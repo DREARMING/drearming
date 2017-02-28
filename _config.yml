@@ -6,7 +6,7 @@ email: 1258235316@qq.com
 description: "So live a life you will remember"
 keyword: "Android Java Web"
 url: "https://drearming.github.io"              # your host, for absolute URL
-baseurl: "/drearming.github.io"         # for example, '/blog' if your blog hosted on 'host/blog'
+baseurl: "/drearming.github.com"         # for example, '/blog' if your blog hosted on 'host/blog'
 
 
 
@@ -62,7 +62,7 @@ duoshuo_share: true                     # set to false if you want to use Commen
 ba_track_id: 4cc1f2d8f3067386cc5cdb626a202900
 # Google Analytics
 ga_track_id: 'UA-49627206-1'            # Format: UA-xxxxxx-xx
-ga_domain: huangxuan.me
+ga_domain: drearming.github.io
 
 
 
