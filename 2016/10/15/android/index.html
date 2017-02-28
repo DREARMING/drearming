@@ -166,12 +166,12 @@
                 col-md-10 col-md-offset-1
                 post-container">
 
-				<p>#消息队列机制</p>
+				<h2 id="消息队列机制">消息队列机制</h2>
 <blockquote>
   <p>要说消息队列机制必须要了解个类：Handler  、 Looper 、 MessageQueue,这三个类是了解整个消息队列机制的必要基础</p>
 </blockquote>
 
-<p>##Looper</p>
+<h3 id="looper">Looper</h3>
 
 <p>我觉得要理解消息队列机制，必须要搞清楚Looper是什么才行；Looper是轮循器，不断从MessageQueue读取 Handler对象发送过来的Message对象</p>
 
@@ -214,9 +214,9 @@
 
 <p>很简单，创建了MessageQueue。</p>
 
-<p>###值得注意的是：在主线程运行的时候，就已经创造了Looper对象。所以不用调用Looper.prepare方法来再创造一次。而其他子线程则需要手动构造Looper对象，假如是有必要在子线程中用到Looper的话。</p>
+<h3 id="值得注意的是在主线程运行的时候就已经创造了looper对象所以不用调用looperprepare方法来再创造一次而其他子线程则需要手动构造looper对象假如是有必要在子线程中用到looper的话">值得注意的是：在主线程运行的时候，就已经创造了Looper对象。所以不用调用Looper.prepare方法来再创造一次。而其他子线程则需要手动构造Looper对象，假如是有必要在子线程中用到Looper的话。</h3>
 
-<p>###Looper.loop()方法</p>
+<h3 id="looperloop方法">Looper.loop()方法</h3>
 
 <p>生成Looper对象后，我们需要调用loop方法，用来轮循消息队列的是否有Message对象
 看看它的源代码，为了方便，删掉了部分代码，详细地请查看源代码</p>
@@ -254,7 +254,7 @@
 
 <p>了解完Looper的工作后，再来看看Looper是如何与Handler产生联系的？</p>
 
-<p>##Handler</p>
+<h2 id="handler">Handler</h2>
 
 <p>要了解Handler，首先要搞懂它的构造方法：</p>
 
@@ -410,9 +410,9 @@
                     data-title="消息队列机制"
                     data-url="http://localhost:4000/drearming.github.com/2016/10/15/android/"
                     data-images="http://localhost:4000/drearming.github.com/img/post-bg-unix-linux.jpg"
-                    data-content="#消息队列机制
+                    data-content="消息队列机制
 
-  要说消息队列机制必须要了解个类：Handler  、 Looper 、 MessageQueue,这三个类是了解整个消息队列机制的必... | 陈俊杰 | MVCoder " >
+  要说消息队列机制必须要了解个类：Handler  、 Looper 、 MessageQueue,这三个类是了解整个消息队列机制的必要... | 陈俊杰 | MVCoder " >
                     <div class="ds-share-inline">
                       <ul  class="ds-share-icons-16">
                         <li data-toggle="ds-share-icons-more"><a class="ds-more" href="#">分享到：</a></li>
