@@ -6,7 +6,7 @@ email: 1258235316@qq.com
 description: "So live a life you will remember"
 keyword: "Android Java Web"
 url: "https://drearming.github.io"              # your host, for absolute URL
-baseurl: "/drearming.github.io"         # for example, '/blog' if your blog hosted on 'host/blog'
+baseurl: "/drearming.github.io/blog"         # for example, '/blog' if your blog hosted on 'host/blog'
 
 
 
@@ -68,7 +68,7 @@ ga_domain: huangxuan.me
 
 # Sidebar settings
 sidebar: true                           # whether or not using Sidebar.
-sidebar-about-description: "So live a life you will remember。"
+sidebar-about-description: "写写代码，做做设计，看看产品。世界那么大，多玩玩看看。"
 sidebar-avatar: /img/avatar-mvcoder.jpg      # use absolute URL, seeing it's used in both `/` and `/about/`
 
 
