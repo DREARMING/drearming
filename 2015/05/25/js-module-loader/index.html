@@ -8,20 +8,20 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="description" content="">
     <meta name="keyword"  content="">
-    <link rel="shortcut icon" href="/huxblog-boilerplate/img/favicon.ico">
+    <link rel="shortcut icon" href="/drearming.github.io/img/favicon.ico">
 
     <title>Example Post with Code Highlight - 你的博客 | Your Blog</title>
 
-    <link rel="canonical" href="http://localhost:4000/huxblog-boilerplate/2015/05/25/js-module-loader/">
+    <link rel="canonical" href="http://localhost:4000/drearming.github.io/2015/05/25/js-module-loader/">
 
     <!-- Bootstrap Core CSS -->
-    <link rel="stylesheet" href="/huxblog-boilerplate/css/bootstrap.min.css">
+    <link rel="stylesheet" href="/drearming.github.io/css/bootstrap.min.css">
 
     <!-- Custom CSS -->
-    <link rel="stylesheet" href="/huxblog-boilerplate/css/hux-blog.min.css">
+    <link rel="stylesheet" href="/drearming.github.io/css/hux-blog.min.css">
 
     <!-- Pygments Github CSS -->
-    <link rel="stylesheet" href="/huxblog-boilerplate/css/syntax.css">
+    <link rel="stylesheet" href="/drearming.github.io/css/syntax.css">
 
     <!-- Custom Fonts -->
     <!-- <link href="http://maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css" rel="stylesheet" type="text/css"> -->
@@ -62,7 +62,7 @@
                 <span class="icon-bar"></span>
                 <span class="icon-bar"></span>
             </button>
-            <a class="navbar-brand" href="/huxblog-boilerplate/">Your Blog</a>
+            <a class="navbar-brand" href="/drearming.github.io/">Your Blog</a>
         </div>
 
         <!-- Collect the nav links, forms, and other content for toggling -->
@@ -75,15 +75,15 @@
             <div class="navbar-collapse">
                 <ul class="nav navbar-nav navbar-right">
                     <li>
-                        <a href="/huxblog-boilerplate/">Home</a>
+                        <a href="/drearming.github.io/">Home</a>
                     </li>
                     
                     <li>
-                        <a href="/huxblog-boilerplate/about/">About</a>
+                        <a href="/drearming.github.io/about/">About</a>
                     </li>
                     
                     <li>
-                        <a href="/huxblog-boilerplate/tags/">Tags</a>
+                        <a href="/drearming.github.io/tags/">Tags</a>
                     </li>
                     
                 </ul>
@@ -125,12 +125,12 @@
 
     <!-- Image to hack wechat -->
 <!-- <img src="/img/icon_wechat.png" width="0" height="0"> -->
-<!-- <img src="/huxblog-boilerplate/img/post-bg-js-module.jpg" width="0" height="0"> -->
+<!-- <img src="/drearming.github.io/img/post-bg-js-module.jpg" width="0" height="0"> -->
 
 <!-- Post Header -->
 <style type="text/css">
     header.intro-header{
-        background-image: url('/huxblog-boilerplate/img/post-bg-js-module.jpg')
+        background-image: url('/drearming.github.io/img/post-bg-js-module.jpg')
     }
 </style>
 <header class="intro-header" >
@@ -140,9 +140,9 @@
                 <div class="post-heading">
                     <div class="tags">
                         
-                        <a class="tag" href="/huxblog-boilerplate/tags/#前端开发" title="前端开发">前端开发</a>
+                        <a class="tag" href="/drearming.github.io/tags/#前端开发" title="前端开发">前端开发</a>
                         
-                        <a class="tag" href="/huxblog-boilerplate/tags/#JavaScript" title="JavaScript">JavaScript</a>
+                        <a class="tag" href="/drearming.github.io/tags/#JavaScript" title="JavaScript">JavaScript</a>
                         
                     </div>
                     <h1>Example Post with Code Highlight</h1>
@@ -203,7 +203,7 @@
 
 <p>让我们看看 Node 中的实现：</p>
 
-<div class="language-js highlighter-rouge"><pre class="highlight"><code><span class="c1">// 由于 Node 原生支持模块的作用域，并不需要额外的 wrapper</span>
+<div class="language-js highlighter-rouge"><span class="c1">// 由于 Node 原生支持模块的作用域，并不需要额外的 wrapper</span>
 <span class="c1">// "as though the module was wrapped in a function"</span>
 
 <span class="kd">var</span> <span class="nx">a</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="s1">'./a'</span><span class="p">)</span>  <span class="c1">// 加载模块（同步加载）</span>
@@ -212,7 +212,6 @@
 <span class="nx">exports</span><span class="p">.</span><span class="nx">b</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(){</span> <span class="c1">// 暴露 b 函数接口</span>
   <span class="c1">// do something</span>
 <span class="p">}</span>
-</code></pre>
 </div>
 
 <p><code class="highlighter-rouge">exports</code>是一个内置对象，就像<code class="highlighter-rouge">require</code>是一个内置加载函数一样。如果你希望直接赋值一个完整的对象或者构造函数，覆写<code class="highlighter-rouge">module.exports</code>就可以了。</p>
@@ -264,7 +263,7 @@
 
 <p>RequireJS 主要解决的还是 CommonJS 同步加载脚本不适合浏览器 这个问题：</p>
 
-<div class="language-js highlighter-rouge"><pre class="highlight"><code><span class="c1">//CommonJS</span>
+<div class="language-js highlighter-rouge"><span class="c1">//CommonJS</span>
 
 <span class="kd">var</span> <span class="nx">Employee</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="s2">"types/Employee"</span><span class="p">);</span>
 
@@ -276,7 +275,6 @@
 
 <span class="c1">//如果 require call 是异步的，那么肯定 error</span>
 <span class="c1">//因为在执行这句前 Employee 模块肯定来不及加载进来</span>
-</code></pre>
 </div>
 <blockquote>
   <p>As the comment indicates above, if require() is async, this code will not work. However, loading scripts synchronously in the browser kills performance. So, what to do?</p>
@@ -284,7 +282,7 @@
 
 <p>所以我们需要 <strong>Function Wrapping</strong> 来获取依赖并且提前通过 script tag 提前加载进来</p>
 
-<div class="language-js highlighter-rouge"><pre class="highlight"><code><span class="c1">//AMD Wrapper</span>
+<div class="language-js highlighter-rouge"><span class="c1">//AMD Wrapper</span>
 
 <span class="nx">define</span><span class="p">(</span>
     <span class="p">[</span><span class="nx">types</span><span class="o">/</span><span class="nx">Employee</span><span class="p">],</span>    <span class="c1">//依赖</span>
@@ -298,28 +296,25 @@
         <span class="k">return</span> <span class="nx">Programmer</span><span class="p">;</span>  <span class="c1">//return Constructor</span>
     <span class="p">}</span>
 <span class="p">)</span>
-</code></pre>
 </div>
 
 <p>当依赖模块非常多时，这种<strong>依赖前置</strong>的写法会显得有点奇怪，所以 AMD 给了一个语法糖， <strong>simplified CommonJS wrapping</strong>，借鉴了 CommonJS 的 require 就近风格，也更方便对 CommonJS 模块的兼容：</p>
 
-<div class="language-js highlighter-rouge"><pre class="highlight"><code><span class="nx">define</span><span class="p">(</span><span class="kd">function</span> <span class="p">(</span><span class="nx">require</span><span class="p">)</span> <span class="p">{</span>
+<div class="language-js highlighter-rouge"><span class="nx">define</span><span class="p">(</span><span class="kd">function</span> <span class="p">(</span><span class="nx">require</span><span class="p">)</span> <span class="p">{</span>
     <span class="kd">var</span> <span class="nx">dependency1</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="s1">'dependency1'</span><span class="p">),</span>
         <span class="nx">dependency2</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="s1">'dependency2'</span><span class="p">);</span>
 
     <span class="k">return</span> <span class="kd">function</span> <span class="p">()</span> <span class="p">{};</span>
 <span class="p">});</span>
-</code></pre>
 </div>
 <p>The AMD loader will parse out the <code class="highlighter-rouge">require('')</code> calls by using <code class="highlighter-rouge">Function.prototype.toString()</code>, then internally convert the above define call into this:</p>
 
-<div class="language-js highlighter-rouge"><pre class="highlight"><code><span class="nx">define</span><span class="p">([</span><span class="s1">'require'</span><span class="p">,</span> <span class="s1">'dependency1'</span><span class="p">,</span> <span class="s1">'dependency2'</span><span class="p">],</span> <span class="kd">function</span> <span class="p">(</span><span class="nx">require</span><span class="p">)</span> <span class="p">{</span>
+<div class="language-js highlighter-rouge"><span class="nx">define</span><span class="p">([</span><span class="s1">'require'</span><span class="p">,</span> <span class="s1">'dependency1'</span><span class="p">,</span> <span class="s1">'dependency2'</span><span class="p">],</span> <span class="kd">function</span> <span class="p">(</span><span class="nx">require</span><span class="p">)</span> <span class="p">{</span>
     <span class="kd">var</span> <span class="nx">dependency1</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="s1">'dependency1'</span><span class="p">),</span>
         <span class="nx">dependency2</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="s1">'dependency2'</span><span class="p">);</span>
 
     <span class="k">return</span> <span class="kd">function</span> <span class="p">()</span> <span class="p">{};</span>
 <span class="p">});</span>
-</code></pre>
 </div>
 
 <p>出于<code class="highlighter-rouge">Function.prototype.toString()</code>兼容性和性能的考虑，最好的做法还是做一次 <strong>optimized build</strong></p>
@@ -330,18 +325,16 @@
 
 <p>Modules/1.0:</p>
 
-<div class="language-js highlighter-rouge"><pre class="highlight"><code><span class="kd">var</span> <span class="nx">a</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="s2">"./a"</span><span class="p">)</span> <span class="c1">// 执行到此时，a.js 才同步下载并执行</span>
-</code></pre>
+<div class="language-js highlighter-rouge"><span class="kd">var</span> <span class="nx">a</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="s2">"./a"</span><span class="p">)</span> <span class="c1">// 执行到此时，a.js 才同步下载并执行</span>
 </div>
 
 <p>AMD: （使用 require 的语法糖时）</p>
 
-<div class="language-js highlighter-rouge"><pre class="highlight"><code><span class="nx">define</span><span class="p">([</span><span class="s2">"require"</span><span class="p">],</span><span class="kd">function</span><span class="p">(</span><span class="nx">require</span><span class="p">)){</span>
+<div class="language-js highlighter-rouge"><span class="nx">define</span><span class="p">([</span><span class="s2">"require"</span><span class="p">],</span><span class="kd">function</span><span class="p">(</span><span class="nx">require</span><span class="p">)){</span>
     <span class="c1">// 在这里，a.js 已经下载并且执行好了</span>
     <span class="c1">// 使用 require() 并不是 AMD 的推荐写法</span>
     <span class="kd">var</span> <span class="nx">a</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="s2">"./a"</span><span class="p">)</span> <span class="c1">// 此处仅仅是取模块 a 的 exports</span>
 <span class="p">})</span>
-</code></pre>
 </div>
 
 <p>AMD 里提前下载 a.js 是出于对浏览器环境的考虑，只能采取异步下载，这个社区都认可（Sea.js 也是这么做的）</p>
@@ -352,25 +345,23 @@
 
 <p>AMD 推荐的风格并不使用<code class="highlighter-rouge">require</code>，而是通过参数传入，破坏了<strong>依赖就近</strong>：</p>
 
-<div class="language-js highlighter-rouge"><pre class="highlight"><code><span class="nx">define</span><span class="p">([</span><span class="s2">"a"</span><span class="p">,</span> <span class="s2">"b"</span><span class="p">,</span> <span class="s2">"c"</span><span class="p">],</span><span class="kd">function</span><span class="p">(</span><span class="nx">a</span><span class="p">,</span> <span class="nx">b</span><span class="p">,</span> <span class="nx">c</span><span class="p">){</span>
+<div class="language-js highlighter-rouge"><span class="nx">define</span><span class="p">([</span><span class="s2">"a"</span><span class="p">,</span> <span class="s2">"b"</span><span class="p">,</span> <span class="s2">"c"</span><span class="p">],</span><span class="kd">function</span><span class="p">(</span><span class="nx">a</span><span class="p">,</span> <span class="nx">b</span><span class="p">,</span> <span class="nx">c</span><span class="p">){</span>
     <span class="c1">// 提前申明了并初始化了所有模块</span>
 
     <span class="kc">true</span> <span class="o">||</span> <span class="nx">b</span><span class="p">.</span><span class="nx">foo</span><span class="p">();</span> <span class="c1">//即便根本没用到模块 b，但 b 还是提前执行了。</span>
 <span class="p">})</span>
-</code></pre>
 </div>
 
 <p>不过，在笔者看来，风格喜好因人而异，主要还是<strong>预执行</strong>和<strong>懒执行</strong>的差异。</p>
 
 <p>另外，require 2.0 也开始思考异步处理<strong>软依赖</strong>（区别于一定需要的<strong>硬依赖</strong>）的问题，提出了这样的方案：</p>
 
-<div class="language-js highlighter-rouge"><pre class="highlight"><code><span class="c1">// 函数体内：</span>
+<div class="language-js highlighter-rouge"><span class="c1">// 函数体内：</span>
 <span class="k">if</span><span class="p">(</span><span class="nx">status</span><span class="p">){</span>
     <span class="nx">async</span><span class="p">([</span><span class="s1">'a'</span><span class="p">],</span><span class="kd">function</span><span class="p">(</span><span class="nx">a</span><span class="p">){</span>
         <span class="nx">a</span><span class="p">.</span><span class="nx">doSomething</span><span class="p">()</span>
     <span class="p">})</span>
 <span class="p">}</span>
-</code></pre>
 </div>
 
 <h2 id="seajs--cmd">SeaJS &amp; CMD</h2>
@@ -403,7 +394,7 @@
   <li>这个 require 实际上是一个全局函数，用于加载模块，这里实际就是传入而已</li>
 </ul>
 
-<div class="language-js highlighter-rouge"><pre class="highlight"><code><span class="nx">define</span><span class="p">(</span><span class="kd">function</span><span class="p">(</span><span class="nx">require</span><span class="p">,</span> <span class="nx">exports</span><span class="p">)</span> <span class="p">{</span>
+<div class="language-js highlighter-rouge"><span class="nx">define</span><span class="p">(</span><span class="kd">function</span><span class="p">(</span><span class="nx">require</span><span class="p">,</span> <span class="nx">exports</span><span class="p">)</span> <span class="p">{</span>
 
     <span class="c1">// 获取模块 a 的接口</span>
     <span class="kd">var</span> <span class="nx">a</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="s1">'./a'</span><span class="p">);</span>
@@ -416,12 +407,11 @@
     <span class="nx">exports</span><span class="p">.</span><span class="nx">doSomething</span> <span class="o">=</span> <span class="kd">function</span><span class="p">()</span> <span class="p">{};</span>
 
 <span class="p">});</span>
-</code></pre>
 </div>
 
 <p>但是你也可以使用 AMD 风格，或者使用 return 来进行模块暴露</p>
 
-<div class="language-js highlighter-rouge"><pre class="highlight"><code><span class="nx">define</span><span class="p">(</span><span class="s1">'hello'</span><span class="p">,</span> <span class="p">[</span><span class="s1">'jquery'</span><span class="p">],</span> <span class="kd">function</span><span class="p">(</span><span class="nx">require</span><span class="p">,</span> <span class="nx">exports</span><span class="p">,</span> <span class="nx">module</span><span class="p">)</span> <span class="p">{</span>
+<div class="language-js highlighter-rouge"><span class="nx">define</span><span class="p">(</span><span class="s1">'hello'</span><span class="p">,</span> <span class="p">[</span><span class="s1">'jquery'</span><span class="p">],</span> <span class="kd">function</span><span class="p">(</span><span class="nx">require</span><span class="p">,</span> <span class="nx">exports</span><span class="p">,</span> <span class="nx">module</span><span class="p">)</span> <span class="p">{</span>
 
     <span class="c1">// 模块代码...</span>
 
@@ -432,7 +422,6 @@
     <span class="p">};</span>
 
 <span class="p">});</span>
-</code></pre>
 </div>
 
 <p>Sea.js 借鉴了 RequireJS 的不少东西，比如将 FlyScript 中的 module.declare 改名为 define 等。Sea.js 更多地来自 Modules/2.0 的观点，但尽可能去掉了学院派的东西，加入了不少实战派的理念。</p>
@@ -451,7 +440,7 @@
 
 <p>看代码：</p>
 
-<div class="language-js highlighter-rouge"><pre class="highlight"><code><span class="c1">// AMD 默认推荐</span>
+<div class="language-js highlighter-rouge"><span class="c1">// AMD 默认推荐</span>
 
 <span class="nx">define</span><span class="p">([</span><span class="s1">'./a'</span><span class="p">,</span> <span class="s1">'./b'</span><span class="p">],</span> <span class="kd">function</span><span class="p">(</span><span class="nx">a</span><span class="p">,</span> <span class="nx">b</span><span class="p">)</span> <span class="p">{</span>  <span class="c1">// 依赖前置，提前执行</span>
 
@@ -460,10 +449,9 @@
 
 <span class="p">})</span>
 
-</code></pre>
 </div>
 
-<div class="language-js highlighter-rouge"><pre class="highlight"><code><span class="c1">// CMD</span>
+<div class="language-js highlighter-rouge"><span class="c1">// CMD</span>
 
 <span class="nx">define</span><span class="p">(</span><span class="kd">function</span><span class="p">(</span><span class="nx">require</span><span class="p">,</span> <span class="nx">exports</span><span class="p">,</span> <span class="nx">module</span><span class="p">)</span> <span class="p">{</span>
 
@@ -473,7 +461,6 @@
     <span class="kd">var</span> <span class="nx">b</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="s1">'./b'</span><span class="p">)</span> <span class="c1">// 依赖就近，延迟执行</span>
     <span class="nx">b</span><span class="p">.</span><span class="nx">doSomething</span><span class="p">()</span>
 <span class="p">})</span>
-</code></pre>
 </div>
 
 <h2 id="webpack">WebPack</h2>
@@ -492,8 +479,8 @@
                     style="text-align: right"
                     data-thread-key="/2015/05/25/js-module-loader"
                     data-title="Example Post with Code Highlight"
-                    data-url="http://localhost:4000/huxblog-boilerplate/2015/05/25/js-module-loader/"
-                    data-images="http://localhost:4000/huxblog-boilerplate/img/post-bg-js-module.jpg"
+                    data-url="http://localhost:4000/drearming.github.io/2015/05/25/js-module-loader/"
+                    data-images="http://localhost:4000/drearming.github.io/img/post-bg-js-module.jpg"
                     data-content="Foreword
 
 
@@ -520,12 +507,12 @@
                 <ul class="pager">
                     
                     <li class="previous">
-                        <a href="/huxblog-boilerplate/2015/04/14/unix-linux-note/" data-toggle="tooltip" data-placement="top" title="Example Post">&larr; Previous Post</a>
+                        <a href="/drearming.github.io/2015/04/14/unix-linux-note/" data-toggle="tooltip" data-placement="top" title="Example Post">&larr; Previous Post</a>
                     </li>
                     
                     
                     <li class="next">
-                        <a href="/huxblog-boilerplate/2015/07/09/js-module-7day/" data-toggle="tooltip" data-placement="top" title="Example Post using Keynote Layout">Next Post &rarr;</a>
+                        <a href="/drearming.github.io/2015/07/09/js-module-7day/" data-toggle="tooltip" data-placement="top" title="Example Post using Keynote Layout">Next Post &rarr;</a>
                     </li>
                     
                 </ul>
@@ -537,7 +524,7 @@
                     <div class="ds-thread"
                         data-thread-key="/2015/05/25/js-module-loader"
                         data-title="Example Post with Code Highlight"
-                        data-url="http://localhost:4000/huxblog-boilerplate/2015/05/25/js-module-loader/" >
+                        data-url="http://localhost:4000/drearming.github.io/2015/05/25/js-module-loader/" >
                     </div>
                 </div>
                 <!-- 多说评论框 end -->
@@ -569,13 +556,13 @@
                             
         				
                             
-                				<a href="/huxblog-boilerplate/tags/#前端开发" title="前端开发" rel="3">
+                				<a href="/drearming.github.io/tags/#前端开发" title="前端开发" rel="3">
                                     前端开发
                                 </a>
                             
         				
                             
-                				<a href="/huxblog-boilerplate/tags/#JavaScript" title="JavaScript" rel="3">
+                				<a href="/drearming.github.io/tags/#JavaScript" title="JavaScript" rel="3">
                                     JavaScript
                                 </a>
                             
@@ -739,13 +726,13 @@
 </footer>
 
 <!-- jQuery -->
-<script src="/huxblog-boilerplate/js/jquery.min.js "></script>
+<script src="/drearming.github.io/js/jquery.min.js "></script>
 
 <!-- Bootstrap Core JavaScript -->
-<script src="/huxblog-boilerplate/js/bootstrap.min.js "></script>
+<script src="/drearming.github.io/js/bootstrap.min.js "></script>
 
 <!-- Custom Theme JavaScript -->
-<script src="/huxblog-boilerplate/js/hux-blog.min.js "></script>
+<script src="/drearming.github.io/js/hux-blog.min.js "></script>
 
 
 <!-- async load function -->
