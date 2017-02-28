@@ -1,0 +1,830 @@
+<!DOCTYPE html>
+
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="google-site-verification" content="xBT4GhYoi5qRD5tr338pgPM5OWHHIDR6mNg1a3euekI" />
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="So live a life you will remember">
+    <meta name="keyword"  content="Android Java Web">
+    <link rel="shortcut icon" href="/drearming.github.com/img/favicon.ico">
+
+    <title>Retrofit原理 - 陈俊杰 | MVCoder</title>
+
+    <link rel="canonical" href="http://localhost:4000/drearming.github.com/2017/02/10/Android-network-retrofit/">
+
+    <!-- Bootstrap Core CSS -->
+    <link rel="stylesheet" href="/drearming.github.com/css/bootstrap.min.css">
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="/drearming.github.com/css/hux-blog.min.css">
+
+    <!-- Pygments Github CSS -->
+    <link rel="stylesheet" href="/drearming.github.com/css/syntax.css">
+
+    <!-- Custom Fonts -->
+    <!-- <link href="http://maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css" rel="stylesheet" type="text/css"> -->
+    <!-- Hux change font-awesome CDN to qiniu -->
+    <link href="http://cdn.staticfile.org/font-awesome/4.2.0/css/font-awesome.min.css" rel="stylesheet" type="text/css">
+
+
+    <!-- Hux Delete, sad but pending in China
+    <link href='http://fonts.googleapis.com/css?family=Lora:400,700,400italic,700italic' rel='stylesheet' type='text/css'>
+    <link href='http://fonts.googleapis.com/css?family=Open+Sans:300italic,400italic,600italic,700italic,800italic,400,300,600,700,800' rel='stylesheet' type='text/
+    css'>
+    -->
+
+
+    <!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
+    <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
+    <!--[if lt IE 9]>
+        <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+        <script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
+    <![endif]-->
+
+    <!-- ga & ba script hoook -->
+    <script></script>
+</head>
+
+
+<!-- hack iOS CSS :active style -->
+<body ontouchstart="">
+
+    <!-- Navigation -->
+<nav class="navbar navbar-default navbar-custom navbar-fixed-top">
+    <div class="container-fluid">
+        <!-- Brand and toggle get grouped for better mobile display -->
+        <div class="navbar-header page-scroll">
+            <button type="button" class="navbar-toggle">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+            <a class="navbar-brand" href="/drearming.github.com/">MVCoder Blog</a>
+        </div>
+
+        <!-- Collect the nav links, forms, and other content for toggling -->
+        <!-- Known Issue, found by Hux:
+            <nav>'s height woule be hold on by its content.
+            so, when navbar scale out, the <nav> will cover tags.
+            also mask any touch event of tags, unfortunately.
+        -->
+        <div id="huxblog_navbar">
+            <div class="navbar-collapse">
+                <ul class="nav navbar-nav navbar-right">
+                    <li>
+                        <a href="/drearming.github.com/">Home</a>
+                    </li>
+                    
+                    <li>
+                        <a href="/drearming.github.com/about/">About</a>
+                    </li>
+                    
+                    <li>
+                        <a href="/drearming.github.com/tags/">Tags</a>
+                    </li>
+                    
+                </ul>
+            </div>
+        </div>
+        <!-- /.navbar-collapse -->
+    </div>
+    <!-- /.container -->
+</nav>
+<script>
+    // Drop Bootstarp low-performance Navbar
+    // Use customize navbar with high-quality material design animation
+    // in high-perf jank-free CSS3 implementation
+    var $body   = document.body;
+    var $toggle = document.querySelector('.navbar-toggle');
+    var $navbar = document.querySelector('#huxblog_navbar');
+    var $collapse = document.querySelector('.navbar-collapse');
+
+    $toggle.addEventListener('click', handleMagic)
+    function handleMagic(e){
+        if ($navbar.className.indexOf('in') > 0) {
+        // CLOSE
+            $navbar.className = " ";
+            // wait until animation end.
+            setTimeout(function(){
+                // prevent frequently toggle
+                if($navbar.className.indexOf('in') < 0) {
+                    $collapse.style.height = "0px"
+                }
+            },400)
+        }else{
+        // OPEN
+            $collapse.style.height = "auto"
+            $navbar.className += " in";
+        }
+    }
+</script>
+
+
+    <!-- Image to hack wechat -->
+<!-- <img src="/img/icon_wechat.png" width="0" height="0"> -->
+<!-- <img src="/drearming.github.com/img/post-bg-2015.jpg" width="0" height="0"> -->
+
+<!-- Post Header -->
+<style type="text/css">
+    header.intro-header{
+        background-image: url('/drearming.github.com/img/post-bg-2015.jpg')
+    }
+</style>
+<header class="intro-header" >
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+                <div class="post-heading">
+                    <div class="tags">
+                        
+                        <a class="tag" href="/drearming.github.com/tags/#网络" title="网络">网络</a>
+                        
+                        <a class="tag" href="/drearming.github.com/tags/#Android" title="Android">Android</a>
+                        
+                    </div>
+                    <h1>Retrofit原理</h1>
+                    
+                    
+                    <h2 class="subheading">带你揭开retrofit的神秘面纱</h2>
+                    
+                    <span class="meta">Posted by MVCoder on February 10, 2017</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</header>
+
+<!-- Post Content -->
+<article>
+    <div class="container">
+        <div class="row">
+
+    <!-- Post Container -->
+            <div class="
+                col-lg-8 col-lg-offset-2
+                col-md-10 col-md-offset-1
+                post-container">
+
+				<h2 id="retrofit基本用法">Retrofit基本用法：</h2>
+
+<figure class="highlight"><pre><code class="language-java" data-lang="java">	<span class="c1">//首先通过动态代理获取到一个接口(GetService)的代理对象，</span>
+	<span class="c1">//当通过代理对象执行接口的任意方法时，都会调用代理对象的 </span>
+	<span class="c1">//InvocationHandler 的public Object invoke(Object proxy, Method method, Object... args)方法（参考下面的源码）</span>
+
+	<span class="n">GetService</span> <span class="n">service</span> <span class="o">=</span>  <span class="n">NetWorkManager</span><span class="o">.</span><span class="na">getInstance</span><span class="o">().</span><span class="na">create</span><span class="o">(</span><span class="n">GetService</span><span class="o">.</span><span class="na">class</span><span class="o">);</span>
+	<span class="n">Call</span><span class="o">&lt;</span><span class="n">ResponseInfo</span><span class="o">&gt;</span> <span class="n">call</span> <span class="o">=</span> <span class="n">service</span><span class="o">.</span><span class="na">httpGet</span><span class="o">();</span>
+        <span class="n">call</span><span class="o">.</span><span class="na">enqueue</span><span class="o">(</span><span class="k">new</span> <span class="n">Callback</span><span class="o">&lt;</span><span class="n">ResponseInfo</span><span class="o">&gt;()</span> <span class="o">{</span>
+            <span class="nd">@Override</span>
+            <span class="kd">public</span> <span class="kt">void</span> <span class="nf">onResponse</span><span class="o">(</span><span class="n">Call</span><span class="o">&lt;</span><span class="n">ResponseInfo</span><span class="o">&gt;</span> <span class="n">call</span><span class="o">,</span> <span class="n">Response</span><span class="o">&lt;</span><span class="n">ResponseInfo</span><span class="o">&gt;</span> <span class="n">response</span><span class="o">)</span> <span class="o">{</span>
+                <span class="n">Log</span><span class="o">.</span><span class="na">e</span><span class="o">(</span><span class="s">"MVP"</span><span class="o">,</span><span class="s">"Server Response : "</span> <span class="o">+</span> <span class="n">response</span><span class="o">.</span><span class="na">body</span><span class="o">().</span><span class="na">description</span><span class="o">);</span>
+            <span class="o">}</span>
+
+            <span class="nd">@Override</span>
+            <span class="kd">public</span> <span class="kt">void</span> <span class="nf">onFailure</span><span class="o">(</span><span class="n">Call</span><span class="o">&lt;</span><span class="n">ResponseInfo</span><span class="o">&gt;</span> <span class="n">call</span><span class="o">,</span> <span class="n">Throwable</span> <span class="n">t</span><span class="o">)</span> <span class="o">{</span>
+                <span class="n">Log</span><span class="o">.</span><span class="na">e</span><span class="o">(</span><span class="s">"MVP"</span><span class="o">,</span><span class="n">t</span><span class="o">.</span><span class="na">getMessage</span><span class="o">());</span>
+            <span class="o">}</span>
+        <span class="o">});</span>
+
+	<span class="kd">public</span> <span class="kd">static</span> <span class="n">Retrofit</span> <span class="nf">getInstance</span><span class="o">(){</span>
+        <span class="k">if</span><span class="o">(</span><span class="n">manager</span> <span class="o">==</span> <span class="kc">null</span><span class="o">){</span>
+            <span class="n">manager</span> <span class="o">=</span> <span class="k">new</span> <span class="n">Retrofit</span><span class="o">.</span><span class="na">Builder</span><span class="o">()</span>
+                    <span class="o">.</span><span class="na">baseUrl</span><span class="o">(</span><span class="n">baseUrl</span><span class="o">)</span>
+                    <span class="o">.</span><span class="na">addConverterFactory</span><span class="o">(</span><span class="n">GsonConverterFactory</span><span class="o">.</span><span class="na">create</span><span class="o">())</span>
+                    <span class="o">.</span><span class="na">build</span><span class="o">();</span>
+        <span class="o">}</span>
+        <span class="k">return</span> <span class="n">manager</span><span class="o">;</span>
+    <span class="o">}</span>
+
+	<span class="kd">public</span> <span class="kd">interface</span> <span class="nc">GetService</span> <span class="o">{</span>
+    <span class="nd">@GET</span><span class="o">(</span><span class="s">"api/test"</span><span class="o">)</span>
+    	<span class="n">Call</span><span class="o">&lt;</span><span class="n">ResponseInfo</span><span class="o">&gt;</span> <span class="nf">httpGet</span><span class="o">();</span>
+	<span class="o">}</span></code></pre></figure>
+
+<p>动态代理的源码：</p>
+
+<p>//动态代理的目的是在执行具体方法前(也可以不执行)，做一些必要的步骤，这里为的是执行接口的方法(即执行http请求)，将method对象的annotion，reponseType，parameterType构造出一个ServiceMethod对象，这个ServiceMethod对象就是将接口方法上的信息，封装成包含所有请求头，请求url，请求正文的一个Okhttp3的Request对象(serviceMethod对象执行toRequest(Object… args)方法后生成Request对象)</p>
+
+<figure class="highlight"><pre><code class="language-java" data-lang="java">	<span class="kd">public</span> <span class="o">&lt;</span><span class="n">T</span><span class="o">&gt;</span> <span class="n">T</span> <span class="nf">create</span><span class="o">(</span><span class="kd">final</span> <span class="n">Class</span><span class="o">&lt;</span><span class="n">T</span><span class="o">&gt;</span> <span class="n">service</span><span class="o">)</span> <span class="o">{</span>
+    <span class="n">Utils</span><span class="o">.</span><span class="na">validateServiceInterface</span><span class="o">(</span><span class="n">service</span><span class="o">);</span>
+    <span class="k">if</span> <span class="o">(</span><span class="n">validateEagerly</span><span class="o">)</span> <span class="o">{</span>
+      <span class="n">eagerlyValidateMethods</span><span class="o">(</span><span class="n">service</span><span class="o">);</span>
+    <span class="o">}</span>
+    <span class="k">return</span> <span class="o">(</span><span class="n">T</span><span class="o">)</span> <span class="n">Proxy</span><span class="o">.</span><span class="na">newProxyInstance</span><span class="o">(</span><span class="n">service</span><span class="o">.</span><span class="na">getClassLoader</span><span class="o">(),</span> <span class="k">new</span> <span class="n">Class</span><span class="o">&lt;?&gt;[]</span> <span class="o">{</span> <span class="n">service</span> <span class="o">},</span>
+        <span class="k">new</span> <span class="nf">InvocationHandler</span><span class="o">()</span> <span class="o">{</span>
+          <span class="kd">private</span> <span class="kd">final</span> <span class="n">Platform</span> <span class="n">platform</span> <span class="o">=</span> <span class="n">Platform</span><span class="o">.</span><span class="na">get</span><span class="o">();</span>
+
+          <span class="nd">@Override</span> <span class="kd">public</span> <span class="n">Object</span> <span class="nf">invoke</span><span class="o">(</span><span class="n">Object</span> <span class="n">proxy</span><span class="o">,</span> <span class="n">Method</span> <span class="n">method</span><span class="o">,</span> <span class="n">Object</span><span class="o">...</span> <span class="n">args</span><span class="o">)</span>
+              <span class="kd">throws</span> <span class="n">Throwable</span> <span class="o">{</span>
+            <span class="c1">// If the method is a method from Object then defer to normal invocation.</span>
+            <span class="k">if</span> <span class="o">(</span><span class="n">method</span><span class="o">.</span><span class="na">getDeclaringClass</span><span class="o">()</span> <span class="o">==</span> <span class="n">Object</span><span class="o">.</span><span class="na">class</span><span class="o">)</span> <span class="o">{</span>
+              <span class="k">return</span> <span class="n">method</span><span class="o">.</span><span class="na">invoke</span><span class="o">(</span><span class="k">this</span><span class="o">,</span> <span class="n">args</span><span class="o">);</span>
+            <span class="o">}</span>
+            <span class="k">if</span> <span class="o">(</span><span class="n">platform</span><span class="o">.</span><span class="na">isDefaultMethod</span><span class="o">(</span><span class="n">method</span><span class="o">))</span> <span class="o">{</span>
+              <span class="k">return</span> <span class="n">platform</span><span class="o">.</span><span class="na">invokeDefaultMethod</span><span class="o">(</span><span class="n">method</span><span class="o">,</span> <span class="n">service</span><span class="o">,</span> <span class="n">proxy</span><span class="o">,</span> <span class="n">args</span><span class="o">);</span>
+            <span class="o">}</span>
+            <span class="n">ServiceMethod</span> <span class="n">serviceMethod</span> <span class="o">=</span> <span class="n">loadServiceMethod</span><span class="o">(</span><span class="n">method</span><span class="o">);</span>
+            <span class="n">OkHttpCall</span> <span class="n">okHttpCall</span> <span class="o">=</span> <span class="k">new</span> <span class="n">OkHttpCall</span><span class="o">&lt;&gt;(</span><span class="n">serviceMethod</span><span class="o">,</span> <span class="n">args</span><span class="o">);</span>
+            <span class="k">return</span> <span class="n">serviceMethod</span><span class="o">.</span><span class="na">callAdapter</span><span class="o">.</span><span class="na">adapt</span><span class="o">(</span><span class="n">okHttpCall</span><span class="o">);</span>
+          <span class="o">}</span>
+        <span class="o">});</span>
+  	<span class="o">}</span></code></pre></figure>
+
+<p>ServiceMethod对象除了能够构造一个Request对象外，它还拥有一个CallAdapter<T>,其实就是Retrofit对象的CallAdapter;这个callAdapter的adapt方法是返回一个ExecutorCallBack&lt;&gt;对象，并且这个方法的参数，就是一个OkHttpCall&lt;&gt;对象，它就是封装了我们接口方法等价的Http请求Request对象的Call<T>对象</T></T></p>
+
+<p>到了这一步，我们就执行到我们常用步骤的：</p>
+
+<figure class="highlight"><pre><code class="language-java" data-lang="java">	<span class="n">Call</span><span class="o">&lt;</span><span class="n">ResponseInfo</span><span class="o">&gt;</span> <span class="n">call</span> <span class="o">=</span> <span class="n">service</span><span class="o">.</span><span class="na">httpGet</span><span class="o">();</span></code></pre></figure>
+
+<p>上面的call对象就是ExecutorCallBackCall<T>对象，它有一个成员变量就是oktthpCall<T>对象（ServiceMethod方法和arg传进区构造的），当调用它的enqueue方法，就是调用okhttpCall<T>对象的enqueue方法，这个方法里面，可以获取由我们接口设置的真是http请求，下面是真正将serviceMethod转换为HTTP 请求的方法</T></T></T></p>
+
+<figure class="highlight"><pre><code class="language-java" data-lang="java">	<span class="kd">private</span> <span class="n">okhttp3</span><span class="o">.</span><span class="na">Call</span> <span class="nf">createRawCall</span><span class="o">()</span> <span class="kd">throws</span> <span class="n">IOException</span> <span class="o">{</span>
+    <span class="n">Request</span> <span class="n">request</span> <span class="o">=</span> <span class="n">serviceMethod</span><span class="o">.</span><span class="na">toRequest</span><span class="o">(</span><span class="n">args</span><span class="o">);</span>
+    <span class="n">okhttp3</span><span class="o">.</span><span class="na">Call</span> <span class="n">call</span> <span class="o">=</span> <span class="n">serviceMethod</span><span class="o">.</span><span class="na">callFactory</span><span class="o">.</span><span class="na">newCall</span><span class="o">(</span><span class="n">request</span><span class="o">);</span>
+    <span class="k">if</span> <span class="o">(</span><span class="n">call</span> <span class="o">==</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span>
+      <span class="k">throw</span> <span class="k">new</span> <span class="nf">NullPointerException</span><span class="o">(</span><span class="s">"Call.Factory returned null."</span><span class="o">);</span>
+    <span class="o">}</span>
+    <span class="k">return</span> <span class="n">call</span><span class="o">;</span>
+  <span class="o">}</span></code></pre></figure>
+
+<p>就可以构造Call<T>对象了</T></p>
+
+<figure class="highlight"><pre><code class="language-java" data-lang="java">	<span class="kd">final</span> <span class="kd">class</span> <span class="nc">ExecutorCallAdapterFactory</span> <span class="kd">extends</span> <span class="n">CallAdapter</span><span class="o">.</span><span class="na">Factory</span> <span class="o">{</span>
+  	<span class="kd">final</span> <span class="n">Executor</span> <span class="n">callbackExecutor</span><span class="o">;</span>
+
+  	<span class="n">ExecutorCallAdapterFactory</span><span class="o">(</span><span class="n">Executor</span> <span class="n">callbackExecutor</span><span class="o">)</span> <span class="o">{</span>
+    	<span class="k">this</span><span class="o">.</span><span class="na">callbackExecutor</span> <span class="o">=</span> <span class="n">callbackExecutor</span><span class="o">;</span>
+  	<span class="o">}</span>
+
+  	<span class="nd">@Override</span>
+  	<span class="kd">public</span> <span class="n">CallAdapter</span><span class="o">&lt;</span><span class="n">Call</span><span class="o">&lt;?&gt;&gt;</span> <span class="n">get</span><span class="o">(</span><span class="n">Type</span> <span class="n">returnType</span><span class="o">,</span> <span class="n">Annotation</span><span class="o">[]</span> <span class="n">annotations</span><span class="o">,</span> 	<span class="n">Retrofit</span> <span class="n">retrofit</span><span class="o">)</span> <span class="o">{</span>
+    <span class="k">if</span> <span class="o">(</span><span class="n">getRawType</span><span class="o">(</span><span class="n">returnType</span><span class="o">)</span> <span class="o">!=</span> <span class="n">Call</span><span class="o">.</span><span class="na">class</span><span class="o">)</span> <span class="o">{</span>
+      <span class="k">return</span> <span class="kc">null</span><span class="o">;</span>
+    <span class="o">}</span>
+    <span class="kd">final</span> <span class="n">Type</span> <span class="n">responseType</span> <span class="o">=</span> <span class="n">Utils</span><span class="o">.</span><span class="na">getCallResponseType</span><span class="o">(</span><span class="n">returnType</span><span class="o">);</span>
+    <span class="k">return</span> <span class="k">new</span> <span class="n">CallAdapter</span><span class="o">&lt;</span><span class="n">Call</span><span class="o">&lt;?&gt;&gt;()</span> <span class="o">{</span>
+      <span class="nd">@Override</span> <span class="kd">public</span> <span class="n">Type</span> <span class="nf">responseType</span><span class="o">()</span> <span class="o">{</span>
+        <span class="k">return</span> <span class="n">responseType</span><span class="o">;</span>
+      <span class="o">}</span>
+
+      <span class="nd">@Override</span> <span class="kd">public</span> <span class="o">&lt;</span><span class="n">R</span><span class="o">&gt;</span> <span class="n">Call</span><span class="o">&lt;</span><span class="n">R</span><span class="o">&gt;</span> <span class="nf">adapt</span><span class="o">(</span><span class="n">Call</span><span class="o">&lt;</span><span class="n">R</span><span class="o">&gt;</span> <span class="n">call</span><span class="o">)</span> <span class="o">{</span>
+        <span class="k">return</span> <span class="k">new</span> <span class="n">ExecutorCallbackCall</span><span class="o">&lt;&gt;(</span><span class="n">callbackExecutor</span><span class="o">,</span> <span class="n">call</span><span class="o">);</span>
+      <span class="o">}</span>
+    <span class="o">};</span>
+  	<span class="o">}</span>
+
+	<span class="o">-------------------</span>
+	<span class="kd">static</span> <span class="kd">final</span> <span class="kd">class</span> <span class="nc">ExecutorCallbackCall</span><span class="o">&lt;</span><span class="n">T</span><span class="o">&gt;</span> <span class="kd">implements</span> <span class="n">Call</span><span class="o">&lt;</span><span class="n">T</span><span class="o">&gt;</span> <span class="o">{</span>
+    <span class="kd">final</span> <span class="n">Executor</span> <span class="n">callbackExecutor</span><span class="o">;</span>
+    <span class="kd">final</span> <span class="n">Call</span><span class="o">&lt;</span><span class="n">T</span><span class="o">&gt;</span> <span class="n">delegate</span><span class="o">;</span>
+
+    <span class="n">ExecutorCallbackCall</span><span class="o">(</span><span class="n">Executor</span> <span class="n">callbackExecutor</span><span class="o">,</span> <span class="n">Call</span><span class="o">&lt;</span><span class="n">T</span><span class="o">&gt;</span> <span class="n">delegate</span><span class="o">)</span> <span class="o">{</span>
+      <span class="k">this</span><span class="o">.</span><span class="na">callbackExecutor</span> <span class="o">=</span> <span class="n">callbackExecutor</span><span class="o">;</span>
+      <span class="k">this</span><span class="o">.</span><span class="na">delegate</span> <span class="o">=</span> <span class="n">delegate</span><span class="o">;</span>
+    <span class="o">}</span>
+
+    <span class="nd">@Override</span> <span class="kd">public</span> <span class="kt">void</span> <span class="nf">enqueue</span><span class="o">(</span><span class="kd">final</span> <span class="n">Callback</span><span class="o">&lt;</span><span class="n">T</span><span class="o">&gt;</span> <span class="n">callback</span><span class="o">)</span> <span class="o">{</span>
+      <span class="k">if</span> <span class="o">(</span><span class="n">callback</span> <span class="o">==</span> <span class="kc">null</span><span class="o">)</span> <span class="k">throw</span> <span class="k">new</span> <span class="n">NullPointerException</span><span class="o">(</span><span class="s">"callback == null"</span><span class="o">);</span>
+
+      <span class="n">delegate</span><span class="o">.</span><span class="na">enqueue</span><span class="o">(</span><span class="k">new</span> <span class="n">Callback</span><span class="o">&lt;</span><span class="n">T</span><span class="o">&gt;()</span> <span class="o">{</span>
+        <span class="nd">@Override</span> <span class="kd">public</span> <span class="kt">void</span> <span class="nf">onResponse</span><span class="o">(</span><span class="n">Call</span><span class="o">&lt;</span><span class="n">T</span><span class="o">&gt;</span> <span class="n">call</span><span class="o">,</span> <span class="kd">final</span> <span class="n">Response</span><span class="o">&lt;</span><span class="n">T</span><span class="o">&gt;</span> <span class="n">response</span><span class="o">)</span> <span class="o">{</span>
+          <span class="n">callbackExecutor</span><span class="o">.</span><span class="na">execute</span><span class="o">(</span><span class="k">new</span> <span class="n">Runnable</span><span class="o">()</span> <span class="o">{</span>
+            <span class="nd">@Override</span> <span class="kd">public</span> <span class="kt">void</span> <span class="nf">run</span><span class="o">()</span> <span class="o">{</span>
+              <span class="k">if</span> <span class="o">(</span><span class="n">delegate</span><span class="o">.</span><span class="na">isCanceled</span><span class="o">())</span> <span class="o">{</span>
+                <span class="c1">// Emulate OkHttp's behavior of throwing/delivering an IOException on cancellation.</span>
+                <span class="n">callback</span><span class="o">.</span><span class="na">onFailure</span><span class="o">(</span><span class="n">ExecutorCallbackCall</span><span class="o">.</span><span class="na">this</span><span class="o">,</span> <span class="k">new</span> <span class="n">IOException</span><span class="o">(</span><span class="s">"Canceled"</span><span class="o">));</span>
+              <span class="o">}</span> <span class="k">else</span> <span class="o">{</span>
+                <span class="n">callback</span><span class="o">.</span><span class="na">onResponse</span><span class="o">(</span><span class="n">ExecutorCallbackCall</span><span class="o">.</span><span class="na">this</span><span class="o">,</span> <span class="n">response</span><span class="o">);</span>
+              <span class="o">}</span>
+            <span class="o">}</span>
+          <span class="o">});</span>
+        <span class="o">}</span>
+
+        <span class="nd">@Override</span> <span class="kd">public</span> <span class="kt">void</span> <span class="nf">onFailure</span><span class="o">(</span><span class="n">Call</span><span class="o">&lt;</span><span class="n">T</span><span class="o">&gt;</span> <span class="n">call</span><span class="o">,</span> <span class="kd">final</span> <span class="n">Throwable</span> <span class="n">t</span><span class="o">)</span> <span class="o">{</span>
+          <span class="n">callbackExecutor</span><span class="o">.</span><span class="na">execute</span><span class="o">(</span><span class="k">new</span> <span class="n">Runnable</span><span class="o">()</span> <span class="o">{</span>
+            <span class="nd">@Override</span> <span class="kd">public</span> <span class="kt">void</span> <span class="nf">run</span><span class="o">()</span> <span class="o">{</span>
+              <span class="n">callback</span><span class="o">.</span><span class="na">onFailure</span><span class="o">(</span><span class="n">ExecutorCallbackCall</span><span class="o">.</span><span class="na">this</span><span class="o">,</span> <span class="n">t</span><span class="o">);</span>
+            <span class="o">}</span>
+          <span class="o">});</span>
+        <span class="o">}</span>
+      <span class="o">});</span>
+    <span class="o">}</span></code></pre></figure>
+
+<p>然后OkHttpCall对象执行equeue方法，构造Response对象，然后判断请求是否成功，然后作为参数传到ExecutorCallbackCall的enqueue方法中，然后将 步骤中的CallBack<T>的onSuccess,onFailure方法通过callBackExecutor 传回主线程执行，到此，整个过程分析完毕</T></p>
+
+<figure class="highlight"><pre><code class="language-java" data-lang="java">	<span class="nd">@Override</span> <span class="kd">public</span> <span class="kt">void</span> <span class="nf">enqueue</span><span class="o">(</span><span class="kd">final</span> <span class="n">Callback</span><span class="o">&lt;</span><span class="n">T</span><span class="o">&gt;</span> <span class="n">callback</span><span class="o">)</span> <span class="o">{</span>
+    <span class="k">if</span> <span class="o">(</span><span class="n">callback</span> <span class="o">==</span> <span class="kc">null</span><span class="o">)</span> <span class="k">throw</span> <span class="k">new</span> <span class="n">NullPointerException</span><span class="o">(</span><span class="s">"callback == null"</span><span class="o">);</span>
+
+    <span class="n">okhttp3</span><span class="o">.</span><span class="na">Call</span> <span class="n">call</span><span class="o">;</span>
+    <span class="n">Throwable</span> <span class="n">failure</span><span class="o">;</span>
+
+    <span class="kd">synchronized</span> <span class="o">(</span><span class="k">this</span><span class="o">)</span> <span class="o">{</span>
+      <span class="k">if</span> <span class="o">(</span><span class="n">executed</span><span class="o">)</span> <span class="k">throw</span> <span class="k">new</span> <span class="n">IllegalStateException</span><span class="o">(</span><span class="s">"Already executed."</span><span class="o">);</span>
+      <span class="n">executed</span> <span class="o">=</span> <span class="kc">true</span><span class="o">;</span>
+
+      <span class="n">call</span> <span class="o">=</span> <span class="n">rawCall</span><span class="o">;</span>
+      <span class="n">failure</span> <span class="o">=</span> <span class="n">creationFailure</span><span class="o">;</span>
+      <span class="k">if</span> <span class="o">(</span><span class="n">call</span> <span class="o">==</span> <span class="kc">null</span> <span class="o">&amp;&amp;</span> <span class="n">failure</span> <span class="o">==</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span>
+        <span class="k">try</span> <span class="o">{</span>
+          <span class="n">call</span> <span class="o">=</span> <span class="n">rawCall</span> <span class="o">=</span> <span class="n">createRawCall</span><span class="o">();</span>
+        <span class="o">}</span> <span class="k">catch</span> <span class="o">(</span><span class="n">Throwable</span> <span class="n">t</span><span class="o">)</span> <span class="o">{</span>
+          <span class="n">failure</span> <span class="o">=</span> <span class="n">creationFailure</span> <span class="o">=</span> <span class="n">t</span><span class="o">;</span>
+        <span class="o">}</span>
+      <span class="o">}</span>
+    <span class="o">}</span>
+
+    <span class="k">if</span> <span class="o">(</span><span class="n">failure</span> <span class="o">!=</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span>
+      <span class="n">callback</span><span class="o">.</span><span class="na">onFailure</span><span class="o">(</span><span class="k">this</span><span class="o">,</span> <span class="n">failure</span><span class="o">);</span>
+      <span class="k">return</span><span class="o">;</span>
+    <span class="o">}</span>
+
+    <span class="k">if</span> <span class="o">(</span><span class="n">canceled</span><span class="o">)</span> <span class="o">{</span>
+      <span class="n">call</span><span class="o">.</span><span class="na">cancel</span><span class="o">();</span>
+    <span class="o">}</span>
+
+    <span class="n">call</span><span class="o">.</span><span class="na">enqueue</span><span class="o">(</span><span class="k">new</span> <span class="n">okhttp3</span><span class="o">.</span><span class="na">Callback</span><span class="o">()</span> <span class="o">{</span>
+      <span class="nd">@Override</span> <span class="kd">public</span> <span class="kt">void</span> <span class="nf">onResponse</span><span class="o">(</span><span class="n">okhttp3</span><span class="o">.</span><span class="na">Call</span> <span class="n">call</span><span class="o">,</span> <span class="n">okhttp3</span><span class="o">.</span><span class="na">Response</span> <span class="n">rawResponse</span><span class="o">)</span>
+          <span class="kd">throws</span> <span class="n">IOException</span> <span class="o">{</span>
+        <span class="n">Response</span><span class="o">&lt;</span><span class="n">T</span><span class="o">&gt;</span> <span class="n">response</span><span class="o">;</span>
+        <span class="k">try</span> <span class="o">{</span>
+          <span class="n">response</span> <span class="o">=</span> <span class="n">parseResponse</span><span class="o">(</span><span class="n">rawResponse</span><span class="o">);</span>
+        <span class="o">}</span> <span class="k">catch</span> <span class="o">(</span><span class="n">Throwable</span> <span class="n">e</span><span class="o">)</span> <span class="o">{</span>
+          <span class="n">callFailure</span><span class="o">(</span><span class="n">e</span><span class="o">);</span>
+          <span class="k">return</span><span class="o">;</span>
+        <span class="o">}</span>
+        <span class="n">callSuccess</span><span class="o">(</span><span class="n">response</span><span class="o">);</span>
+      <span class="o">}</span>
+
+      <span class="nd">@Override</span> <span class="kd">public</span> <span class="kt">void</span> <span class="nf">onFailure</span><span class="o">(</span><span class="n">okhttp3</span><span class="o">.</span><span class="na">Call</span> <span class="n">call</span><span class="o">,</span> <span class="n">IOException</span> <span class="n">e</span><span class="o">)</span> <span class="o">{</span>
+        <span class="k">try</span> <span class="o">{</span>
+          <span class="n">callback</span><span class="o">.</span><span class="na">onFailure</span><span class="o">(</span><span class="n">OkHttpCall</span><span class="o">.</span><span class="na">this</span><span class="o">,</span> <span class="n">e</span><span class="o">);</span>
+        <span class="o">}</span> <span class="k">catch</span> <span class="o">(</span><span class="n">Throwable</span> <span class="n">t</span><span class="o">)</span> <span class="o">{</span>
+          <span class="n">t</span><span class="o">.</span><span class="na">printStackTrace</span><span class="o">();</span>
+        <span class="o">}</span>
+      <span class="o">}</span>
+
+      <span class="kd">private</span> <span class="kt">void</span> <span class="nf">callFailure</span><span class="o">(</span><span class="n">Throwable</span> <span class="n">e</span><span class="o">)</span> <span class="o">{</span>
+        <span class="k">try</span> <span class="o">{</span>
+          <span class="n">callback</span><span class="o">.</span><span class="na">onFailure</span><span class="o">(</span><span class="n">OkHttpCall</span><span class="o">.</span><span class="na">this</span><span class="o">,</span> <span class="n">e</span><span class="o">);</span>
+        <span class="o">}</span> <span class="k">catch</span> <span class="o">(</span><span class="n">Throwable</span> <span class="n">t</span><span class="o">)</span> <span class="o">{</span>
+          <span class="n">t</span><span class="o">.</span><span class="na">printStackTrace</span><span class="o">();</span>
+        <span class="o">}</span>
+      <span class="o">}</span>
+
+      <span class="kd">private</span> <span class="kt">void</span> <span class="nf">callSuccess</span><span class="o">(</span><span class="n">Response</span><span class="o">&lt;</span><span class="n">T</span><span class="o">&gt;</span> <span class="n">response</span><span class="o">)</span> <span class="o">{</span>
+        <span class="k">try</span> <span class="o">{</span>
+          <span class="n">callback</span><span class="o">.</span><span class="na">onResponse</span><span class="o">(</span><span class="n">OkHttpCall</span><span class="o">.</span><span class="na">this</span><span class="o">,</span> <span class="n">response</span><span class="o">);</span>
+        <span class="o">}</span> <span class="k">catch</span> <span class="o">(</span><span class="n">Throwable</span> <span class="n">t</span><span class="o">)</span> <span class="o">{</span>
+          <span class="n">t</span><span class="o">.</span><span class="na">printStackTrace</span><span class="o">();</span>
+        <span class="o">}</span>
+      <span class="o">}</span>
+    <span class="o">});</span>
+  	<span class="o">}</span></code></pre></figure>
+
+<p>Retrofit</p>
+
+<p>构造Retrofit：</p>
+
+<p>baseUrl(String)  设置了基本url</p>
+
+<p>convertAdapterFactories 其中将GsonConverter塞了进去</p>
+
+<p>callBackExecutor  默认是一个Executor，里面有个成员变量是连接主线程looper的handler，当executor执行execute方法时候，将runnable对象通过handler发送到主线程执行，实现线程切换</p>
+
+<figure class="highlight"><pre><code class="language-java" data-lang="java">	<span class="kd">static</span> <span class="kd">class</span> <span class="nc">Android</span> <span class="kd">extends</span> <span class="n">Platform</span> <span class="o">{</span>
+    <span class="nd">@Override</span> <span class="kd">public</span> <span class="n">Executor</span> <span class="nf">defaultCallbackExecutor</span><span class="o">()</span> <span class="o">{</span>
+      <span class="k">return</span> <span class="k">new</span> <span class="nf">MainThreadExecutor</span><span class="o">();</span>
+    <span class="o">}</span>
+
+    <span class="nd">@Override</span> <span class="n">CallAdapter</span><span class="o">.</span><span class="na">Factory</span> <span class="nf">defaultCallAdapterFactory</span><span class="o">(</span><span class="n">Executor</span> <span class="n">callbackExecutor</span><span class="o">)</span> <span class="o">{</span>
+      <span class="k">return</span> <span class="k">new</span> <span class="nf">ExecutorCallAdapterFactory</span><span class="o">(</span><span class="n">callbackExecutor</span><span class="o">);</span>
+    <span class="o">}</span>
+
+    <span class="kd">static</span> <span class="kd">class</span> <span class="nc">MainThreadExecutor</span> <span class="kd">implements</span> <span class="n">Executor</span> <span class="o">{</span>
+      <span class="kd">private</span> <span class="kd">final</span> <span class="n">Handler</span> <span class="n">handler</span> <span class="o">=</span> <span class="k">new</span> <span class="n">Handler</span><span class="o">(</span><span class="n">Looper</span><span class="o">.</span><span class="na">getMainLooper</span><span class="o">());</span>
+
+      <span class="nd">@Override</span> <span class="kd">public</span> <span class="kt">void</span> <span class="nf">execute</span><span class="o">(</span><span class="n">Runnable</span> <span class="n">r</span><span class="o">)</span> <span class="o">{</span>
+        <span class="n">handler</span><span class="o">.</span><span class="na">post</span><span class="o">(</span><span class="n">r</span><span class="o">);</span>
+      <span class="o">}</span>
+    <span class="o">}</span>
+   	<span class="o">}</span></code></pre></figure>
+
+<p>adapterFactories  里面封装了一个默认的callAdapterFactory(callBackExecutor)，并且将callbackExecutor作为参数传了进去</p>
+
+<figure class="highlight"><pre><code class="language-java" data-lang="java">	<span class="n">CallAdapter</span><span class="o">.</span><span class="na">Factory</span> <span class="nf">defaultCallAdapterFactory</span><span class="o">(</span><span class="n">Executor</span> <span class="n">callbackExecutor</span><span class="o">)</span> <span class="o">{</span>
+    <span class="k">if</span> <span class="o">(</span><span class="n">callbackExecutor</span> <span class="o">!=</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span>
+      <span class="k">return</span> <span class="k">new</span> <span class="nf">ExecutorCallAdapterFactory</span><span class="o">(</span><span class="n">callbackExecutor</span><span class="o">);</span>
+    <span class="o">}</span>
+    <span class="k">return</span> <span class="n">DefaultCallAdapterFactory</span><span class="o">.</span><span class="na">INSTANCE</span><span class="o">;</span>
+  	<span class="o">}</span>
+
+	<span class="kd">final</span> <span class="kd">class</span> <span class="nc">ExecutorCallAdapterFactory</span> <span class="kd">extends</span> <span class="n">CallAdapter</span><span class="o">.</span><span class="na">Factory</span> <span class="o">{</span>
+  	<span class="kd">final</span> <span class="n">Executor</span> <span class="n">callbackExecutor</span><span class="o">;</span>
+
+  	<span class="n">ExecutorCallAdapterFactory</span><span class="o">(</span><span class="n">Executor</span> <span class="n">callbackExecutor</span><span class="o">)</span> <span class="o">{</span>
+    <span class="k">this</span><span class="o">.</span><span class="na">callbackExecutor</span> <span class="o">=</span> <span class="n">callbackExecutor</span><span class="o">;</span>
+  	<span class="o">}</span>
+
+  	<span class="nd">@Override</span>
+ 	 <span class="kd">public</span> <span class="n">CallAdapter</span><span class="o">&lt;</span><span class="n">Call</span><span class="o">&lt;?&gt;&gt;</span> <span class="n">get</span><span class="o">(</span><span class="n">Type</span> <span class="n">returnType</span><span class="o">,</span> <span class="n">Annotation</span><span class="o">[]</span> <span class="n">annotations</span><span class="o">,</span> <span class="n">Retrofit</span> <span class="n">retrofit</span><span class="o">)</span> <span class="o">{</span>
+    <span class="k">if</span> <span class="o">(</span><span class="n">getRawType</span><span class="o">(</span><span class="n">returnType</span><span class="o">)</span> <span class="o">!=</span> <span class="n">Call</span><span class="o">.</span><span class="na">class</span><span class="o">)</span> <span class="o">{</span>
+      <span class="k">return</span> <span class="kc">null</span><span class="o">;</span>
+    <span class="o">}</span>
+    <span class="kd">final</span> <span class="n">Type</span> <span class="n">responseType</span> <span class="o">=</span> <span class="n">Utils</span><span class="o">.</span><span class="na">getCallResponseType</span><span class="o">(</span><span class="n">returnType</span><span class="o">);</span>
+    <span class="k">return</span> <span class="k">new</span> <span class="n">CallAdapter</span><span class="o">&lt;</span><span class="n">Call</span><span class="o">&lt;?&gt;&gt;()</span> <span class="o">{</span>
+      <span class="nd">@Override</span> <span class="kd">public</span> <span class="n">Type</span> <span class="nf">responseType</span><span class="o">()</span> <span class="o">{</span>
+        <span class="k">return</span> <span class="n">responseType</span><span class="o">;</span>
+      <span class="o">}</span>
+
+      <span class="nd">@Override</span> <span class="kd">public</span> <span class="o">&lt;</span><span class="n">R</span><span class="o">&gt;</span> <span class="n">Call</span><span class="o">&lt;</span><span class="n">R</span><span class="o">&gt;</span> <span class="nf">adapt</span><span class="o">(</span><span class="n">Call</span><span class="o">&lt;</span><span class="n">R</span><span class="o">&gt;</span> <span class="n">call</span><span class="o">)</span> <span class="o">{</span>
+        <span class="k">return</span> <span class="k">new</span> <span class="n">ExecutorCallbackCall</span><span class="o">&lt;&gt;(</span><span class="n">callbackExecutor</span><span class="o">,</span> <span class="n">call</span><span class="o">);</span>
+      <span class="o">}</span>
+    <span class="o">};</span>
+  	<span class="o">}</span>
+
+  	<span class="kd">static</span> <span class="kd">final</span> <span class="kd">class</span> <span class="nc">ExecutorCallbackCall</span><span class="o">&lt;</span><span class="n">T</span><span class="o">&gt;</span> <span class="kd">implements</span> <span class="n">Call</span><span class="o">&lt;</span><span class="n">T</span><span class="o">&gt;</span> <span class="o">{</span>
+    <span class="kd">final</span> <span class="n">Executor</span> <span class="n">callbackExecutor</span><span class="o">;</span>
+    <span class="kd">final</span> <span class="n">Call</span><span class="o">&lt;</span><span class="n">T</span><span class="o">&gt;</span> <span class="n">delegate</span><span class="o">;</span>
+
+    <span class="n">ExecutorCallbackCall</span><span class="o">(</span><span class="n">Executor</span> <span class="n">callbackExecutor</span><span class="o">,</span> <span class="n">Call</span><span class="o">&lt;</span><span class="n">T</span><span class="o">&gt;</span> <span class="n">delegate</span><span class="o">)</span> <span class="o">{</span>
+      <span class="k">this</span><span class="o">.</span><span class="na">callbackExecutor</span> <span class="o">=</span> <span class="n">callbackExecutor</span><span class="o">;</span>
+      <span class="k">this</span><span class="o">.</span><span class="na">delegate</span> <span class="o">=</span> <span class="n">delegate</span><span class="o">;</span>
+    <span class="o">}</span>
+
+    <span class="nd">@Override</span> <span class="kd">public</span> <span class="kt">void</span> <span class="nf">enqueue</span><span class="o">(</span><span class="kd">final</span> <span class="n">Callback</span><span class="o">&lt;</span><span class="n">T</span><span class="o">&gt;</span> <span class="n">callback</span><span class="o">)</span> <span class="o">{</span>
+      <span class="k">if</span> <span class="o">(</span><span class="n">callback</span> <span class="o">==</span> <span class="kc">null</span><span class="o">)</span> <span class="k">throw</span> <span class="k">new</span> <span class="n">NullPointerException</span><span class="o">(</span><span class="s">"callback == null"</span><span class="o">);</span>
+
+      <span class="n">delegate</span><span class="o">.</span><span class="na">enqueue</span><span class="o">(</span><span class="k">new</span> <span class="n">Callback</span><span class="o">&lt;</span><span class="n">T</span><span class="o">&gt;()</span> <span class="o">{</span>
+        <span class="nd">@Override</span> <span class="kd">public</span> <span class="kt">void</span> <span class="nf">onResponse</span><span class="o">(</span><span class="n">Call</span><span class="o">&lt;</span><span class="n">T</span><span class="o">&gt;</span> <span class="n">call</span><span class="o">,</span> <span class="kd">final</span> <span class="n">Response</span><span class="o">&lt;</span><span class="n">T</span><span class="o">&gt;</span> <span class="n">response</span><span class="o">)</span> <span class="o">{</span>
+          <span class="n">callbackExecutor</span><span class="o">.</span><span class="na">execute</span><span class="o">(</span><span class="k">new</span> <span class="n">Runnable</span><span class="o">()</span> <span class="o">{</span>
+            <span class="nd">@Override</span> <span class="kd">public</span> <span class="kt">void</span> <span class="nf">run</span><span class="o">()</span> <span class="o">{</span>
+              <span class="k">if</span> <span class="o">(</span><span class="n">delegate</span><span class="o">.</span><span class="na">isCanceled</span><span class="o">())</span> <span class="o">{</span>
+                <span class="c1">// Emulate OkHttp's behavior of throwing/delivering an IOException on cancellation.</span>
+                <span class="n">callback</span><span class="o">.</span><span class="na">onFailure</span><span class="o">(</span><span class="n">ExecutorCallbackCall</span><span class="o">.</span><span class="na">this</span><span class="o">,</span> <span class="k">new</span> <span class="n">IOException</span><span class="o">(</span><span class="s">"Canceled"</span><span class="o">));</span>
+              <span class="o">}</span> <span class="k">else</span> <span class="o">{</span>
+                <span class="n">callback</span><span class="o">.</span><span class="na">onResponse</span><span class="o">(</span><span class="n">ExecutorCallbackCall</span><span class="o">.</span><span class="na">this</span><span class="o">,</span> <span class="n">response</span><span class="o">);</span>
+              <span class="o">}</span>
+            <span class="o">}</span>
+          <span class="o">});</span>
+        <span class="o">}</span>
+
+        <span class="nd">@Override</span> <span class="kd">public</span> <span class="kt">void</span> <span class="nf">onFailure</span><span class="o">(</span><span class="n">Call</span><span class="o">&lt;</span><span class="n">T</span><span class="o">&gt;</span> <span class="n">call</span><span class="o">,</span> <span class="kd">final</span> <span class="n">Throwable</span> <span class="n">t</span><span class="o">)</span> <span class="o">{</span>
+          <span class="n">callbackExecutor</span><span class="o">.</span><span class="na">execute</span><span class="o">(</span><span class="k">new</span> <span class="n">Runnable</span><span class="o">()</span> <span class="o">{</span>
+            <span class="nd">@Override</span> <span class="kd">public</span> <span class="kt">void</span> <span class="nf">run</span><span class="o">()</span> <span class="o">{</span>
+              <span class="n">callback</span><span class="o">.</span><span class="na">onFailure</span><span class="o">(</span><span class="n">ExecutorCallbackCall</span><span class="o">.</span><span class="na">this</span><span class="o">,</span> <span class="n">t</span><span class="o">);</span>
+            <span class="o">}</span>
+          <span class="o">});</span>
+        <span class="o">}</span>
+      <span class="o">});</span>
+    <span class="o">}</span></code></pre></figure>
+
+
+                <hr>
+
+                
+                <!-- 多说 Share start -->
+                </style>
+                <div class="ds-share"
+                    style="text-align: right"
+                    data-thread-key="/2017/02/10/Android-network-retrofit"
+                    data-title="Retrofit原理"
+                    data-url="http://localhost:4000/drearming.github.com/2017/02/10/Android-network-retrofit/"
+                    data-images="http://localhost:4000/drearming.github.com/img/post-bg-2015.jpg"
+                    data-content="Retrofit基本用法：
+
+	//首先通过动态代理获取到一个接口(GetService)的代理对象，
+	//当通过代理对象执行接口的任意方法时，都会调用... | 陈俊杰 | MVCoder " >
+                    <div class="ds-share-inline">
+                      <ul  class="ds-share-icons-16">
+                        <li data-toggle="ds-share-icons-more"><a class="ds-more" href="#">分享到：</a></li>
+                        <li><a class="ds-wechat flat" href="javascript:void(0);" data-service="wechat">微信</a></li>
+                        <li><a class="ds-weibo flat" href="javascript:void(0);" data-service="weibo">微博</a></li>
+                        <li><a class="ds-douban flat" href="javascript:void(0);" data-service="douban">豆瓣</a></li>
+                      </ul>
+                      <div class="ds-share-icons-more">
+                      </div>
+                    </div>
+                <hr>
+                </div>
+                <!-- 多说 Share end-->
+                
+
+
+                <ul class="pager">
+                    
+                    <li class="previous">
+                        <a href="/drearming.github.com/2017/01/10/Java-multiThread/" data-toggle="tooltip" data-placement="top" title="Java 多线程详解">&larr; Previous Post</a>
+                    </li>
+                    
+                    
+                </ul>
+
+
+                
+                <!-- 多说评论框 start -->
+                <div class="comment">
+                    <div class="ds-thread"
+                        data-thread-key="/2017/02/10/Android-network-retrofit"
+                        data-title="Retrofit原理"
+                        data-url="http://localhost:4000/drearming.github.com/2017/02/10/Android-network-retrofit/" >
+                    </div>
+                </div>
+                <!-- 多说评论框 end -->
+                
+
+                
+
+            </div>
+
+    <!-- Sidebar Container -->
+            <div class="
+                col-lg-8 col-lg-offset-2
+                col-md-10 col-md-offset-1
+                sidebar-container">
+
+                <!-- Featured Tags -->
+                
+                <section>
+                    <hr class="hidden-sm hidden-xs">
+                    <h5><a href="/tags/">FEATURED TAGS</a></h5>
+                    <div class="tags">
+        				
+                            
+        				
+                            
+                				<a href="/drearming.github.com/tags/#Android" title="Android" rel="3">
+                                    Android
+                                </a>
+                            
+        				
+                            
+                				<a href="/drearming.github.com/tags/#Java" title="Java" rel="4">
+                                    Java
+                                </a>
+                            
+        				
+                            
+        				
+                            
+                				<a href="/drearming.github.com/tags/#前端开发" title="前端开发" rel="3">
+                                    前端开发
+                                </a>
+                            
+        				
+                            
+                				<a href="/drearming.github.com/tags/#JavaScript" title="JavaScript" rel="3">
+                                    JavaScript
+                                </a>
+                            
+        				
+                            
+        				
+                            
+        				
+                            
+        				
+                            
+        				
+                            
+        				
+        			</div>
+                </section>
+                
+
+                <!-- Friends Blog -->
+                
+                <hr>
+                <h5>FRIENDS</h5>
+                <ul class="list-inline">
+                    
+                        <li><a href="https://github.com/DREARMING">MVCoder</a></li>
+                    
+                        <li><a href="http://blog.csdn.net/lmj623565791/article/details/48129405">鸿洋</a></li>
+                    
+                        <li><a href="http://blog.csdn.net/guolin_blog/article/details/9097463/">郭霖</a></li>
+                    
+                        <li><a href="http://blog.csdn.net/aigestudio">爱歌</a></li>
+                    
+                        <li><a href="http://www.jianshu.com/p/6a8c2ae0b1c6?utm_campaign=haruki">死党</a></li>
+                    
+                </ul>
+                
+            </div>
+        </div>
+    </div>
+</article>
+
+
+<!-- 多说公共JS代码 start (一个网页只需插入一次) -->
+<script type="text/javascript">
+    // dynamic User by Hux
+    var _user = 'MVCoder';
+
+    // duoshuo comment query.
+    var duoshuoQuery = {short_name: _user };
+    (function() {
+        var ds = document.createElement('script');
+        ds.type = 'text/javascript';ds.async = true;
+        ds.src = (document.location.protocol == 'https:' ? 'https:' : 'http:') + '//static.duoshuo.com/embed.js';
+        ds.charset = 'UTF-8';
+        (document.getElementsByTagName('head')[0]
+         || document.getElementsByTagName('body')[0]).appendChild(ds);
+    })();
+</script>
+<!-- 多说公共JS代码 end -->
+
+
+
+
+
+
+
+<!-- async load function -->
+<script>
+    function async(u, c) {
+      var d = document, t = 'script',
+          o = d.createElement(t),
+          s = d.getElementsByTagName(t)[0];
+      o.src = u;
+      if (c) { o.addEventListener('load', function (e) { c(null, e); }, false); }
+      s.parentNode.insertBefore(o, s);
+    }
+</script>
+<!-- anchor-js, Doc:http://bryanbraun.github.io/anchorjs/ -->
+<script>
+    async("http://cdn.bootcss.com/anchor-js/1.1.1/anchor.min.js",function(){
+        anchors.options = {
+          visible: 'always',
+          placement: 'right',
+          icon: '#'
+        };
+        anchors.add().remove('.intro-header h1').remove('.subheading').remove('.sidebar-container h5');
+    })
+</script>
+<style>
+    /* place left on bigger screen */
+    @media all and (min-width: 800px) {
+        .anchorjs-link{
+            position: absolute;
+            left: -0.75em;
+            font-size: 1.1em;
+            margin-top : -0.1em;
+        }
+    }
+</style>
+
+
+
+    <!-- Footer -->
+<footer>
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+                <ul class="list-inline text-center">
+                    
+                    
+
+                    <!-- add Weibo, Zhihu by Hux, add target = "_blank" to <a> by Hux -->
+                    
+                    
+
+
+                    
+                    
+                    <li>
+                        <a target="_blank" href="https://github.com/drearming">
+                            <span class="fa-stack fa-lg">
+                                <i class="fa fa-circle fa-stack-2x"></i>
+                                <i class="fa fa-github fa-stack-1x fa-inverse"></i>
+                            </span>
+                        </a>
+                    </li>
+                    
+                </ul>
+                <p class="copyright text-muted">
+                    Copyright &copy; MVCoder Blog 2017
+                    <br>
+                    Theme by <a href="http://huangxuan.me">Hux</a> |
+                    <iframe
+                        style="margin-left: 2px; margin-bottom:-5px;"
+                        frameborder="0" scrolling="0" width="91px" height="20px"
+                        src="https://ghbtns.com/github-btn.html?user=huxpro&repo=huxpro.github.io&type=star&count=true" >
+                    </iframe>
+                </p>
+            </div>
+        </div>
+    </div>
+</footer>
+
+<!-- jQuery -->
+<script src="/drearming.github.com/js/jquery.min.js "></script>
+
+<!-- Bootstrap Core JavaScript -->
+<script src="/drearming.github.com/js/bootstrap.min.js "></script>
+
+<!-- Custom Theme JavaScript -->
+<script src="/drearming.github.com/js/hux-blog.min.js "></script>
+
+
+<!-- async load function -->
+<script>
+    function async(u, c) {
+      var d = document, t = 'script',
+          o = d.createElement(t),
+          s = d.getElementsByTagName(t)[0];
+      o.src = u;
+      if (c) { o.addEventListener('load', function (e) { c(null, e); }, false); }
+      s.parentNode.insertBefore(o, s);
+    }
+</script>
+
+<!-- 
+     Because of the native support for backtick-style fenced code blocks 
+     right within the Markdown is landed in Github Pages, 
+     From V1.6, There is no need for Highlight.js, 
+     so Huxblog drops it officially.
+
+     - https://github.com/blog/2100-github-pages-now-faster-and-simpler-with-jekyll-3-0  
+     - https://help.github.com/articles/creating-and-highlighting-code-blocks/    
+-->
+<!--
+    <script>
+        async("http://cdn.bootcss.com/highlight.js/8.6/highlight.min.js", function(){
+            hljs.initHighlightingOnLoad();
+        })
+    </script>
+    <link href="http://cdn.bootcss.com/highlight.js/8.6/styles/github.min.css" rel="stylesheet">
+-->
+
+
+<!-- jquery.tagcloud.js -->
+<script>
+    // only load tagcloud.js in tag.html
+    if($('#tag_cloud').length !== 0){
+        async("/js/jquery.tagcloud.js",function(){
+            $.fn.tagcloud.defaults = {
+                //size: {start: 1, end: 1, unit: 'em'},
+                color: {start: '#bbbbee', end: '#0085a1'},
+            };
+            $('#tag_cloud a').tagcloud();
+        })
+    }
+</script>
+
+<!--fastClick.js -->
+<script>
+    async("http://cdn.bootcss.com/fastclick/1.0.6/fastclick.min.js", function(){
+        var $nav = document.querySelector("nav");
+        if($nav) FastClick.attach($nav);
+    })
+</script>
+
+
+<!-- Google Analytics -->
+
+<script>
+    // dynamic User by Hux
+    var _gaId = 'UA-49627206-1';
+    var _gaDomain = 'drearming.github.io';
+
+    // Originial
+    (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+    (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+    m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+    })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+    ga('create', _gaId, _gaDomain);
+    ga('send', 'pageview');
+</script>
+
+
+
+<!-- Baidu Tongji -->
+
+<script>
+    // dynamic User by Hux
+    var _baId = '4cc1f2d8f3067386cc5cdb626a202900';
+
+    // Originial
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "//hm.baidu.com/hm.js?" + _baId;
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+</script>
+
+
+
+
+<!-- Image to hack wechat -->
+<img src="/img/icon_wechat.png" width="0" height="0" />
+<!-- Migrate from head to bottom, no longer block render and still work -->
+
+</body>
+
+</html>

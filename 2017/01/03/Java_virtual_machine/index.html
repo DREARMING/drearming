@@ -1,0 +1,824 @@
+<!DOCTYPE html>
+
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="google-site-verification" content="xBT4GhYoi5qRD5tr338pgPM5OWHHIDR6mNg1a3euekI" />
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="So live a life you will remember">
+    <meta name="keyword"  content="Android Java Web">
+    <link rel="shortcut icon" href="/drearming.github.com/img/favicon.ico">
+
+    <title>Java虚拟机全面了解 - 陈俊杰 | MVCoder</title>
+
+    <link rel="canonical" href="http://localhost:4000/drearming.github.com/2017/01/03/Java_virtual_machine/">
+
+    <!-- Bootstrap Core CSS -->
+    <link rel="stylesheet" href="/drearming.github.com/css/bootstrap.min.css">
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="/drearming.github.com/css/hux-blog.min.css">
+
+    <!-- Pygments Github CSS -->
+    <link rel="stylesheet" href="/drearming.github.com/css/syntax.css">
+
+    <!-- Custom Fonts -->
+    <!-- <link href="http://maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css" rel="stylesheet" type="text/css"> -->
+    <!-- Hux change font-awesome CDN to qiniu -->
+    <link href="http://cdn.staticfile.org/font-awesome/4.2.0/css/font-awesome.min.css" rel="stylesheet" type="text/css">
+
+
+    <!-- Hux Delete, sad but pending in China
+    <link href='http://fonts.googleapis.com/css?family=Lora:400,700,400italic,700italic' rel='stylesheet' type='text/css'>
+    <link href='http://fonts.googleapis.com/css?family=Open+Sans:300italic,400italic,600italic,700italic,800italic,400,300,600,700,800' rel='stylesheet' type='text/
+    css'>
+    -->
+
+
+    <!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
+    <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
+    <!--[if lt IE 9]>
+        <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+        <script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
+    <![endif]-->
+
+    <!-- ga & ba script hoook -->
+    <script></script>
+</head>
+
+
+<!-- hack iOS CSS :active style -->
+<body ontouchstart="">
+
+    <!-- Navigation -->
+<nav class="navbar navbar-default navbar-custom navbar-fixed-top">
+    <div class="container-fluid">
+        <!-- Brand and toggle get grouped for better mobile display -->
+        <div class="navbar-header page-scroll">
+            <button type="button" class="navbar-toggle">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+            <a class="navbar-brand" href="/drearming.github.com/">MVCoder Blog</a>
+        </div>
+
+        <!-- Collect the nav links, forms, and other content for toggling -->
+        <!-- Known Issue, found by Hux:
+            <nav>'s height woule be hold on by its content.
+            so, when navbar scale out, the <nav> will cover tags.
+            also mask any touch event of tags, unfortunately.
+        -->
+        <div id="huxblog_navbar">
+            <div class="navbar-collapse">
+                <ul class="nav navbar-nav navbar-right">
+                    <li>
+                        <a href="/drearming.github.com/">Home</a>
+                    </li>
+                    
+                    <li>
+                        <a href="/drearming.github.com/about/">About</a>
+                    </li>
+                    
+                    <li>
+                        <a href="/drearming.github.com/tags/">Tags</a>
+                    </li>
+                    
+                </ul>
+            </div>
+        </div>
+        <!-- /.navbar-collapse -->
+    </div>
+    <!-- /.container -->
+</nav>
+<script>
+    // Drop Bootstarp low-performance Navbar
+    // Use customize navbar with high-quality material design animation
+    // in high-perf jank-free CSS3 implementation
+    var $body   = document.body;
+    var $toggle = document.querySelector('.navbar-toggle');
+    var $navbar = document.querySelector('#huxblog_navbar');
+    var $collapse = document.querySelector('.navbar-collapse');
+
+    $toggle.addEventListener('click', handleMagic)
+    function handleMagic(e){
+        if ($navbar.className.indexOf('in') > 0) {
+        // CLOSE
+            $navbar.className = " ";
+            // wait until animation end.
+            setTimeout(function(){
+                // prevent frequently toggle
+                if($navbar.className.indexOf('in') < 0) {
+                    $collapse.style.height = "0px"
+                }
+            },400)
+        }else{
+        // OPEN
+            $collapse.style.height = "auto"
+            $navbar.className += " in";
+        }
+    }
+</script>
+
+
+    <!-- Image to hack wechat -->
+<!-- <img src="/img/icon_wechat.png" width="0" height="0"> -->
+<!-- <img src="/drearming.github.com/img/post-bg-2015.jpg" width="0" height="0"> -->
+
+<!-- Post Header -->
+<style type="text/css">
+    header.intro-header{
+        background-image: url('/drearming.github.com/img/post-bg-2015.jpg')
+    }
+</style>
+<header class="intro-header" >
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+                <div class="post-heading">
+                    <div class="tags">
+                        
+                        <a class="tag" href="/drearming.github.com/tags/#Java" title="Java">Java</a>
+                        
+                        <a class="tag" href="/drearming.github.com/tags/#虚拟机" title="虚拟机">虚拟机</a>
+                        
+                    </div>
+                    <h1>Java虚拟机全面了解</h1>
+                    
+                    
+                    <h2 class="subheading">关于Java虚拟的内存布局，类加载机制，垃圾回收算法等等</h2>
+                    
+                    <span class="meta">Posted by MVCoder on January 3, 2017</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</header>
+
+<!-- Post Content -->
+<article>
+    <div class="container">
+        <div class="row">
+
+    <!-- Post Container -->
+            <div class="
+                col-lg-8 col-lg-offset-2
+                col-md-10 col-md-offset-1
+                post-container">
+
+				<h2 id="java虚拟机">Java虚拟机</h2>
+
+<p>Java虚拟机的作用是什么？它如何实现这些基本功能的？</p>
+
+<p>作用：通过将.java文件编译成目标字节码.class文件，Java虚拟机通过加载.class文件，解析，将Java指令替换成系统底层指令，从而能够使Java程序无差别运行在各种平台上</p>
+
+<h3 id="生命周期">生命周期</h3>
+<p>在Java虚拟机内部有两种线程：守护线程和非守护线程。守护线程通常是由虚拟机自己使用的，比如执行垃圾收集任务的线程。但是，Java程序也可以把它创建的任何线程标记为守护线程。而Java程序中的初始线程——就是开始于main()的那个，是非守护线程。</p>
+
+<p>只要还有任何非守护线程在运行，那么这个Java程序也在继续运行。当该程序中所有的非守护线程都终止时，虚拟机实例将自动退出。假若安全管理器允许，程序本身也能够通过调用Runtime类或者System类的exit()方法来退出。</p>
+
+<h3 id="编译">编译</h3>
+<p>经过java编译器编译成的 .class文件，具有哪些内容？</p>
+
+ 	ClassFile {
+<div class="highlighter-rouge">u4 magic;                                     //魔数：0xCAFEBABE，用来判断是否是Java class文件
+u2 minor_version;                             //次版本号
+u2 major_version;                             //主版本号
+u2 constant_pool_count;                       //常量池大小
+cp_info constant_pool[constant_pool_count-1]; //常量池
+u2 access_flags;                              //类和接口层次的访问标志（通过|运算得到）
+u2 this_class;                                //类索引（指向常量池中的类常量）
+u2 super_class;                               //父类索引（指向常量池中的类常量）
+u2 interfaces_count;                          //接口索引计数器
+u2 interfaces[interfaces_count];              //接口索引集合
+u2 fields_count;                              //字段数量计数器
+field_info fields[fields_count];              //字段表集合
+u2 methods_count;                             //方法数量计数器
+method_info methods[methods_count];           //方法表集合
+u2 attributes_count;                          //属性个数
+attribute_info attributes[attributes_count];  //属性表
+ 
+}
+</div>
+
+<h2 id="加载">加载</h2>
+<p>当程序创建第一个对类的静态成员的引用时，就会加载这个类，从而也说明：java并不是一开始就加载完全的，而是有必要的时候才会加载，跟其他语音有很大的不同；另外，也说明了构造函数是隐式的静态方法</p>
+
+<h3 id="类的加载流程">类的加载流程：</h3>
+
+<p>加载一个类，如果有父类的话，首先加载父类的静态方法等类的信息，如果没有，加载类的静态方法等与类相关的信息</p>
+
+<p>然后，发生new操作，如果有父类，先初始化父类的成员变量，然后调用父类的构造方法；假如没有的话，初始化类的成员变量，然后调用其构造方法</p>
+
+<p>加载完成后，会在堆里面生成一个Class对象，Class对象相当于.class文件。。</p>
+
+<h3 id="双亲委派加载模型">双亲委派加载模型</h3>
+<p>参考博客：<a href="http://m.blog.csdn.net/article/details?id=45033273">双亲委派模型</a></p>
+
+<p>作用：保证相同的类只加载一次</p>
+
+<p>三种类加载器类型</p>
+
+<ol>
+  <li>启动类加载器： Java虚拟机第一个加载器Bootstrap ClassLoader，这个不是Java类，而是用C++实现的，它负责加载<Java_Runtime_Home>/lib下面的类库加载到内存</Java_Runtime_Home></li>
+  <li>标准扩展类加载器： 第二个子类加载器是ExtClassLoader,它负责将&lt;Java/runtime_home&gt;/lib/ext下面的类库加载到内存中</li>
+  <li>系统类加载器：AppClassLoader，它负责将系统类路径(CLASSPATH)中指定的类库加载到内存中</li>
+</ol>
+
+<h3 id="首先要清楚类加载器会将加载过的类缓存下来生成一个class对象避免重复加载">首先要清楚，类加载器会将加载过的类缓存下来，生成一个Class对象，避免重复加载</h3>
+
+<p>我们是如何加载一个类的呢？双亲委派，假如我们加载一个类A，其中类A有一个类B的引用，类A和类B都有一个System类的引用；</p>
+
+<p>首先我们将类A的加载需求传到父类加载器，假如一开始运行的类加载器是AppClassLoader，那么首先将类加载器交到ExtClassLoader，然后ExtClassLoader又将类A的加载需求上传到Bootstrap加载器</p>
+
+<p>如果类A 能被 Bootstrap 找到（因为加载器有自己加载的类库范围），就加载，返回成功，否则传递给ExtClassLoader，同样如此，如果能加载，就加载下来，被缓存，否则，就传递给子类加载器，直到加载成功。</p>
+
+<p>因为所有的类加载都是经过Bootstrap -&gt; ExtClassLoader -&gt; AppClassLoader ,又因为加载器加载过的类会缓存下来，所以这种双亲委派模型，确保了所有的类只加载一次</p>
+
+<p>这3个父子类加载器并不是用继承的关系来加载 .class 文件的，而是通过组合的形式，持有父类加载器的引用，一级一级向上传</p>
+
+<h2 id="连接">连接</h2>
+
+<p>加载完毕后就是进行连接，连接的步骤如下：</p>
+
+<ol>
+  <li>首先是验证 加载的字节流是否是java类，有没有出错等等验证。</li>
+  <li>准备，为所有类变量(静态变量)分配内存空间，并初始化所属类型的默认值(int的初始默认值==0，而并不是直接将 static int i = 3 的3传进去)</li>
+  <li>解析：把类型中的符号引用转换为直接引用</li>
+</ol>
+
+<h2 id="初始化">初始化</h2>
+<p>初始化就是将类变量(静态变量)初始化为正确值</p>
+
+<h2 id="体系架构">体系架构</h2>
+<p><img src="http://i.imgur.com/aNDRLZ9.png" alt="" /></p>
+
+<h3 id="方法区">方法区</h3>
+
+<p>方法区是装载.class文件的时候，用于存放类信息的，包括下面的信息：</p>
+
+<p>所谓类信息，是类的公有信息，而不包括某个对象的特有属性(非static属性)，当我们new 一个对象出来的时候，才会在堆中分配一块区域用来存储对象的特有属性变量。。而属于类的公有属性(static方法和变量，常量，全类名，直接父类名，加载器，class对象)可以直接用类进行访问。。而非static方法，也是属于类的公有信息，但是，需要传入对象才能进行访问，如果没有对象，则不能访问。</p>
+
+<ul>
+  <li>这个类型的全限定名（如全限定名java.lang.Object）</li>
+  <li>这个类型的直接超类的全限定名</li>
+  <li>这个类型是类类型还是接口类型</li>
+  <li>这个类型的访问修饰符（public, abstract, final的某个子集）</li>
+  <li>任何直接超接口的全限定名的有序列表</li>
+  <li>该类型的常量池（一个有序集合，包括直接常量[string, integer和floating point常量]和对其它类型、字段和方法的符号引用）</li>
+  <li>字段信息（字段名、类型、修饰符）</li>
+  <li>方法信息（方法名、返回类型、参数数量和类型、修饰符）</li>
+  <li>除了常量以外的所有类（静态）变量</li>
+  <li>指向ClassLoader类的引用（每个类型被装载时，虚拟机必须跟踪它是由启动类装载器还是由用户自定义类装载器装载的）</li>
+  <li>指向Class类的引用（对于每一个被装载的类型，虚拟机相应地为它创建一个java.lang.Class类的实例。比如你有一个到java.lang.Integer类的对象的引用，那么只需要调用Integer对象引用的getClass()方法，就可以得到表示java.lang.Integer类的Class对象）</li>
+</ul>
+
+<h2 id="堆区">堆区</h2>
+
+<p>堆上包含在Java程序中创建的所有对象，无论是哪一个对象创建的。这包括基本类型的包装类。如果一个对象被创建然后赋值给一个局部变量，或者用来作为另一个对象的成员变量，这个对象仍然是存放在堆上。 类中的成员变量是一个引用的话，也是存放在堆中； 而栈中存放的是局部变量，是属于方法内部的；</p>
+
+<h3 id="垃圾回收">垃圾回收</h3>
+
+<p>垃圾回收有两个必要的前提：1.垃圾回收器能够精确地标记活着的对象 2.垃圾回收器能够精确地定位引用和对象之间的关系</p>
+
+<p>前者是垃圾回收器能够完全回收 没有引用的对象所占据的内存空间的必要前提。后者是垃圾回收器能够改变引用的地址，使引用指向新复制的对象控件，解决堆内存管理和碎片化的重要前提</p>
+
+<p><strong>常用的垃圾回收算法：</strong></p>
+
+<p>参考博客：<a href="http://www.cnblogs.com/andy-zcx/p/5522836.html">深入理解垃圾回收算法</a></p>
+
+<ol>
+  <li>
+    <p><strong>引用计数算法</strong></p>
+
+    <p>这种垃圾回收算法是基于引用计数器的，我们new出一个对象时，使当前对象的引用计数器值为0，当发生赋值给引用变量时，就+1；对象超出生命周期时(离开作用域)或者引用被指向新值时，引用计数器 -1，当引用计数器为0，我们就可以确定：当前对象没有任何引用指向了，是一个废弃的对象，所以垃圾回收器遍历堆时，发现引用计数器为0的对象，就回收这种对象所占据的内存空间</p>
+
+    <p>优点：
+ 基于引用计数器的垃圾收集器运行较快，不会长时间中断程序执行，适宜必须实时运行的程序。</p>
+
+    <p>缺点：但引用计数器增加了程序执行的开销，因为每次对象赋给新的变量，计数器加1，而每次现有对象出了作用域生，计数器减1。同时，这种直接清除堆对象的方法，会造成堆碎片化；</p>
+
+    <p>无法解决循环引用的问题；即对象A有对象B的引用，对象B也有对象A的引用，但是没有根集引用指向他们</p>
+  </li>
+  <li>
+    <p><strong>标记-清除算法</strong></p>
+
+    <p>这种垃圾回收算法跟第一种有很大差别，并不是基于引用计数器的，而是利用根集的概念，后面的垃圾算法都是基于这种思想，我们从根集出发，扫描出哪些对象是可达的，并且标记好，垃圾回收器再收集的时候，就回收那些没有标记的对象(即根集不可达)</p>
+
+    <p>java中可作为GC Root的对象有(即根集)</p>
+
+    <p>1.虚拟机栈中引用的对象（本地变量表）</p>
+
+    <p>2.方法区中静态属性引用的对象</p>
+
+    <p>3.方法区中常量引用的对象</p>
+
+    <p>4.本地方法栈中引用的对象（Native对象）</p>
+  </li>
+  <li>
+    <p><strong>copying算法</strong></p>
+
+    <p>为了解决了标记-清楚法的缺陷，它将堆分为两块，一个是对象区，一个是空闲区，当对象区满的时候，将根集可达的对象移到空闲区，空闲堆的堆顶指针往下移，就可以实现密集，无碎片的堆</p>
+
+    <p>优点：无碎片化
+ 缺点：堆空间分为2份，大大的浪费了，每次都对所有对象进行复制操作，GC时间变长了，GC期间程序会明显卡顿；因为对象的地址发生改变，还要维护一份句柄表，引用指向一个句柄，修改句柄指向的对象地址就可以改变引用指向的地址了；</p>
+  </li>
+  <li>
+    <p><strong>标记-整理算法</strong></p>
+
+    <p>标记-整理算法采用标记-清除算法一样的方式进行对象的标记，但在清除时不同，在回收不存活的对象占用的空间后，会将所有的存活对象往左端空闲空间移动，并更新对应的指针。标记-整理算法是在标记-清除算法的基础上，又进行了对象的移动，因此成本更高，但是却解决了内存碎片的问题。在基于Compacting算法的收集器的实现中，一般增加句柄和句柄表。</p>
+  </li>
+  <li>
+    <p><strong>Generation算法</strong></p>
+
+    <p>为了解决Copying算法遗留下来的大问题，每一次GC都对堆里面的对象全复制，Generation算法是符合程序设计思维的：大多数对象生存周期短，应该主要对这部分对象进行GC，少数对象的生存周期很长，这部分对象应该少进行GC；</p>
+
+    <p>generation算法将堆分成两个或多个，每个子堆作为对象的一代 (generation)。由于多数对象存在的时间比较短，随着程序丢弃不使用的对象，垃圾收集器将从最年轻的子堆中收集这些对象。在分代式的垃圾收集器运行后，上次运行存活下来的对象移到下一最高代的子堆中。</p>
+
+    <p>优点：由于老一代的子堆不会经常被回收，因而节省了时间。</p>
+
+    <p>注意：并不需要根据1:1划分内存空间，而是将内存划分为一块较大的EdenSpace和两块较小的SurvivorSpace
+ <img src="http://i.imgur.com/mMu61fw.jpg" alt="" /></p>
+
+    <p><strong>年轻代（Young Generation）</strong></p>
+
+    <p>1.所有新生成的对象首先都是放在年轻代的。年轻代的目标就是尽可能快速的收集掉那些生命周期短的对象。</p>
+
+    <p>2.新生代内存按照8:1:1的比例分为一个eden区和两个survivor(survivor0,survivor1)区。一个Eden区，两个 Survivor区(一般而言)。大部分对象在Eden区中生成。回收时先将eden区存活对象复制到一个survivor0区，然后清空eden区，当这个survivor0区也存放满了时，则将eden区和survivor0区存活对象复制到另一个survivor1区，然后清空eden和这个survivor0区，此时survivor0区是空的，然后将survivor0区和survivor1区交换，即保持survivor1区为空， 如此往复。</p>
+
+    <p>3.当survivor1区不足以存放 eden和survivor0的存活对象时，就将存活对象直接存放到老年代。若是老年代也满了就会触发一次Full GC，也就是新生代、老年代都进行回收</p>
+
+    <p>4.新生代发生的GC也叫做Minor GC，MinorGC发生频率比较高(不一定等Eden区满了才触发)</p>
+
+    <p><strong>年老代（Old Generation）</strong></p>
+
+    <p>1.在年轻代中经历了N次垃圾回收后仍然存活的对象，就会被放到年老代中。因此，可以认为年老代中存放的都是一些生命周期较长的对象。</p>
+
+    <p>2.内存比新生代也大很多(大概比例是1:2)，当老年代内存满时触发Major GC即Full GC，Full GC发生频率比较低，老年代对象存活时间比较长，存活率标记高。</p>
+
+    <p><strong>持久代（Permanent Generation）</strong></p>
+
+    <p>用于存放静态文件，如Java类、方法等。持久代对垃圾回收没有显著影响，但是有些应用可能动态生成或者调用一些class，例如Hibernate 等，在这种时候需要设置一个比较大的持久代空间来存放这些运行过程中新增的类。</p>
+  </li>
+</ol>
+
+<h3 id="java栈-java工作内存">Java栈 (Java工作内存)</h3>
+
+<p>每当启动给一个线程时，Java虚拟机会为它分配一个Java栈。Java栈由许多栈帧组成，一个栈帧包含一个Java方法调用的状态。当线程调用一个Java方法时，虚拟机压入一个新的栈帧到该线程的Java栈中，当该方法返回时，这个栈帧就从Java栈中弹出。Java栈存储线程中Java方法调用的状态–包括局部变量、参数、返回值以及运算的中间结果等。Java虚拟机没有寄存器，其指令集使用Java栈来存储中间数据。这样设计的原因是为了保持Java虚拟机的指令集尽量紧凑，同时也便于Java虚拟机在只有很少通用寄存器的平台上实现。</p>
+
+<p><strong>栈帧</strong></p>
+
+<p>栈帧由局部变量区、操作数栈和帧数据区组成。当虚拟机调用一个Java方法时，它从对应类的类型信息中得到此方法的局部变量区和操作数栈的大小，并根据此分配栈帧内存，然后压入Java栈中。</p>
+
+<p><strong>局部变量区</strong></p>
+
+<p>局部变量表，顾名思义，想必不用解释大家应该明白它的作用了吧。就是用来存储方法中的局部变量（包括在方法中声明的非静态变量以及函数形参）。对于基本数据类型的变量，则直接存储它的值，对于引用类型的变量，则存的是指向对象的引用。局部变量表的大小在编译器就可以确定其大小了，因此在程序执行期间局部变量表的大小是不会改变的。</p>
+
+<p><strong>操作数栈</strong></p>
+
+<p>操作数栈，想必学过数据结构中的栈的朋友想必对表达式求值问题不会陌生，栈最典型的一个应用就是用来对表达式求值。想想一个线程执行方法的过程中，实际上就是不断执行语句的过程，而归根到底就是进行计算的过程。因此可以这么说，程序中的所有计算过程都是在借助于操作数栈来完成的。</p>
+
+<p><strong>帧数据区</strong></p>
+
+<p>有一个指向运行时常量池的引用，因为在方法执行的过程中有可能需要用到类中的常量，所以必须要有一个引用指向运行时常量。</p>
+
+<p>方法返回地址，当一个方法执行完毕之后，要返回之前调用它的地方，因此在栈帧中必须保存一个方法返回地址。或者异常的返回</p>
+
+<p><strong>由于每个线程正在执行的方法可能不同，因此每个线程都会有一个自己的Java栈，互不干扰。</strong></p>
+
+<h3 id="java内存模型">Java内存模型</h3>
+
+<p><a href="http://www.cnblogs.com/nexiyi/p/java_memory_model_and_thread.html">博客：java内存模型</a></p>
+
+<p>当代的CPU的计算速度和内存读取速率存在几个数量级别差，为了缓解这种情况，搞了一种高速缓存的东西作为CPU和内存中的中介，我们把内存(主存)中需要运算的变量(在Java中，这里的主存是堆区，由线程间进行共享，而这种变量则是存储在堆中的数据)，拷贝到线程的工作内存中(线程的工作内存则是Java栈，Java栈的局部变量区存储着Java方法的参数，局部变量，返回值等等，Java栈还有存储着由堆中拷贝过来的数据)，因为每个线程都有属于自己的一个工作内存，各线程间不可互相访问，工作区中对堆中的拷贝数据进行了计算操作，要把计算好的新值刷新到堆去，其他线程才能获取到正确的数据，实现线程间的通信；</p>
+
+<p><img src="http://i.imgur.com/5cnizQf.jpg" alt="" /></p>
+
+<p>3.2 内存间交互操作</p>
+
+<p>关于主内存与工作内存之间的具体交互协议，即一个变量如何从主内存拷贝到工作内存、如何从工作内存同步到主内存之间的实现细节，Java内存模型定义了以下八种操作来完成：</p>
+
+<ul>
+  <li>lock（锁定）：作用于主内存的变量，把一个变量标识为一条线程独占状态。</li>
+  <li>unlock（解锁）：作用于主内存变量，把一个处于锁定状态的变量释放出来，释放后的变量才可以被其他线程锁定。</li>
+  <li>read（读取）：作用于主内存变量，把一个变量值从主内存传输到线程的工作内存中，以便随后的load动作使用</li>
+  <li>load（载入）：作用于工作内存的变量，它把read操作从主内存中得到的变量值放入工作内存的变量副本中。</li>
+  <li>use（使用）：作用于工作内存的变量，把工作内存中的一个变量值传递给执行引擎，每当虚拟机遇到一个需要使用变量的值的字节码指令时将会执行这个操作。</li>
+  <li>assign（赋值）：作用于工作内存的变量，它把一个从执行引擎接收到的值赋值给工作内存的变量，每当虚拟机遇到一个给变量赋值的字节码指令时执行这个操作。</li>
+  <li>store（存储）：作用于工作内存的变量，把工作内存中的一个变量的值传送到主内存中，以便随后的write的操作。</li>
+  <li>write（写入）：作用于主内存的变量，它把store操作从工作内存中一个变量的值传送到主内存的变量中。</li>
+</ul>
+
+<p>如果要把一个变量从主内存中复制到工作内存，就需要按顺寻地执行read和load操作，如果把变量从工作内存中同步回主内存中，就要按顺序地执行store和write操作。Java内存模型只要求上述操作必须按顺序执行，而没有保证必须是连续执行。也就是read和load之间，store和write之间是可以插入其他指令的，如对主内存中的变量a、b进行访问时，可能的顺序是read a，read b，load b， load a。Java内存模型还规定了在执行上述八种基本操作时，必须满足如下规则：</p>
+
+<ul>
+  <li>不允许read和load、store和write操作之一单独出现</li>
+  <li>不允许一个线程丢弃它的最近assign的操作，即变量在工作内存中改变了之后必须同步到主内存中。</li>
+  <li>不允许一个线程无原因地（没有发生过任何assign操作）把数据从工作内存同步回主内存中。</li>
+  <li>一个新的变量只能在主内存中诞生，不允许在工作内存中直接使用一个未被初始化（load或assign）的变量。即就是对一个变量实施use和store操作之前，必须先执行过了assign和load操作。</li>
+  <li>一个变量在同一时刻只允许一条线程对其进行lock操作，lock和unlock必须成对出现</li>
+  <li>如果对一个变量执行lock操作，将会清空工作内存中此变量的值，在执行引擎使用这个变量前需要重新执行load或assign操作初始化变量的值</li>
+  <li>如果一个变量事先没有被lock操作锁定，则不允许对它执行unlock操作；也不允许去unlock一个被其他线程锁定的变量。</li>
+  <li>对一个变量执行unlock操作之前，必须先把此变量同步到主内存中（执行store和write操作）。</li>
+</ul>
+
+<h2 id="并发"><strong>并发</strong></h2>
+
+<p>Java之间的线程通信都是基于上面的 <strong>共享内存模型</strong> ，因为工作内存只会对从堆中拷贝的数据进行计算修改，还要刷新到堆中，其他进程才能读到正确的数据。</p>
+
+<p>比如银行的存储款吧，当吖佳和吖妍都知道我的银行卡号和密码，同一时刻，吖妍、吖佳读取了银行卡信息，余额为100，吖妍从中取了10元，剩下90元，刷新到银行卡中，但是吖佳向银行卡中存了10元，因为读到的时候为100元，这个时候是110元，刷新到主存时应该为110；所以并不是最后的正确余额100；</p>
+
+<p>同样线程间的通信也是这样，为了避免这种情况，应该让线程共享的部分修改代码同步起来，有序地进行访问和修改</p>
+
+<h3 id="cas-compare-and-swap">CAS (Compare And Swap)</h3>
+
+<p>基于Java内存共享模型，在多线程访问的情况下，会出现这么一种情况： 主存中存在变量 v，线程A读取变量A到工作内存中，做出了修改，但是在还没有把修改后的写回主存的时候，发生了线程调度（线程调度的发生是无法确定的），线程B同样读取了变量V，并作出修改后，写回到主存中；这个时候，线程A如果再把其工作内存中修改后的值写回到内存的话，就会把线程B的操作覆盖掉，这并不是我们想看到的，而多线程的操作就是针对这种情况</p>
+
+<p>在这种情况下，JDK5提出了锁机制，synchronized(同步),它事先在读取变量V的时候，进行了锁定，这样子其他访问变量V的线程就会被挂起，直到离开同步块后才能释放变量V的锁定；</p>
+
+<p>这种独占锁的缺点是：</p>
+
+<p>（1）在多线程竞争下，加锁、释放锁会导致比较多的上下文切换和调度延时，引起性能问题。</p>
+
+<p>（2）一个线程持有锁会导致其它所有需要此锁的线程挂起。</p>
+
+<p>独占锁是一种悲观锁，基于这部分缺点，又提出一种叫乐观锁的，所谓乐观锁就是，每次不加锁而是假设没有冲突而去完成某项操作，如果因为冲突失败就重试，直到成功为止。乐观锁用到的机制就是CAS，Compare and Swap</p>
+
+<p>CAS 它不对变量做出锁定操作，它是如何实现线程安全的呢？举个例子：线程A读取了主存中的变量V，并做出修改，不管当前是否发生线程调度导致主存中的V发生改变，我们都要确认我们一开始读到的变量V的值和版本 跟当前的变量V是否匹配，如果相同，则把修改后的值写到主存中；假如失败的话，就返回当前主存中的变量V的值，重试，直到修改成功</p>
+
+<p>理论：CAS 操作包含三个操作数 —— 内存位置（V）、预期原值（A）和新值(B)。 如果内存位置的值与预期原值相匹配，那么处理器会自动将该位置值更新为新值 。否则，处理器不做任何操作。无论哪种情况，它都会在 CAS 指令之前返回该 位置的值。（在 CAS 的一些特殊情况下将仅返回 CAS 是否成功，而不提取当前 值。）CAS 有效地说明了“我认为位置 V 应该包含值 A；如果包含该值，则将 B 放到这个位置；否则，不要更改该位置，只告诉我这个位置现在的值即可。”</p>
+
+<p>CAS这种机制就很好地避免了synchronized锁定变量所带来的性能问题，但是也产生了性能开销的问题，因为它会循环操作，会造成CPU的消耗。。现在CAS广泛应用在 concurrent包中</p>
+
+<h3 id="volatile">volatile</h3>
+
+<p>Volatile在java中是一个神秘的关键字，官方对其定义：</p>
+
+<p>TheJava programming language provides a second mechanism, volatile fields, that ismore convenient than locking for some purposes. A field may be declaredvolatile, in which case the Java Memory Model ensures that all threads see aconsistent value for the variable.</p>
+
+<p>大概意思是说：如果一个变量加了volatile关键字，就会告诉编译器和内存模型：这个变量对所有线程是共享的、可见的，每次JVM都会读取最新写入的值并使其最新值在所有CPU可见。</p>
+
+<p>1.2 Volatile是如何保证可见性的：</p>
+
+<p>在当前的Java内存模型下，线程可以把变量保存在本地内存（比如机器的寄存器）中，而不是直接在主存中进行读写。这就可能造成一个线程在主存中修改了一个变量的值，而另外一个线程还继续使用它在寄存器中的变量值的拷贝，造成数据的不一致。要解决这个问题，只有把该变量声明为volatile，这就指示JVM，这个变量是不稳定的，每次使用它都到主存中进行读取。而且，当成员变量发生变化时，强迫线程将变化值回写到共享内存。这样在任何时刻，两个不同的线程总是看到某个成员变量的同一个值。Java语言规范中指出：为了获得最佳速度，允许线程保存共享成员变量的私有拷贝，而且只当线程进入或者离开同步代码块时才与共享成员变量的原始值对比。这样当多个线程同时与某个对象交互时，就必须要注意到要让线程及时的得到共享成员变量的变化。而volatile关键字就是提示JVM：对于这个成员变量不能保存它的私有拷贝，而应直接与共享成员变量交互。</p>
+
+<h2 id="jni">JNI</h2>
+
+<p>Java本地接口，也叫JNI（Java Native Interface），是为可移植性准备的。本地方法接口允许本地方法完成以下工作：</p>
+
+
+
+                <hr>
+
+                
+                <!-- 多说 Share start -->
+                </style>
+                <div class="ds-share"
+                    style="text-align: right"
+                    data-thread-key="/2017/01/03/Java_virtual_machine"
+                    data-title="Java虚拟机全面了解"
+                    data-url="http://localhost:4000/drearming.github.com/2017/01/03/Java_virtual_machine/"
+                    data-images="http://localhost:4000/drearming.github.com/img/post-bg-2015.jpg"
+                    data-content="Java虚拟机
+
+Java虚拟机的作用是什么？它如何实现这些基本功能的？
+
+作用：通过将.java文件编译成目标字节码.class文件，Java虚拟机通过... | 陈俊杰 | MVCoder " >
+                    <div class="ds-share-inline">
+                      <ul  class="ds-share-icons-16">
+                        <li data-toggle="ds-share-icons-more"><a class="ds-more" href="#">分享到：</a></li>
+                        <li><a class="ds-wechat flat" href="javascript:void(0);" data-service="wechat">微信</a></li>
+                        <li><a class="ds-weibo flat" href="javascript:void(0);" data-service="weibo">微博</a></li>
+                        <li><a class="ds-douban flat" href="javascript:void(0);" data-service="douban">豆瓣</a></li>
+                      </ul>
+                      <div class="ds-share-icons-more">
+                      </div>
+                    </div>
+                <hr>
+                </div>
+                <!-- 多说 Share end-->
+                
+
+
+                <ul class="pager">
+                    
+                    <li class="previous">
+                        <a href="/drearming.github.com/2016/11/02/java-hashmap/" data-toggle="tooltip" data-placement="top" title="从源码去了解HashMap">&larr; Previous Post</a>
+                    </li>
+                    
+                    
+                    <li class="next">
+                        <a href="/drearming.github.com/2017/01/10/Java-multiThread/" data-toggle="tooltip" data-placement="top" title="Java 多线程详解">Next Post &rarr;</a>
+                    </li>
+                    
+                </ul>
+
+
+                
+                <!-- 多说评论框 start -->
+                <div class="comment">
+                    <div class="ds-thread"
+                        data-thread-key="/2017/01/03/Java_virtual_machine"
+                        data-title="Java虚拟机全面了解"
+                        data-url="http://localhost:4000/drearming.github.com/2017/01/03/Java_virtual_machine/" >
+                    </div>
+                </div>
+                <!-- 多说评论框 end -->
+                
+
+                
+
+            </div>
+
+    <!-- Sidebar Container -->
+            <div class="
+                col-lg-8 col-lg-offset-2
+                col-md-10 col-md-offset-1
+                sidebar-container">
+
+                <!-- Featured Tags -->
+                
+                <section>
+                    <hr class="hidden-sm hidden-xs">
+                    <h5><a href="/tags/">FEATURED TAGS</a></h5>
+                    <div class="tags">
+        				
+                            
+        				
+                            
+                				<a href="/drearming.github.com/tags/#Android" title="Android" rel="3">
+                                    Android
+                                </a>
+                            
+        				
+                            
+                				<a href="/drearming.github.com/tags/#Java" title="Java" rel="4">
+                                    Java
+                                </a>
+                            
+        				
+                            
+        				
+                            
+                				<a href="/drearming.github.com/tags/#前端开发" title="前端开发" rel="3">
+                                    前端开发
+                                </a>
+                            
+        				
+                            
+                				<a href="/drearming.github.com/tags/#JavaScript" title="JavaScript" rel="3">
+                                    JavaScript
+                                </a>
+                            
+        				
+                            
+        				
+                            
+        				
+                            
+        				
+                            
+        				
+                            
+        				
+        			</div>
+                </section>
+                
+
+                <!-- Friends Blog -->
+                
+                <hr>
+                <h5>FRIENDS</h5>
+                <ul class="list-inline">
+                    
+                        <li><a href="https://github.com/DREARMING">MVCoder</a></li>
+                    
+                        <li><a href="http://blog.csdn.net/lmj623565791/article/details/48129405">鸿洋</a></li>
+                    
+                        <li><a href="http://blog.csdn.net/guolin_blog/article/details/9097463/">郭霖</a></li>
+                    
+                        <li><a href="http://blog.csdn.net/aigestudio">爱歌</a></li>
+                    
+                        <li><a href="http://www.jianshu.com/p/6a8c2ae0b1c6?utm_campaign=haruki">死党</a></li>
+                    
+                </ul>
+                
+            </div>
+        </div>
+    </div>
+</article>
+
+
+<!-- 多说公共JS代码 start (一个网页只需插入一次) -->
+<script type="text/javascript">
+    // dynamic User by Hux
+    var _user = 'MVCoder';
+
+    // duoshuo comment query.
+    var duoshuoQuery = {short_name: _user };
+    (function() {
+        var ds = document.createElement('script');
+        ds.type = 'text/javascript';ds.async = true;
+        ds.src = (document.location.protocol == 'https:' ? 'https:' : 'http:') + '//static.duoshuo.com/embed.js';
+        ds.charset = 'UTF-8';
+        (document.getElementsByTagName('head')[0]
+         || document.getElementsByTagName('body')[0]).appendChild(ds);
+    })();
+</script>
+<!-- 多说公共JS代码 end -->
+
+
+
+
+
+
+
+<!-- async load function -->
+<script>
+    function async(u, c) {
+      var d = document, t = 'script',
+          o = d.createElement(t),
+          s = d.getElementsByTagName(t)[0];
+      o.src = u;
+      if (c) { o.addEventListener('load', function (e) { c(null, e); }, false); }
+      s.parentNode.insertBefore(o, s);
+    }
+</script>
+<!-- anchor-js, Doc:http://bryanbraun.github.io/anchorjs/ -->
+<script>
+    async("http://cdn.bootcss.com/anchor-js/1.1.1/anchor.min.js",function(){
+        anchors.options = {
+          visible: 'always',
+          placement: 'right',
+          icon: '#'
+        };
+        anchors.add().remove('.intro-header h1').remove('.subheading').remove('.sidebar-container h5');
+    })
+</script>
+<style>
+    /* place left on bigger screen */
+    @media all and (min-width: 800px) {
+        .anchorjs-link{
+            position: absolute;
+            left: -0.75em;
+            font-size: 1.1em;
+            margin-top : -0.1em;
+        }
+    }
+</style>
+
+
+
+    <!-- Footer -->
+<footer>
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+                <ul class="list-inline text-center">
+                    
+                    
+
+                    <!-- add Weibo, Zhihu by Hux, add target = "_blank" to <a> by Hux -->
+                    
+                    
+
+
+                    
+                    
+                    <li>
+                        <a target="_blank" href="https://github.com/drearming">
+                            <span class="fa-stack fa-lg">
+                                <i class="fa fa-circle fa-stack-2x"></i>
+                                <i class="fa fa-github fa-stack-1x fa-inverse"></i>
+                            </span>
+                        </a>
+                    </li>
+                    
+                </ul>
+                <p class="copyright text-muted">
+                    Copyright &copy; MVCoder Blog 2017
+                    <br>
+                    Theme by <a href="http://huangxuan.me">Hux</a> |
+                    <iframe
+                        style="margin-left: 2px; margin-bottom:-5px;"
+                        frameborder="0" scrolling="0" width="91px" height="20px"
+                        src="https://ghbtns.com/github-btn.html?user=huxpro&repo=huxpro.github.io&type=star&count=true" >
+                    </iframe>
+                </p>
+            </div>
+        </div>
+    </div>
+</footer>
+
+<!-- jQuery -->
+<script src="/drearming.github.com/js/jquery.min.js "></script>
+
+<!-- Bootstrap Core JavaScript -->
+<script src="/drearming.github.com/js/bootstrap.min.js "></script>
+
+<!-- Custom Theme JavaScript -->
+<script src="/drearming.github.com/js/hux-blog.min.js "></script>
+
+
+<!-- async load function -->
+<script>
+    function async(u, c) {
+      var d = document, t = 'script',
+          o = d.createElement(t),
+          s = d.getElementsByTagName(t)[0];
+      o.src = u;
+      if (c) { o.addEventListener('load', function (e) { c(null, e); }, false); }
+      s.parentNode.insertBefore(o, s);
+    }
+</script>
+
+<!-- 
+     Because of the native support for backtick-style fenced code blocks 
+     right within the Markdown is landed in Github Pages, 
+     From V1.6, There is no need for Highlight.js, 
+     so Huxblog drops it officially.
+
+     - https://github.com/blog/2100-github-pages-now-faster-and-simpler-with-jekyll-3-0  
+     - https://help.github.com/articles/creating-and-highlighting-code-blocks/    
+-->
+<!--
+    <script>
+        async("http://cdn.bootcss.com/highlight.js/8.6/highlight.min.js", function(){
+            hljs.initHighlightingOnLoad();
+        })
+    </script>
+    <link href="http://cdn.bootcss.com/highlight.js/8.6/styles/github.min.css" rel="stylesheet">
+-->
+
+
+<!-- jquery.tagcloud.js -->
+<script>
+    // only load tagcloud.js in tag.html
+    if($('#tag_cloud').length !== 0){
+        async("/js/jquery.tagcloud.js",function(){
+            $.fn.tagcloud.defaults = {
+                //size: {start: 1, end: 1, unit: 'em'},
+                color: {start: '#bbbbee', end: '#0085a1'},
+            };
+            $('#tag_cloud a').tagcloud();
+        })
+    }
+</script>
+
+<!--fastClick.js -->
+<script>
+    async("http://cdn.bootcss.com/fastclick/1.0.6/fastclick.min.js", function(){
+        var $nav = document.querySelector("nav");
+        if($nav) FastClick.attach($nav);
+    })
+</script>
+
+
+<!-- Google Analytics -->
+
+<script>
+    // dynamic User by Hux
+    var _gaId = 'UA-49627206-1';
+    var _gaDomain = 'drearming.github.io';
+
+    // Originial
+    (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+    (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+    m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+    })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+    ga('create', _gaId, _gaDomain);
+    ga('send', 'pageview');
+</script>
+
+
+
+<!-- Baidu Tongji -->
+
+<script>
+    // dynamic User by Hux
+    var _baId = '4cc1f2d8f3067386cc5cdb626a202900';
+
+    // Originial
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "//hm.baidu.com/hm.js?" + _baId;
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+</script>
+
+
+
+
+<!-- Image to hack wechat -->
+<img src="/img/icon_wechat.png" width="0" height="0" />
+<!-- Migrate from head to bottom, no longer block render and still work -->
+
+</body>
+
+</html>

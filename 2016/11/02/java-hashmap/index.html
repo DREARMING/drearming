@@ -11,9 +11,9 @@
     <meta name="keyword"  content="Android Java Web">
     <link rel="shortcut icon" href="/drearming.github.com/img/favicon.ico">
 
-    <title>Example Post using Keynote Layout - 陈俊杰 | MVCoder</title>
+    <title>从源码去了解HashMap - 陈俊杰 | MVCoder</title>
 
-    <link rel="canonical" href="http://localhost:4000/drearming.github.com/2015/07/09/js-module-7day/">
+    <link rel="canonical" href="http://localhost:4000/drearming.github.com/2016/11/02/java-hashmap/">
 
     <!-- Bootstrap Core CSS -->
     <link rel="stylesheet" href="/drearming.github.com/css/bootstrap.min.css">
@@ -126,45 +126,36 @@
 
     <!-- Image to hack wechat -->
 <!-- <img src="/img/icon_wechat.png" width="0" height="0"> -->
-<!-- <img src="/drearming.github.com/img/post-bg-js-version.jpg" width="0" height="0"> -->
+<!-- <img src="/drearming.github.com/img/post-bg-2015.jpg" width="0" height="0"> -->
 
 <!-- Post Header -->
 <style type="text/css">
     header.intro-header{
-        /*background-image: url('/drearming.github.com/img/post-bg-js-version.jpg')*/
-        height: 500px;
-        overflow: hidden;
-    }
-    header iframe{
-        width: 100%;
-        height: 100%;
-        border: 0;
+        background-image: url('/drearming.github.com/img/post-bg-2015.jpg')
     }
 </style>
 <header class="intro-header" >
-    <iframe src="http://huangxuan.me/js-module-7day/"/>
-        <div class="container">
-            <div class="row">
-                <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
-                    <div class="post-heading">
-                        <div class="tags">
-                            
-                            <a class="tag" href="/drearming.github.com/tags/#前端开发" title="前端开发">前端开发</a>
-                            
-                            <a class="tag" href="/drearming.github.com/tags/#JavaScript" title="JavaScript">JavaScript</a>
-                            
-                        </div>
-                        <h1>Example Post using Keynote Layout</h1>
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+                <div class="post-heading">
+                    <div class="tags">
                         
+                        <a class="tag" href="/drearming.github.com/tags/#Java" title="Java">Java</a>
                         
-                        <h2 class="subheading">Keynote: JavaScript Modularization Journey</h2>
+                        <a class="tag" href="/drearming.github.com/tags/#容器" title="容器">容器</a>
                         
-                        <span class="meta">Posted by Hux on July 9, 2015</span>
                     </div>
+                    <h1>从源码去了解HashMap</h1>
+                    
+                    
+                    <h2 class="subheading">HashMap到底是如何实现的呢？</h2>
+                    
+                    <span class="meta">Posted by MVCoder on November 2, 2016</span>
                 </div>
             </div>
         </div>
-    </iframe>
+    </div>
 </header>
 
 <!-- Post Content -->
@@ -172,42 +163,77 @@
     <div class="container">
         <div class="row">
 
-            <!-- Post Container -->
-            <div class="post-container
+    <!-- Post Container -->
+            <div class="
                 col-lg-8 col-lg-offset-2
-                col-md-10 col-md-offset-1 ">
+                col-md-10 col-md-offset-1
+                post-container">
 
-				<blockquote>
-  <p>下滑这里查看更多内容</p>
-</blockquote>
+				<h2 id="hashmap">HashMap</h2>
 
-<p>7月9日，我在公司内部进行了名为「JavaScript 模块化七日谈」分享，并将该 Slides 分享到了微博上。出乎意料地，这篇微博先后被 @JS小组 @尤小右 @寸志 等近 200 人转发，阅读达到 10w，获得了还不错的评价。</p>
+<p><a href="http://blog.csdn.net/vking_wang/article/details/14166593">参考链接</a></p>
 
-<p>于是，我决定将它重新发到我的博客上，并为它专门制作了适用于 Keynote 展示文稿的新布局。它能自动根据屏幕大小/旋转以一定比例填充屏幕，你也可以直接点击下方链接在新页面打开，来获得更好的、沉浸式的全屏体验</p>
+<p>HashMap是我们经常使用的键值对集合，它的内部原理是如何实现的呢？</p>
 
-<h3 id="watch-slides-"><a href="http://huangxuan.me/js-module-7day">Watch Slides →</a></h3>
+<p>在要理解hashmap的内部机制前，我们先要来了解一下一种数据结构hash表，我们常常使用的数据结构是Array，链表，Array在查询的时候非常快，但是删除操作却比较慢；而链表是查询比较慢，而插入删除比较快，有没有一种相对来说，更好的数据结构？有，这就是hash表</p>
 
-<p><img src="http://huangxuan.me/js-module-7day/attach/qrcode.png" width="350" height="350" /></p>
+<h2 id="hash表">hash表</h2>
 
-<p><small class="img-hint">你也可以通过扫描二维码在手机上观看</small></p>
+<p>hash表是一个线性数组，但是跟Array不同的是，hash表存储的是一个Entry,Entry中有一个key值，一个value值，还有一个hash值，还有一个next(属于一个Entry)；</p>
 
-<p>这个 Web Slides 开源在<a href="https://github.com/Huxpro/js-module-7day">我的 Github 上</a>，欢迎你帮助我完善这个展示文稿，你可以给我提 issue，可以 fork &amp; pull request。如果它能帮助到你了，希望你还能不吝啬 star 一下这个项目</p>
+<p>我们在插入元素的时候，我们会对key值 调用hash函数(一般我们常用的hash函数是对数组的长度进行取模)，得出这个key值在hash表中的位置，然后将传进来的key，value键值对生成一个Entry，把Entry插进去。</p>
 
-<h3 id="catalog">Catalog</h3>
+<p>但是有这么一种情况，因为不同的key值可能会出现相同的hash值，假如长度为10的数组，key是整型的，那么2和12都会插到数组下标为2这个位置中，所以这个时候就会发生冲突，这个我们常用的解决冲突的办法是用链表来解决这种问题。</p>
 
-<ul>
-  <li>第一日 上古时期 <strong><em>Module?</em></strong> 从设计模式说起</li>
-  <li>第二日 石器时代 <strong><em>Script Loader</em></strong> 只有封装性可不够，我们还需要加载</li>
-  <li>第三日 蒸汽朋克 <strong><em>Module Loader</em></strong> 模块化架构的工业革命</li>
-  <li>第四日 号角吹响 <strong><em>CommonJS</em></strong> 征服世界的第一步是跳出浏览器</li>
-  <li>第五日 双塔奇兵 <strong><em>AMD/CMD</em></strong> 浏览器环境模块化方案</li>
-  <li>第六日 精灵宝钻 <strong><em>Browserify/Webpack</em></strong> 大势所趋，去掉这层包裹！</li>
-  <li>第七日 王者归来 <strong><em>ES6 Module</em></strong> 最后的战役</li>
-</ul>
+<figure class="highlight"><pre><code class="language-java" data-lang="java"><span class="o">![](</span><span class="nl">http:</span><span class="c1">//i.imgur.com/Z64NUz2.png)</span>
 
-<h3 id="thanks">Thanks</h3>
+	<span class="kd">public</span> <span class="n">V</span> <span class="nf">put</span><span class="o">(</span><span class="n">K</span> <span class="n">key</span><span class="o">,</span> <span class="n">V</span> <span class="n">value</span><span class="o">)</span> <span class="o">{</span>
+        <span class="k">if</span> <span class="o">(</span><span class="n">table</span> <span class="o">==</span> <span class="n">EMPTY_TABLE</span><span class="o">)</span> <span class="o">{</span>
+            <span class="n">inflateTable</span><span class="o">(</span><span class="n">threshold</span><span class="o">);</span>
+        <span class="o">}</span>
+        <span class="k">if</span> <span class="o">(</span><span class="n">key</span> <span class="o">==</span> <span class="kc">null</span><span class="o">)</span>
+            <span class="k">return</span> <span class="nf">putForNullKey</span><span class="o">(</span><span class="n">value</span><span class="o">);</span>
+        <span class="kt">int</span> <span class="n">hash</span> <span class="o">=</span> <span class="n">sun</span><span class="o">.</span><span class="na">misc</span><span class="o">.</span><span class="na">Hashing</span><span class="o">.</span><span class="na">singleWordWangJenkinsHash</span><span class="o">(</span><span class="n">key</span><span class="o">);</span>
+        <span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="n">indexFor</span><span class="o">(</span><span class="n">hash</span><span class="o">,</span> <span class="n">table</span><span class="o">.</span><span class="na">length</span><span class="o">);</span>
+        <span class="k">for</span> <span class="o">(</span><span class="n">HashMapEntry</span><span class="o">&lt;</span><span class="n">K</span><span class="o">,</span><span class="n">V</span><span class="o">&gt;</span> <span class="n">e</span> <span class="o">=</span> <span class="n">table</span><span class="o">[</span><span class="n">i</span><span class="o">];</span> <span class="n">e</span> <span class="o">!=</span> <span class="kc">null</span><span class="o">;</span> <span class="n">e</span> <span class="o">=</span> <span class="n">e</span><span class="o">.</span><span class="na">next</span><span class="o">)</span> <span class="o">{</span>
+            <span class="n">Object</span> <span class="n">k</span><span class="o">;</span>
+			<span class="c1">//遍历是否有相同key值的Enrty，因为hashCode相等，key却不一定相等</span>
+            <span class="k">if</span> <span class="o">(</span><span class="n">e</span><span class="o">.</span><span class="na">hash</span> <span class="o">==</span> <span class="n">hash</span> <span class="o">&amp;&amp;</span> <span class="o">((</span><span class="n">k</span> <span class="o">=</span> <span class="n">e</span><span class="o">.</span><span class="na">key</span><span class="o">)</span> <span class="o">==</span> <span class="n">key</span> <span class="o">||</span> <span class="n">key</span><span class="o">.</span><span class="na">equals</span><span class="o">(</span><span class="n">k</span><span class="o">)))</span> <span class="o">{</span>
+                <span class="n">V</span> <span class="n">oldValue</span> <span class="o">=</span> <span class="n">e</span><span class="o">.</span><span class="na">value</span><span class="o">;</span>
+                <span class="n">e</span><span class="o">.</span><span class="na">value</span> <span class="o">=</span> <span class="n">value</span><span class="o">;</span>
+                <span class="n">e</span><span class="o">.</span><span class="na">recordAccess</span><span class="o">(</span><span class="k">this</span><span class="o">);</span>
+                <span class="k">return</span> <span class="n">oldValue</span><span class="o">;</span>
+            <span class="o">}</span>
+        <span class="o">}</span>
 
-<p><a href="http://lab.hakim.se/reveal-js">Reveal.js</a></p>
+        <span class="n">modCount</span><span class="o">++;</span>
+        <span class="n">addEntry</span><span class="o">(</span><span class="n">hash</span><span class="o">,</span> <span class="n">key</span><span class="o">,</span> <span class="n">value</span><span class="o">,</span> <span class="n">i</span><span class="o">);</span>
+        <span class="k">return</span> <span class="kc">null</span><span class="o">;</span>
+    <span class="o">}</span>
+
+	<span class="kt">void</span> <span class="nf">addEntry</span><span class="o">(</span><span class="kt">int</span> <span class="n">hash</span><span class="o">,</span> <span class="n">K</span> <span class="n">key</span><span class="o">,</span> <span class="n">V</span> <span class="n">value</span><span class="o">,</span> <span class="kt">int</span> <span class="n">bucketIndex</span><span class="o">)</span> <span class="o">{</span>
+        <span class="k">if</span> <span class="o">((</span><span class="n">size</span> <span class="o">&gt;=</span> <span class="n">threshold</span><span class="o">)</span> <span class="o">&amp;&amp;</span> <span class="o">(</span><span class="kc">null</span> <span class="o">!=</span> <span class="n">table</span><span class="o">[</span><span class="n">bucketIndex</span><span class="o">]))</span> <span class="o">{</span>
+            <span class="n">resize</span><span class="o">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">table</span><span class="o">.</span><span class="na">length</span><span class="o">);</span>
+            <span class="n">hash</span> <span class="o">=</span> <span class="o">(</span><span class="kc">null</span> <span class="o">!=</span> <span class="n">key</span><span class="o">)</span> <span class="o">?</span> <span class="n">sun</span><span class="o">.</span><span class="na">misc</span><span class="o">.</span><span class="na">Hashing</span><span class="o">.</span><span class="na">singleWordWangJenkinsHash</span><span class="o">(</span><span class="n">key</span><span class="o">)</span> <span class="o">:</span> <span class="mi">0</span><span class="o">;</span>
+            <span class="n">bucketIndex</span> <span class="o">=</span> <span class="n">indexFor</span><span class="o">(</span><span class="n">hash</span><span class="o">,</span> <span class="n">table</span><span class="o">.</span><span class="na">length</span><span class="o">);</span>
+        <span class="o">}</span>
+
+        <span class="n">createEntry</span><span class="o">(</span><span class="n">hash</span><span class="o">,</span> <span class="n">key</span><span class="o">,</span> <span class="n">value</span><span class="o">,</span> <span class="n">bucketIndex</span><span class="o">);</span>
+    <span class="o">}</span>
+
+	<span class="kt">void</span> <span class="nf">createEntry</span><span class="o">(</span><span class="kt">int</span> <span class="n">hash</span><span class="o">,</span> <span class="n">K</span> <span class="n">key</span><span class="o">,</span> <span class="n">V</span> <span class="n">value</span><span class="o">,</span> <span class="kt">int</span> <span class="n">bucketIndex</span><span class="o">)</span> <span class="o">{</span>
+        <span class="n">HashMapEntry</span><span class="o">&lt;</span><span class="n">K</span><span class="o">,</span><span class="n">V</span><span class="o">&gt;</span> <span class="n">e</span> <span class="o">=</span> <span class="n">table</span><span class="o">[</span><span class="n">bucketIndex</span><span class="o">];</span>
+		<span class="c1">//e参数就是指Entry.next；意思是在链表头插入最新的键值对</span>
+        <span class="n">table</span><span class="o">[</span><span class="n">bucketIndex</span><span class="o">]</span> <span class="o">=</span> <span class="k">new</span> <span class="n">HashMapEntry</span><span class="o">&lt;&gt;(</span><span class="n">hash</span><span class="o">,</span> <span class="n">key</span><span class="o">,</span> <span class="n">value</span><span class="o">,</span> <span class="n">e</span><span class="o">);</span>
+        <span class="n">size</span><span class="o">++;</span>
+    <span class="o">}</span></code></pre></figure>
+
+<h2 id="-和equal-的区别">== 和equal() 的区别</h2>
+
+<p>很简单，==有两种使用情况，都是比较栈堆中的value值； 例如是基本数据类型的话，就比较基本类型的值；如果是对象的话，就比较对象的引用，两者相等返回true；</p>
+
+<p>equal()方法是应用于Object的，同样是比较两个对象的引用是否相同。。但是这个方法是可以被覆盖的，就像String一样，String将其改成比较字符串的内容了，而不是比较引用；所以当我们想修改一个类的比较方法时候，就可以修改equal方法的比较规则；</p>
+
 
 
                 <hr>
@@ -217,14 +243,17 @@
                 </style>
                 <div class="ds-share"
                     style="text-align: right"
-                    data-thread-key="/2015/07/09/js-module-7day" data-title="Example Post using Keynote Layout"
-                    data-images="http://localhost:4000/drearming.github.com/img/post-bg-js-version.jpg"
-                    data-content="
-  下滑这里查看更多内容
+                    data-thread-key="/2016/11/02/java-hashmap"
+                    data-title="从源码去了解HashMap"
+                    data-url="http://localhost:4000/drearming.github.com/2016/11/02/java-hashmap/"
+                    data-images="http://localhost:4000/drearming.github.com/img/post-bg-2015.jpg"
+                    data-content="HashMap
 
+参考链接
 
-7月9日，我在公司内部进行了名为「JavaScript 模块化七日谈」分享，并将该 Slides 分享到了微博上。出乎意料... | Hux Blog，@Hux黄玄 的个人博客"
-                    data-url="http://localhost:4000/drearming.github.com/2015/07/09/js-module-7day/">
+HashMap是我们经常使用的键值对集合，它的内部原理是如何实现的呢？
+
+在要理解hashmap的内部机制前，我们先要来了解... | 陈俊杰 | MVCoder " >
                     <div class="ds-share-inline">
                       <ul  class="ds-share-icons-16">
                         <li data-toggle="ds-share-icons-more"><a class="ds-more" href="#">分享到：</a></li>
@@ -237,19 +266,19 @@
                     </div>
                 <hr>
                 </div>
-                <!-- 多少 Share end-->
+                <!-- 多说 Share end-->
                 
 
 
                 <ul class="pager">
                     
                     <li class="previous">
-                        <a href="/drearming.github.com/2015/05/25/js-module-loader/" data-toggle="tooltip" data-placement="top" title="Example Post with Code Highlight">&larr; Previous Post</a>
+                        <a href="/drearming.github.com/2016/10/15/android/" data-toggle="tooltip" data-placement="top" title="消息队列机制">&larr; Previous Post</a>
                     </li>
                     
                     
                     <li class="next">
-                        <a href="/drearming.github.com/2015/09/22/js-version/" data-toggle="tooltip" data-placement="top" title="Example Post">Next Post &rarr;</a>
+                        <a href="/drearming.github.com/2017/01/03/Java_virtual_machine/" data-toggle="tooltip" data-placement="top" title="Java虚拟机全面了解">Next Post &rarr;</a>
                     </li>
                     
                 </ul>
@@ -259,9 +288,9 @@
                 <!-- 多说评论框 start -->
                 <div class="comment">
                     <div class="ds-thread"
-                        data-thread-key="/2015/07/09/js-module-7day"
-                        data-title="Example Post using Keynote Layout"
-                        data-url="http://localhost:4000/drearming.github.com/2015/07/09/js-module-7day/" >
+                        data-thread-key="/2016/11/02/java-hashmap"
+                        data-title="从源码去了解HashMap"
+                        data-url="http://localhost:4000/drearming.github.com/2016/11/02/java-hashmap/" >
                     </div>
                 </div>
                 <!-- 多说评论框 end -->
@@ -271,10 +300,11 @@
 
             </div>
 
-            <!-- Sidebar Container -->
-            <div class="sidebar-container
+    <!-- Sidebar Container -->
+            <div class="
                 col-lg-8 col-lg-offset-2
-                col-md-10 col-md-offset-1 ">
+                col-md-10 col-md-offset-1
+                sidebar-container">
 
                 <!-- Featured Tags -->
                 
@@ -282,46 +312,46 @@
                     <hr class="hidden-sm hidden-xs">
                     <h5><a href="/tags/">FEATURED TAGS</a></h5>
                     <div class="tags">
-                        
+        				
                             
-                        
+        				
                             
-                                <a href="/drearming.github.com/tags/#Android" title="Android" rel="3">
+                				<a href="/drearming.github.com/tags/#Android" title="Android" rel="3">
                                     Android
                                 </a>
                             
-                        
+        				
                             
-                                <a href="/drearming.github.com/tags/#Java" title="Java" rel="4">
+                				<a href="/drearming.github.com/tags/#Java" title="Java" rel="4">
                                     Java
                                 </a>
                             
-                        
+        				
                             
-                        
+        				
                             
-                                <a href="/drearming.github.com/tags/#前端开发" title="前端开发" rel="3">
+                				<a href="/drearming.github.com/tags/#前端开发" title="前端开发" rel="3">
                                     前端开发
                                 </a>
                             
-                        
+        				
                             
-                                <a href="/drearming.github.com/tags/#JavaScript" title="JavaScript" rel="3">
+                				<a href="/drearming.github.com/tags/#JavaScript" title="JavaScript" rel="3">
                                     JavaScript
                                 </a>
                             
-                        
+        				
                             
-                        
+        				
                             
-                        
+        				
                             
-                        
+        				
                             
-                        
+        				
                             
-                        
-                    </div>
+        				
+        			</div>
                 </section>
                 
 
@@ -347,29 +377,6 @@
         </div>
     </div>
 </article>
-
-<!-- resize header to fullscreen keynotes -->
-<script>
-    var $header = document.getElementsByTagName("header")[0];
-    function resize(){
-        /*
-         * leave 85px to both
-         * - told/imply users that there has more content below
-         * - let user can scroll in mobile device, seeing the keynote-view is unscrollable
-         */
-        $header.style.height = (window.innerHeight-85) + 'px';
-    }
-    document.addEventListener('DOMContentLoaded', function(){
-        resize();
-    })
-    window.addEventListener('load', function(){
-        resize();
-    })
-    window.addEventListener('resize', function(){
-        resize();
-    })
-    resize();
-</script>
 
 
 <!-- 多说公共JS代码 start (一个网页只需插入一次) -->

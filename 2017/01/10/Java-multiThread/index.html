@@ -1,0 +1,1431 @@
+<!DOCTYPE html>
+
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="google-site-verification" content="xBT4GhYoi5qRD5tr338pgPM5OWHHIDR6mNg1a3euekI" />
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="So live a life you will remember">
+    <meta name="keyword"  content="Android Java Web">
+    <link rel="shortcut icon" href="/drearming.github.com/img/favicon.ico">
+
+    <title>Java 多线程详解 - 陈俊杰 | MVCoder</title>
+
+    <link rel="canonical" href="http://localhost:4000/drearming.github.com/2017/01/10/Java-multiThread/">
+
+    <!-- Bootstrap Core CSS -->
+    <link rel="stylesheet" href="/drearming.github.com/css/bootstrap.min.css">
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="/drearming.github.com/css/hux-blog.min.css">
+
+    <!-- Pygments Github CSS -->
+    <link rel="stylesheet" href="/drearming.github.com/css/syntax.css">
+
+    <!-- Custom Fonts -->
+    <!-- <link href="http://maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css" rel="stylesheet" type="text/css"> -->
+    <!-- Hux change font-awesome CDN to qiniu -->
+    <link href="http://cdn.staticfile.org/font-awesome/4.2.0/css/font-awesome.min.css" rel="stylesheet" type="text/css">
+
+
+    <!-- Hux Delete, sad but pending in China
+    <link href='http://fonts.googleapis.com/css?family=Lora:400,700,400italic,700italic' rel='stylesheet' type='text/css'>
+    <link href='http://fonts.googleapis.com/css?family=Open+Sans:300italic,400italic,600italic,700italic,800italic,400,300,600,700,800' rel='stylesheet' type='text/
+    css'>
+    -->
+
+
+    <!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
+    <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
+    <!--[if lt IE 9]>
+        <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+        <script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
+    <![endif]-->
+
+    <!-- ga & ba script hoook -->
+    <script></script>
+</head>
+
+
+<!-- hack iOS CSS :active style -->
+<body ontouchstart="">
+
+    <!-- Navigation -->
+<nav class="navbar navbar-default navbar-custom navbar-fixed-top">
+    <div class="container-fluid">
+        <!-- Brand and toggle get grouped for better mobile display -->
+        <div class="navbar-header page-scroll">
+            <button type="button" class="navbar-toggle">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+            <a class="navbar-brand" href="/drearming.github.com/">MVCoder Blog</a>
+        </div>
+
+        <!-- Collect the nav links, forms, and other content for toggling -->
+        <!-- Known Issue, found by Hux:
+            <nav>'s height woule be hold on by its content.
+            so, when navbar scale out, the <nav> will cover tags.
+            also mask any touch event of tags, unfortunately.
+        -->
+        <div id="huxblog_navbar">
+            <div class="navbar-collapse">
+                <ul class="nav navbar-nav navbar-right">
+                    <li>
+                        <a href="/drearming.github.com/">Home</a>
+                    </li>
+                    
+                    <li>
+                        <a href="/drearming.github.com/about/">About</a>
+                    </li>
+                    
+                    <li>
+                        <a href="/drearming.github.com/tags/">Tags</a>
+                    </li>
+                    
+                </ul>
+            </div>
+        </div>
+        <!-- /.navbar-collapse -->
+    </div>
+    <!-- /.container -->
+</nav>
+<script>
+    // Drop Bootstarp low-performance Navbar
+    // Use customize navbar with high-quality material design animation
+    // in high-perf jank-free CSS3 implementation
+    var $body   = document.body;
+    var $toggle = document.querySelector('.navbar-toggle');
+    var $navbar = document.querySelector('#huxblog_navbar');
+    var $collapse = document.querySelector('.navbar-collapse');
+
+    $toggle.addEventListener('click', handleMagic)
+    function handleMagic(e){
+        if ($navbar.className.indexOf('in') > 0) {
+        // CLOSE
+            $navbar.className = " ";
+            // wait until animation end.
+            setTimeout(function(){
+                // prevent frequently toggle
+                if($navbar.className.indexOf('in') < 0) {
+                    $collapse.style.height = "0px"
+                }
+            },400)
+        }else{
+        // OPEN
+            $collapse.style.height = "auto"
+            $navbar.className += " in";
+        }
+    }
+</script>
+
+
+    <!-- Image to hack wechat -->
+<!-- <img src="/img/icon_wechat.png" width="0" height="0"> -->
+<!-- <img src="/drearming.github.com/img/post-bg-2015.jpg" width="0" height="0"> -->
+
+<!-- Post Header -->
+<style type="text/css">
+    header.intro-header{
+        background-image: url('/drearming.github.com/img/post-bg-2015.jpg')
+    }
+</style>
+<header class="intro-header" >
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+                <div class="post-heading">
+                    <div class="tags">
+                        
+                        <a class="tag" href="/drearming.github.com/tags/#Java" title="Java">Java</a>
+                        
+                        <a class="tag" href="/drearming.github.com/tags/#多线程" title="多线程">多线程</a>
+                        
+                    </div>
+                    <h1>Java 多线程详解</h1>
+                    
+                    
+                    <h2 class="subheading">涉及ThreadLocal，同步机制，CAS，BlockingQueue等</h2>
+                    
+                    <span class="meta">Posted by MVCoder on January 10, 2017</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</header>
+
+<!-- Post Content -->
+<article>
+    <div class="container">
+        <div class="row">
+
+    <!-- Post Container -->
+            <div class="
+                col-lg-8 col-lg-offset-2
+                col-md-10 col-md-offset-1
+                post-container">
+
+				<h2 id="多线程">多线程</h2>
+
+<h3 id="threadlocal">ThreadLocal</h3>
+
+<p>ThreadLocal，其机制是每一条线程都拥有一个ThreadLocalMap的公有属性，调用get或者set方法，就会确认当前是哪条线程？比如是A线程，通过getMap方法，获取A线程的ThreadLocalMap的变量，然后通过ThreadLocal作为key值存取Value</p>
+
+<figure class="highlight"><pre><code class="language-java" data-lang="java">	<span class="c1">//使用ThreadLocal，每一条线程都可以通过这个ThreadLocal获取到对应线程中存储的值</span>
+	<span class="n">ThreadLocal</span><span class="o">&lt;</span><span class="n">Integer</span><span class="o">&gt;</span> <span class="n">localValue</span> <span class="o">=</span> <span class="k">new</span> <span class="n">ThreadLocal</span><span class="o">&lt;</span><span class="n">Integer</span><span class="o">&gt;(){</span>
+        <span class="nd">@Override</span>
+        <span class="kd">protected</span> <span class="n">Integer</span> <span class="nf">initialValue</span><span class="o">()</span> <span class="o">{</span>
+            <span class="k">return</span> <span class="kd">super</span><span class="o">.</span><span class="na">initialValue</span><span class="o">();</span>
+        <span class="o">}</span>
+    <span class="o">};</span>
+
+
+	<span class="c1">//ThreadLocal源代码</span>
+
+	<span class="kd">public</span> <span class="n">T</span> <span class="nf">get</span><span class="o">()</span> <span class="o">{</span>
+        <span class="n">Thread</span> <span class="n">t</span> <span class="o">=</span> <span class="n">Thread</span><span class="o">.</span><span class="na">currentThread</span><span class="o">();</span>
+        <span class="n">ThreadLocalMap</span> <span class="n">map</span> <span class="o">=</span> <span class="n">getMap</span><span class="o">(</span><span class="n">t</span><span class="o">);</span>
+        <span class="k">if</span> <span class="o">(</span><span class="n">map</span> <span class="o">!=</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span>
+            <span class="n">ThreadLocalMap</span><span class="o">.</span><span class="na">Entry</span> <span class="n">e</span> <span class="o">=</span> <span class="n">map</span><span class="o">.</span><span class="na">getEntry</span><span class="o">(</span><span class="k">this</span><span class="o">);</span>
+            <span class="k">if</span> <span class="o">(</span><span class="n">e</span> <span class="o">!=</span> <span class="kc">null</span><span class="o">)</span>
+                <span class="k">return</span> <span class="o">(</span><span class="n">T</span><span class="o">)</span><span class="n">e</span><span class="o">.</span><span class="na">value</span><span class="o">;</span>
+        <span class="o">}</span>
+        <span class="k">return</span> <span class="nf">setInitialValue</span><span class="o">();</span>
+    <span class="o">}</span>
+
+	<span class="c1">//获取当前线程的ThreadLocalMap public变量</span>
+	<span class="n">ThreadLocalMap</span> <span class="nf">getMap</span><span class="o">(</span><span class="n">Thread</span> <span class="n">t</span><span class="o">)</span> <span class="o">{</span>
+        <span class="k">return</span> <span class="n">t</span><span class="o">.</span><span class="na">threadLocals</span><span class="o">;</span>
+    <span class="o">}</span>
+
+	<span class="c1">//当前线程的ThreadLocalMap如果为null的话，就new一个对象给它，并且把初始值initialValue() 赋值到这个map中</span>
+
+	<span class="kd">private</span> <span class="n">T</span> <span class="nf">setInitialValue</span><span class="o">()</span> <span class="o">{</span>
+        <span class="n">T</span> <span class="n">value</span> <span class="o">=</span> <span class="n">initialValue</span><span class="o">();</span>
+        <span class="n">Thread</span> <span class="n">t</span> <span class="o">=</span> <span class="n">Thread</span><span class="o">.</span><span class="na">currentThread</span><span class="o">();</span>
+        <span class="n">ThreadLocalMap</span> <span class="n">map</span> <span class="o">=</span> <span class="n">getMap</span><span class="o">(</span><span class="n">t</span><span class="o">);</span>
+        <span class="k">if</span> <span class="o">(</span><span class="n">map</span> <span class="o">!=</span> <span class="kc">null</span><span class="o">)</span>
+            <span class="n">map</span><span class="o">.</span><span class="na">set</span><span class="o">(</span><span class="k">this</span><span class="o">,</span> <span class="n">value</span><span class="o">);</span>
+        <span class="k">else</span>
+            <span class="nf">createMap</span><span class="o">(</span><span class="n">t</span><span class="o">,</span> <span class="n">value</span><span class="o">);</span>
+        <span class="k">return</span> <span class="n">value</span><span class="o">;</span>
+    <span class="o">}</span>
+
+	<span class="c1">//这个map是以ThreadLoal对象作为key值存取数据的</span>
+	 <span class="kd">public</span> <span class="kt">void</span> <span class="nf">set</span><span class="o">(</span><span class="n">T</span> <span class="n">value</span><span class="o">)</span> <span class="o">{</span>
+        <span class="n">Thread</span> <span class="n">t</span> <span class="o">=</span> <span class="n">Thread</span><span class="o">.</span><span class="na">currentThread</span><span class="o">();</span>
+        <span class="n">ThreadLocalMap</span> <span class="n">map</span> <span class="o">=</span> <span class="n">getMap</span><span class="o">(</span><span class="n">t</span><span class="o">);</span>
+        <span class="k">if</span> <span class="o">(</span><span class="n">map</span> <span class="o">!=</span> <span class="kc">null</span><span class="o">)</span>
+            <span class="n">map</span><span class="o">.</span><span class="na">set</span><span class="o">(</span><span class="k">this</span><span class="o">,</span> <span class="n">value</span><span class="o">);</span>
+        <span class="k">else</span>
+            <span class="nf">createMap</span><span class="o">(</span><span class="n">t</span><span class="o">,</span> <span class="n">value</span><span class="o">);</span>
+    <span class="o">}</span></code></pre></figure>
+
+<p><strong>同步共享方面</strong></p>
+
+<p>Java中的synchronized是一个保留字,它依靠JVM的锁机制来实现临界区的函数或者变量的访问中的原子性.在同步机制中,通过对象的锁机制保证同一时间只有一个线程访问变量.此时,被用作“锁机制”的变量是多个线程共享的；</p>
+
+<p>而ThreadLocal会为每一个线程维护一个和该线程绑定的变量的副本，从而隔离了多个线程的数据，每一个线程都拥有自己的变量副本，从而也就没有必要对该变量进行同步了。　 　</p>
+
+<p><strong>使用场合</strong></p>
+
+<p>同步机制是为了同步多个线程对相同资源的并发访问，是为了多个线程之间进行通信的有效方式。</p>
+
+<p>而ThreadLocal是隔离多个线程的数据共享，从根本上就不在多个线程之间共享资源（变量），这样当然不需要对多个线程进行同步了。</p>
+
+<p>所以，如果你需要进行多个线程之间进行通信，则使用同步机制。如果需要隔离多个线程之间的共享冲突，可以使用ThreadLocal。</p>
+
+<h2 id="excutor线程池">Excutor线程池</h2>
+
+<p><a href="http://www.cnblogs.com/dolphin0520/p/3932921.html">参考博客</a></p>
+
+<p>这个类是出现在concurrent包里的，通过它可以很方便的管理Thread对象，避免频繁创建线程对象，消耗时间，从而简化并发编程；</p>
+
+<p>ExcutorService(具有服务生命周期的Excutor)知道如何构建恰当的上下文来如何运行Runnable对象。 可以通过Executord的静态方法获取</p>
+
+<figure class="highlight"><pre><code class="language-java" data-lang="java">	<span class="c1">//这个线程池会为每一个任务都创建一条线程</span>
+	<span class="n">ExecutorService</span> <span class="n">exec</span> <span class="o">=</span> <span class="n">Executor</span><span class="o">.</span><span class="na">newCacheThreadPool</span><span class="o">();</span>
+
+	<span class="c1">//创建一个指定线程数量的线程池</span>
+	<span class="n">ExecutorService</span> <span class="n">exec</span> <span class="o">=</span> <span class="n">Executor</span><span class="o">.</span><span class="na">newFixedThreadPool</span><span class="o">(</span><span class="kt">int</span><span class="o">);</span>
+
+	<span class="c1">//创建只有一条线程的线程池，但是提交到这个线程池的所有任务，将会排队执行</span>
+	<span class="n">ExecutorService</span> <span class="n">exec</span> <span class="o">=</span> <span class="n">Executor</span><span class="o">.</span><span class="na">newSingleThreadPool</span><span class="o">();</span>
+
+	<span class="c1">//调用此方法后，不再接收Runnable的提交，并且会在线程池中所有任务都完成后马上退出</span>
+	<span class="n">exec</span><span class="o">.</span><span class="na">shutDown</span><span class="o">()</span> 
+
+	<span class="c1">//立刻结束当前线程池的所有任务，还在运行中的任务则会抛出InteruptException；</span>
+	<span class="n">exec</span><span class="o">.</span><span class="na">shutDownNow</span><span class="o">();</span>
+
+	<span class="c1">//执行任务Runnable，无返回值</span>
+	<span class="n">exec</span><span class="o">.</span><span class="na">execute</span><span class="o">(</span><span class="n">Runnable</span><span class="o">)</span>
+
+	<span class="c1">//执行任务Callable，返回线程运行结果</span>
+	<span class="n">Future</span><span class="o">&lt;</span><span class="n">T</span><span class="o">&gt;</span> <span class="n">exec</span><span class="o">.</span><span class="na">submit</span><span class="o">(</span><span class="n">Callable</span><span class="o">&lt;</span><span class="n">T</span><span class="o">&gt;</span> <span class="o">);</span>
+
+<span class="err">用法：</span>
+
+	<span class="kd">public</span> <span class="kd">class</span> <span class="nc">ExecutorTest</span> <span class="o">{</span>
+
+	<span class="kd">public</span> <span class="kd">static</span> <span class="kt">void</span> <span class="nf">main</span><span class="o">(</span><span class="n">String</span><span class="o">[]</span> <span class="n">args</span><span class="o">)</span> <span class="kd">throws</span> <span class="n">InterruptedException</span> <span class="o">{</span>
+		<span class="n">ArrayList</span><span class="o">&lt;</span><span class="n">Future</span><span class="o">&lt;</span><span class="n">String</span><span class="o">&gt;&gt;</span> <span class="n">list</span> <span class="o">=</span> <span class="k">new</span> <span class="n">ArrayList</span><span class="o">&lt;&gt;();</span>
+		<span class="n">ExecutorService</span> <span class="n">exec</span> <span class="o">=</span> <span class="n">Executors</span><span class="o">.</span><span class="na">newCachedThreadPool</span><span class="o">();</span>
+		<span class="k">for</span> <span class="o">(</span><span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="o">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="mi">5</span><span class="o">;</span> <span class="n">i</span><span class="o">++)</span> <span class="o">{</span>
+			<span class="n">list</span><span class="o">.</span><span class="na">add</span><span class="o">(</span><span class="n">exec</span><span class="o">.</span><span class="na">submit</span><span class="o">(</span><span class="k">new</span> <span class="n">CallbackTest</span><span class="o">(</span><span class="n">i</span> <span class="o">+</span> <span class="s">""</span><span class="o">)));</span>
+		<span class="o">}</span>
+		<span class="k">for</span> <span class="o">(</span><span class="n">Future</span><span class="o">&lt;</span><span class="n">String</span><span class="o">&gt;</span> <span class="n">item</span> <span class="o">:</span> <span class="n">list</span><span class="o">)</span> <span class="o">{</span>
+			<span class="k">try</span> <span class="o">{</span>
+				<span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="s">"NO: "</span> <span class="o">+</span> <span class="n">item</span><span class="o">.</span><span class="na">get</span><span class="o">());</span>
+			<span class="o">}</span> <span class="k">catch</span> <span class="o">(</span><span class="n">InterruptedException</span> <span class="n">e</span><span class="o">)</span> <span class="o">{</span>
+				<span class="c1">// TODO Auto-generated catch block</span>
+				<span class="n">e</span><span class="o">.</span><span class="na">printStackTrace</span><span class="o">();</span>
+			<span class="o">}</span> <span class="k">catch</span> <span class="o">(</span><span class="n">ExecutionException</span> <span class="n">e</span><span class="o">)</span> <span class="o">{</span>
+				<span class="c1">// TODO Auto-generated catch block</span>
+				<span class="n">e</span><span class="o">.</span><span class="na">printStackTrace</span><span class="o">();</span>
+			<span class="o">}</span>
+		<span class="o">}</span>
+		<span class="n">TimeUnit</span><span class="o">.</span><span class="na">SECONDS</span><span class="o">.</span><span class="na">sleep</span><span class="o">(</span><span class="mi">2000</span><span class="o">);</span>
+		<span class="n">exec</span><span class="o">.</span><span class="na">shutdownNow</span><span class="o">();</span>
+	<span class="o">}</span>
+
+	<span class="o">}</span>
+
+	<span class="kd">class</span> <span class="nc">CallbackTest</span> <span class="kd">implements</span> <span class="n">Callable</span><span class="o">&lt;</span><span class="n">String</span><span class="o">&gt;</span> <span class="o">{</span>
+	<span class="kd">public</span> <span class="n">String</span> <span class="n">result</span><span class="o">;</span>
+
+	<span class="kd">public</span> <span class="nf">CallbackTest</span><span class="o">(</span><span class="n">String</span> <span class="n">s</span><span class="o">)</span> <span class="o">{</span>
+		<span class="c1">// TODO Auto-generated constructor stub</span>
+		<span class="n">result</span> <span class="o">=</span> <span class="n">s</span><span class="o">;</span>
+	<span class="o">}</span>
+
+	<span class="nd">@Override</span>
+	<span class="kd">public</span> <span class="n">String</span> <span class="nf">call</span><span class="o">()</span> <span class="kd">throws</span> <span class="n">Exception</span> <span class="o">{</span>
+		<span class="c1">// TODO Auto-generated method stub</span>
+		<span class="k">return</span> <span class="n">result</span><span class="o">;</span>
+	<span class="o">}</span>
+	<span class="o">}</span></code></pre></figure>
+
+<p>线程池的最核心类是： <strong>ThreadPoolExecutor</strong></p>
+
+<p>这个类有几个比较重要的属性，关乎整个线程池的运作</p>
+
+<ul>
+  <li>
+    <p>corePoolSize：核心池的大小，这个参数跟后面讲述的线程池的实现原理有非常大的关系。在创建了线程池后，默认情况下，线程池中并没有任何线程，而是等待有任务到来才创建线程去执行任务，除非调用了prestartAllCoreThreads()或者prestartCoreThread()方法，从这2个方法的名字就可以看出，是预创建线程的意思，即在没有任务到来之前就创建corePoolSize个线程或者一个线程。默认情况下，在创建了线程池后，线程池中的线程数为0，当有任务来之后，就会创建一个线程去执行任务，当线程池中的线程数目达到corePoolSize后，就会把到达的任务放到缓存队列当中；</p>
+  </li>
+  <li>
+    <p>maximumPoolSize：线程池最大线程数，这个参数也是一个非常重要的参数，它表示在线程池中最多能创建多少个线程；</p>
+  </li>
+  <li>
+    <p>keepAliveTime：表示线程没有任务执行时最多保持多久时间会终止。默认情况下，只有当线程池中的线程数大于corePoolSize时，keepAliveTime才会起作用，直到线程池中的线程数不大于corePoolSize，即当线程池中的线程数大于corePoolSize时，如果一个线程空闲的时间达到keepAliveTime，则会终止，直到线程池中的线程数不超过corePoolSize。但是如果调用了allowCoreThreadTimeOut(boolean)方法，在线程池中的线程数不大于corePoolSize时，keepAliveTime参数也会起作用，直到线程池中的线程数为0；</p>
+  </li>
+  <li>
+    <p>unit：参数keepAliveTime的时间单位，有7种取值，在TimeUnit类中有7种静态属性：</p>
+  </li>
+</ul>
+
+<p>这四个是属于构造ThreadPoolExecutor的必要参数；</p>
+
+<p>每个变量的作用都已经标明出来了，这里要重点解释一下corePoolSize、maximumPoolSize 两个变量。</p>
+
+<p>corePoolSize在很多地方被翻译成核心池大小，其实我的理解这个就是线程池的大小。举个简单的例子：</p>
+
+<p>假如有一个工厂，工厂里面有10个工人，每个工人同时只能做一件任务。</p>
+
+<p>因此只要当10个工人中有工人是空闲的，来了任务就分配给空闲的工人做；</p>
+
+<p>当10个工人都有任务在做时，如果还来了任务，就把任务进行排队等待；</p>
+
+<p>如果说新任务数目增长的速度远远大于工人做任务的速度，那么此时工厂主管可能会想补救措施，比如重新招4个临时工人进来；</p>
+
+<p>然后就将任务也分配给这4个临时工人做；</p>
+
+<p>如果说着14个工人做任务的速度还是不够，此时工厂主管可能就要考虑不再接收新的任务或者抛弃前面的一些任务了。</p>
+
+<p>当这14个工人当中有人空闲时，而新任务增长的速度又比较缓慢，工厂主管可能就考虑辞掉4个临时工了，只保持原来的10个工人，毕竟请额外的工人是要花钱的。</p>
+
+<p>这个例子中的corePoolSize就是10，而maximumPoolSize就是14（10+4）。</p>
+
+<p>也就是说corePoolSize就是线程池大小，maximumPoolSize在我看来是线程池的一种补救措施，即任务量突然过大时的一种补救措施。</p>
+
+<p>不过为了方便理解，在本文后面还是将corePoolSize翻译成核心池大小。</p>
+
+<p>largestPoolSize只是一个用来起记录作用的变量，用来记录线程池中曾经有过的最大线程数目，跟线程池的容量没有任何关系。</p>
+
+<p>所以就是说：</p>
+
+<ol>
+  <li>当poolSize(当前线程池的线程数量) &lt; corePoolSize 时，就会创建线程来执行任务</li>
+  <li>当poolsize &gt;= corePoolSize时，就会将任务添加到 BlockingQueue中，由运行的线程不断读取，直到BlockingQueue中没有线程后，超过keepAliveTime时间或者调用shutdown()方法后，线程被打断</li>
+  <li>当poolSize&gt;=corePoolSize时，BlockingQueue也满了，则会拒绝接受任务；当调用shutdown后也会拒绝接受任务</li>
+</ol>
+
+<p>线程池负责管理众多线程，所以有自己的状态：包括运行状态，shutdown状态，stop状态，terminal状态</p>
+
+<p>ThreadPoolExecutor是通过一个原子类AtomicInteger来保存线程池的状态的</p>
+
+<p>运行状态：会接受 task，线程也在轮循读取BlockingQueue中的task
+shutdown：当调用shutdown方法后，进入这个状态，线程池会<strong>尽快执行完所有任务后，退出</strong>
+stop：当调用shutdownNow方法后，进入这个状态，<strong>线程池会立刻打断任务，退出</strong>
+terminal：当线程池中没有可执行的任务后，会进入这个状态</p>
+
+<p>添加一个任务，最终都是汇到execute方法</p>
+
+<figure class="highlight"><pre><code class="language-java" data-lang="java">	 <span class="kd">public</span> <span class="kt">void</span> <span class="nf">execute</span><span class="o">(</span><span class="n">Runnable</span> <span class="n">command</span><span class="o">)</span> <span class="o">{</span>
+        <span class="k">if</span> <span class="o">(</span><span class="n">command</span> <span class="o">==</span> <span class="kc">null</span><span class="o">)</span>
+            <span class="k">throw</span> <span class="k">new</span> <span class="nf">NullPointerException</span><span class="o">();</span>
+		<span class="c1">//获取当前的状态</span>
+		<span class="kt">int</span> <span class="n">c</span> <span class="o">=</span> <span class="n">ctl</span><span class="o">.</span><span class="na">get</span><span class="o">();</span>
+
+		<span class="c1">//当前线程数少于CorePoolSize时，会创建线程执行Runnable</span>
+        <span class="k">if</span> <span class="o">(</span><span class="n">workerCountOf</span><span class="o">(</span><span class="n">c</span><span class="o">)</span> <span class="o">&lt;</span> <span class="n">corePoolSize</span><span class="o">)</span> <span class="o">{</span>
+            <span class="k">if</span> <span class="o">(</span><span class="n">addWorker</span><span class="o">(</span><span class="n">command</span><span class="o">,</span> <span class="kc">true</span><span class="o">))</span>
+                <span class="k">return</span><span class="o">;</span>
+            <span class="n">c</span> <span class="o">=</span> <span class="n">ctl</span><span class="o">.</span><span class="na">get</span><span class="o">();</span>
+        <span class="o">}</span>
+
+		<span class="c1">//基于线程数 &gt;= corePoolSize，当前线程池属于Running状态时，将Runnable对象添加到BlockingQueue中</span>
+        <span class="k">if</span> <span class="o">(</span><span class="n">isRunning</span><span class="o">(</span><span class="n">c</span><span class="o">)</span> <span class="o">&amp;&amp;</span> <span class="n">workQueue</span><span class="o">.</span><span class="na">offer</span><span class="o">(</span><span class="n">command</span><span class="o">))</span> <span class="o">{</span>
+            <span class="kt">int</span> <span class="n">recheck</span> <span class="o">=</span> <span class="n">ctl</span><span class="o">.</span><span class="na">get</span><span class="o">();</span>
+            <span class="k">if</span> <span class="o">(!</span> <span class="n">isRunning</span><span class="o">(</span><span class="n">recheck</span><span class="o">)</span> <span class="o">&amp;&amp;</span> <span class="n">remove</span><span class="o">(</span><span class="n">command</span><span class="o">))</span>
+                <span class="n">reject</span><span class="o">(</span><span class="n">command</span><span class="o">);</span>
+            <span class="k">else</span> <span class="nf">if</span> <span class="o">(</span><span class="n">workerCountOf</span><span class="o">(</span><span class="n">recheck</span><span class="o">)</span> <span class="o">==</span> <span class="mi">0</span><span class="o">)</span>
+                <span class="n">addWorker</span><span class="o">(</span><span class="kc">null</span><span class="o">,</span> <span class="kc">false</span><span class="o">);</span>
+        <span class="o">}</span>
+        <span class="k">else</span> <span class="nf">if</span> <span class="o">(!</span><span class="n">addWorker</span><span class="o">(</span><span class="n">command</span><span class="o">,</span> <span class="kc">false</span><span class="o">))</span>
+            <span class="n">reject</span><span class="o">(</span><span class="n">command</span><span class="o">);</span>
+    <span class="o">}</span>
+
+	
+	<span class="c1">//addwordk</span>
+
+	<span class="kd">private</span> <span class="kt">boolean</span> <span class="nf">addWorker</span><span class="o">(</span><span class="n">Runnable</span> <span class="n">firstTask</span><span class="o">,</span> <span class="kt">boolean</span> <span class="n">core</span><span class="o">)</span> <span class="o">{</span>
+        <span class="nl">retry:</span>
+        <span class="k">for</span> <span class="o">(;;)</span> <span class="o">{</span>
+            <span class="kt">int</span> <span class="n">c</span> <span class="o">=</span> <span class="n">ctl</span><span class="o">.</span><span class="na">get</span><span class="o">();</span>
+            <span class="kt">int</span> <span class="n">rs</span> <span class="o">=</span> <span class="n">runStateOf</span><span class="o">(</span><span class="n">c</span><span class="o">);</span>
+
+            <span class="c1">// Check if queue empty only if necessary.</span>
+            <span class="k">if</span> <span class="o">(</span><span class="n">rs</span> <span class="o">&gt;=</span> <span class="n">SHUTDOWN</span> <span class="o">&amp;&amp;</span>
+                <span class="o">!</span> <span class="o">(</span><span class="n">rs</span> <span class="o">==</span> <span class="n">SHUTDOWN</span> <span class="o">&amp;&amp;</span>
+                   <span class="n">firstTask</span> <span class="o">==</span> <span class="kc">null</span> <span class="o">&amp;&amp;</span>
+                   <span class="o">!</span> <span class="n">workQueue</span><span class="o">.</span><span class="na">isEmpty</span><span class="o">()))</span>
+                <span class="k">return</span> <span class="kc">false</span><span class="o">;</span>
+
+            <span class="k">for</span> <span class="o">(;;)</span> <span class="o">{</span>
+                <span class="kt">int</span> <span class="n">wc</span> <span class="o">=</span> <span class="n">workerCountOf</span><span class="o">(</span><span class="n">c</span><span class="o">);</span>
+                <span class="k">if</span> <span class="o">(</span><span class="n">wc</span> <span class="o">&gt;=</span> <span class="n">CAPACITY</span> <span class="o">||</span>
+                    <span class="n">wc</span> <span class="o">&gt;=</span> <span class="o">(</span><span class="n">core</span> <span class="o">?</span> <span class="n">corePoolSize</span> <span class="o">:</span> <span class="n">maximumPoolSize</span><span class="o">))</span>
+                    <span class="k">return</span> <span class="kc">false</span><span class="o">;</span>
+                <span class="k">if</span> <span class="o">(</span><span class="n">compareAndIncrementWorkerCount</span><span class="o">(</span><span class="n">c</span><span class="o">))</span>
+                    <span class="k">break</span> <span class="n">retry</span><span class="o">;</span>
+                <span class="n">c</span> <span class="o">=</span> <span class="n">ctl</span><span class="o">.</span><span class="na">get</span><span class="o">();</span>  <span class="c1">// Re-read ctl</span>
+                <span class="k">if</span> <span class="o">(</span><span class="n">runStateOf</span><span class="o">(</span><span class="n">c</span><span class="o">)</span> <span class="o">!=</span> <span class="n">rs</span><span class="o">)</span>
+                    <span class="k">continue</span> <span class="n">retry</span><span class="o">;</span>
+                <span class="c1">// else CAS failed due to workerCount change; retry inner loop</span>
+            <span class="o">}</span>
+        <span class="o">}</span>
+
+        <span class="kt">boolean</span> <span class="n">workerStarted</span> <span class="o">=</span> <span class="kc">false</span><span class="o">;</span>
+        <span class="kt">boolean</span> <span class="n">workerAdded</span> <span class="o">=</span> <span class="kc">false</span><span class="o">;</span>
+        <span class="n">Worker</span> <span class="n">w</span> <span class="o">=</span> <span class="kc">null</span><span class="o">;</span>
+        <span class="k">try</span> <span class="o">{</span>
+            <span class="n">w</span> <span class="o">=</span> <span class="k">new</span> <span class="n">Worker</span><span class="o">(</span><span class="n">firstTask</span><span class="o">);</span>
+            <span class="kd">final</span> <span class="n">Thread</span> <span class="n">t</span> <span class="o">=</span> <span class="n">w</span><span class="o">.</span><span class="na">thread</span><span class="o">;</span>
+            <span class="k">if</span> <span class="o">(</span><span class="n">t</span> <span class="o">!=</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span>
+                <span class="kd">final</span> <span class="n">ReentrantLock</span> <span class="n">mainLock</span> <span class="o">=</span> <span class="k">this</span><span class="o">.</span><span class="na">mainLock</span><span class="o">;</span>
+                <span class="n">mainLock</span><span class="o">.</span><span class="na">lock</span><span class="o">();</span>
+                <span class="k">try</span> <span class="o">{</span>
+                    <span class="c1">// Recheck while holding lock.</span>
+                    <span class="c1">// Back out on ThreadFactory failure or if</span>
+                    <span class="c1">// shut down before lock acquired.</span>
+                    <span class="kt">int</span> <span class="n">rs</span> <span class="o">=</span> <span class="n">runStateOf</span><span class="o">(</span><span class="n">ctl</span><span class="o">.</span><span class="na">get</span><span class="o">());</span>
+
+                    <span class="k">if</span> <span class="o">(</span><span class="n">rs</span> <span class="o">&lt;</span> <span class="n">SHUTDOWN</span> <span class="o">||</span>
+                        <span class="o">(</span><span class="n">rs</span> <span class="o">==</span> <span class="n">SHUTDOWN</span> <span class="o">&amp;&amp;</span> <span class="n">firstTask</span> <span class="o">==</span> <span class="kc">null</span><span class="o">))</span> <span class="o">{</span>
+                        <span class="k">if</span> <span class="o">(</span><span class="n">t</span><span class="o">.</span><span class="na">isAlive</span><span class="o">())</span> <span class="c1">// precheck that t is startable</span>
+                            <span class="k">throw</span> <span class="k">new</span> <span class="nf">IllegalThreadStateException</span><span class="o">();</span>
+                        <span class="n">workers</span><span class="o">.</span><span class="na">add</span><span class="o">(</span><span class="n">w</span><span class="o">);</span>
+                        <span class="kt">int</span> <span class="n">s</span> <span class="o">=</span> <span class="n">workers</span><span class="o">.</span><span class="na">size</span><span class="o">();</span>
+                        <span class="k">if</span> <span class="o">(</span><span class="n">s</span> <span class="o">&gt;</span> <span class="n">largestPoolSize</span><span class="o">)</span>
+                            <span class="n">largestPoolSize</span> <span class="o">=</span> <span class="n">s</span><span class="o">;</span>
+                        <span class="n">workerAdded</span> <span class="o">=</span> <span class="kc">true</span><span class="o">;</span>
+                    <span class="o">}</span>
+                <span class="o">}</span> <span class="k">finally</span> <span class="o">{</span>
+                    <span class="n">mainLock</span><span class="o">.</span><span class="na">unlock</span><span class="o">();</span>
+                <span class="o">}</span>
+                <span class="k">if</span> <span class="o">(</span><span class="n">workerAdded</span><span class="o">)</span> <span class="o">{</span>
+                    <span class="n">t</span><span class="o">.</span><span class="na">start</span><span class="o">();</span>
+                    <span class="n">workerStarted</span> <span class="o">=</span> <span class="kc">true</span><span class="o">;</span>
+                <span class="o">}</span>
+            <span class="o">}</span>
+        <span class="o">}</span> <span class="k">finally</span> <span class="o">{</span>
+            <span class="k">if</span> <span class="o">(!</span> <span class="n">workerStarted</span><span class="o">)</span>
+                <span class="n">addWorkerFailed</span><span class="o">(</span><span class="n">w</span><span class="o">);</span>
+        <span class="o">}</span>
+        <span class="k">return</span> <span class="n">workerStarted</span><span class="o">;</span>
+    <span class="o">}</span>
+
+	<span class="c1">//Worker类</span>
+
+	<span class="kd">private</span> <span class="kd">final</span> <span class="kd">class</span> <span class="nc">Worker</span>
+        <span class="kd">extends</span> <span class="n">AbstractQueuedSynchronizer</span>
+        <span class="kd">implements</span> <span class="n">Runnable</span>
+    <span class="o">{</span>
+        <span class="cm">/**
+         * This class will never be serialized, but we provide a
+         * serialVersionUID to suppress a javac warning.
+         */</span>
+        <span class="kd">private</span> <span class="kd">static</span> <span class="kd">final</span> <span class="kt">long</span> <span class="n">serialVersionUID</span> <span class="o">=</span> <span class="mi">6138294804551838833L</span><span class="o">;</span>
+
+        <span class="cm">/** Thread this worker is running in.  Null if factory fails. */</span>
+        <span class="kd">final</span> <span class="n">Thread</span> <span class="n">thread</span><span class="o">;</span>
+        <span class="cm">/** Initial task to run.  Possibly null. */</span>
+        <span class="n">Runnable</span> <span class="n">firstTask</span><span class="o">;</span>
+        <span class="cm">/** Per-thread task counter */</span>
+        <span class="kd">volatile</span> <span class="kt">long</span> <span class="n">completedTasks</span><span class="o">;</span>
+
+        <span class="cm">/**
+         * Creates with given first task and thread from ThreadFactory.
+         * @param firstTask the first task (null if none)
+         */</span>
+        <span class="n">Worker</span><span class="o">(</span><span class="n">Runnable</span> <span class="n">firstTask</span><span class="o">)</span> <span class="o">{</span>
+            <span class="n">setState</span><span class="o">(-</span><span class="mi">1</span><span class="o">);</span> <span class="c1">// inhibit interrupts until runWorker</span>
+            <span class="k">this</span><span class="o">.</span><span class="na">firstTask</span> <span class="o">=</span> <span class="n">firstTask</span><span class="o">;</span>
+            <span class="k">this</span><span class="o">.</span><span class="na">thread</span> <span class="o">=</span> <span class="n">getThreadFactory</span><span class="o">().</span><span class="na">newThread</span><span class="o">(</span><span class="k">this</span><span class="o">);</span>
+        <span class="o">}</span>
+
+        <span class="cm">/** Delegates main run loop to outer runWorker  */</span>
+        <span class="kd">public</span> <span class="kt">void</span> <span class="nf">run</span><span class="o">()</span> <span class="o">{</span>
+            <span class="n">runWorker</span><span class="o">(</span><span class="k">this</span><span class="o">);</span>
+        <span class="o">}</span>
+
+        <span class="c1">// Lock methods</span>
+        <span class="c1">//</span>
+        <span class="c1">// The value 0 represents the unlocked state.</span>
+        <span class="c1">// The value 1 represents the locked state.</span>
+
+        <span class="kd">protected</span> <span class="kt">boolean</span> <span class="nf">isHeldExclusively</span><span class="o">()</span> <span class="o">{</span>
+            <span class="k">return</span> <span class="nf">getState</span><span class="o">()</span> <span class="o">!=</span> <span class="mi">0</span><span class="o">;</span>
+        <span class="o">}</span>
+
+        <span class="kd">protected</span> <span class="kt">boolean</span> <span class="nf">tryAcquire</span><span class="o">(</span><span class="kt">int</span> <span class="n">unused</span><span class="o">)</span> <span class="o">{</span>
+            <span class="k">if</span> <span class="o">(</span><span class="n">compareAndSetState</span><span class="o">(</span><span class="mi">0</span><span class="o">,</span> <span class="mi">1</span><span class="o">))</span> <span class="o">{</span>
+                <span class="n">setExclusiveOwnerThread</span><span class="o">(</span><span class="n">Thread</span><span class="o">.</span><span class="na">currentThread</span><span class="o">());</span>
+                <span class="k">return</span> <span class="kc">true</span><span class="o">;</span>
+            <span class="o">}</span>
+            <span class="k">return</span> <span class="kc">false</span><span class="o">;</span>
+        <span class="o">}</span>
+
+        <span class="kd">protected</span> <span class="kt">boolean</span> <span class="nf">tryRelease</span><span class="o">(</span><span class="kt">int</span> <span class="n">unused</span><span class="o">)</span> <span class="o">{</span>
+            <span class="n">setExclusiveOwnerThread</span><span class="o">(</span><span class="kc">null</span><span class="o">);</span>
+            <span class="n">setState</span><span class="o">(</span><span class="mi">0</span><span class="o">);</span>
+            <span class="k">return</span> <span class="kc">true</span><span class="o">;</span>
+        <span class="o">}</span>
+
+        <span class="kd">public</span> <span class="kt">void</span> <span class="nf">lock</span><span class="o">()</span>        <span class="o">{</span> <span class="n">acquire</span><span class="o">(</span><span class="mi">1</span><span class="o">);</span> <span class="o">}</span>
+        <span class="kd">public</span> <span class="kt">boolean</span> <span class="nf">tryLock</span><span class="o">()</span>  <span class="o">{</span> <span class="k">return</span> <span class="n">tryAcquire</span><span class="o">(</span><span class="mi">1</span><span class="o">);</span> <span class="o">}</span>
+        <span class="kd">public</span> <span class="kt">void</span> <span class="nf">unlock</span><span class="o">()</span>      <span class="o">{</span> <span class="n">release</span><span class="o">(</span><span class="mi">1</span><span class="o">);</span> <span class="o">}</span>
+        <span class="kd">public</span> <span class="kt">boolean</span> <span class="nf">isLocked</span><span class="o">()</span> <span class="o">{</span> <span class="k">return</span> <span class="n">isHeldExclusively</span><span class="o">();</span> <span class="o">}</span>
+
+        <span class="kt">void</span> <span class="nf">interruptIfStarted</span><span class="o">()</span> <span class="o">{</span>
+            <span class="n">Thread</span> <span class="n">t</span><span class="o">;</span>
+            <span class="k">if</span> <span class="o">(</span><span class="n">getState</span><span class="o">()</span> <span class="o">&gt;=</span> <span class="mi">0</span> <span class="o">&amp;&amp;</span> <span class="o">(</span><span class="n">t</span> <span class="o">=</span> <span class="n">thread</span><span class="o">)</span> <span class="o">!=</span> <span class="kc">null</span> <span class="o">&amp;&amp;</span> <span class="o">!</span><span class="n">t</span><span class="o">.</span><span class="na">isInterrupted</span><span class="o">())</span> <span class="o">{</span>
+                <span class="k">try</span> <span class="o">{</span>
+                    <span class="n">t</span><span class="o">.</span><span class="na">interrupt</span><span class="o">();</span>
+                <span class="o">}</span> <span class="k">catch</span> <span class="o">(</span><span class="n">SecurityException</span> <span class="n">ignore</span><span class="o">)</span> <span class="o">{</span>
+                <span class="o">}</span>
+            <span class="o">}</span>
+        <span class="o">}</span>
+    <span class="o">}</span>
+
+	<span class="c1">//runWorker方法</span>
+	<span class="kd">final</span> <span class="kt">void</span> <span class="nf">runWorker</span><span class="o">(</span><span class="n">Worker</span> <span class="n">w</span><span class="o">)</span> <span class="o">{</span>
+        <span class="n">Thread</span> <span class="n">wt</span> <span class="o">=</span> <span class="n">Thread</span><span class="o">.</span><span class="na">currentThread</span><span class="o">();</span>
+        <span class="n">Runnable</span> <span class="n">task</span> <span class="o">=</span> <span class="n">w</span><span class="o">.</span><span class="na">firstTask</span><span class="o">;</span>
+        <span class="n">w</span><span class="o">.</span><span class="na">firstTask</span> <span class="o">=</span> <span class="kc">null</span><span class="o">;</span>
+        <span class="n">w</span><span class="o">.</span><span class="na">unlock</span><span class="o">();</span> <span class="c1">// allow interrupts</span>
+        <span class="kt">boolean</span> <span class="n">completedAbruptly</span> <span class="o">=</span> <span class="kc">true</span><span class="o">;</span>
+        <span class="k">try</span> <span class="o">{</span>
+			<span class="c1">//不断读取BlockQueue中的任务</span>
+            <span class="k">while</span> <span class="o">(</span><span class="n">task</span> <span class="o">!=</span> <span class="kc">null</span> <span class="o">||</span> <span class="o">(</span><span class="n">task</span> <span class="o">=</span> <span class="n">getTask</span><span class="o">())</span> <span class="o">!=</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span>
+                <span class="n">w</span><span class="o">.</span><span class="na">lock</span><span class="o">();</span>
+                <span class="c1">// If pool is stopping, ensure thread is interrupted;</span>
+                <span class="c1">// if not, ensure thread is not interrupted.  This</span>
+                <span class="c1">// requires a recheck in second case to deal with</span>
+                <span class="c1">// shutdownNow race while clearing interrupt</span>
+                <span class="k">if</span> <span class="o">((</span><span class="n">runStateAtLeast</span><span class="o">(</span><span class="n">ctl</span><span class="o">.</span><span class="na">get</span><span class="o">(),</span> <span class="n">STOP</span><span class="o">)</span> <span class="o">||</span>
+                     <span class="o">(</span><span class="n">Thread</span><span class="o">.</span><span class="na">interrupted</span><span class="o">()</span> <span class="o">&amp;&amp;</span>
+                      <span class="n">runStateAtLeast</span><span class="o">(</span><span class="n">ctl</span><span class="o">.</span><span class="na">get</span><span class="o">(),</span> <span class="n">STOP</span><span class="o">)))</span> <span class="o">&amp;&amp;</span>
+                    <span class="o">!</span><span class="n">wt</span><span class="o">.</span><span class="na">isInterrupted</span><span class="o">())</span>
+                    <span class="n">wt</span><span class="o">.</span><span class="na">interrupt</span><span class="o">();</span>
+                <span class="k">try</span> <span class="o">{</span>
+                    <span class="n">beforeExecute</span><span class="o">(</span><span class="n">wt</span><span class="o">,</span> <span class="n">task</span><span class="o">);</span>
+                    <span class="n">Throwable</span> <span class="n">thrown</span> <span class="o">=</span> <span class="kc">null</span><span class="o">;</span>
+                    <span class="k">try</span> <span class="o">{</span>
+                        <span class="n">task</span><span class="o">.</span><span class="na">run</span><span class="o">();</span>
+                    <span class="o">}</span> <span class="k">catch</span> <span class="o">(</span><span class="n">RuntimeException</span> <span class="n">x</span><span class="o">)</span> <span class="o">{</span>
+                        <span class="n">thrown</span> <span class="o">=</span> <span class="n">x</span><span class="o">;</span> <span class="k">throw</span> <span class="n">x</span><span class="o">;</span>
+                    <span class="o">}</span> <span class="k">catch</span> <span class="o">(</span><span class="n">Error</span> <span class="n">x</span><span class="o">)</span> <span class="o">{</span>
+                        <span class="n">thrown</span> <span class="o">=</span> <span class="n">x</span><span class="o">;</span> <span class="k">throw</span> <span class="n">x</span><span class="o">;</span>
+                    <span class="o">}</span> <span class="k">catch</span> <span class="o">(</span><span class="n">Throwable</span> <span class="n">x</span><span class="o">)</span> <span class="o">{</span>
+                        <span class="n">thrown</span> <span class="o">=</span> <span class="n">x</span><span class="o">;</span> <span class="k">throw</span> <span class="k">new</span> <span class="n">Error</span><span class="o">(</span><span class="n">x</span><span class="o">);</span>
+                    <span class="o">}</span> <span class="k">finally</span> <span class="o">{</span>
+                        <span class="n">afterExecute</span><span class="o">(</span><span class="n">task</span><span class="o">,</span> <span class="n">thrown</span><span class="o">);</span>
+                    <span class="o">}</span>
+                <span class="o">}</span> <span class="k">finally</span> <span class="o">{</span>
+                    <span class="n">task</span> <span class="o">=</span> <span class="kc">null</span><span class="o">;</span>
+                    <span class="n">w</span><span class="o">.</span><span class="na">completedTasks</span><span class="o">++;</span>
+                    <span class="n">w</span><span class="o">.</span><span class="na">unlock</span><span class="o">();</span>
+                <span class="o">}</span>
+            <span class="o">}</span>
+            <span class="n">completedAbruptly</span> <span class="o">=</span> <span class="kc">false</span><span class="o">;</span>
+        <span class="o">}</span> <span class="k">finally</span> <span class="o">{</span>
+            <span class="n">processWorkerExit</span><span class="o">(</span><span class="n">w</span><span class="o">,</span> <span class="n">completedAbruptly</span><span class="o">);</span>
+        <span class="o">}</span>
+    <span class="o">}</span></code></pre></figure>
+
+<h3 id="futuret">Future&lt;T&gt;</h3>
+
+<p>当我们调用线程池的submit方法时，会返回一个Future对象，我们可以通过它获取返回结果，这个机制是如何实现的呢？</p>
+
+<figure class="highlight"><pre><code class="language-java" data-lang="java">	<span class="c1">//当我们调用了submit方法时，我们提交的task被封装成了FutureTask对象(实现了RunnableFuture接口)</span>
+	<span class="kd">public</span> <span class="n">Future</span><span class="o">&lt;?&gt;</span> <span class="n">submit</span><span class="o">(</span><span class="n">Runnable</span> <span class="n">task</span><span class="o">)</span> <span class="o">{</span>
+        <span class="k">if</span> <span class="o">(</span><span class="n">task</span> <span class="o">==</span> <span class="kc">null</span><span class="o">)</span> <span class="k">throw</span> <span class="k">new</span> <span class="n">NullPointerException</span><span class="o">();</span>
+        <span class="n">RunnableFuture</span><span class="o">&lt;</span><span class="n">Void</span><span class="o">&gt;</span> <span class="n">ftask</span> <span class="o">=</span> <span class="n">newTaskFor</span><span class="o">(</span><span class="n">task</span><span class="o">,</span> <span class="kc">null</span><span class="o">);</span>
+        <span class="n">execute</span><span class="o">(</span><span class="n">ftask</span><span class="o">);</span>
+        <span class="k">return</span> <span class="n">ftask</span><span class="o">;</span>
+    <span class="o">}</span>
+
+	 <span class="kd">protected</span> <span class="o">&lt;</span><span class="n">T</span><span class="o">&gt;</span> <span class="n">RunnableFuture</span><span class="o">&lt;</span><span class="n">T</span><span class="o">&gt;</span> <span class="nf">newTaskFor</span><span class="o">(</span><span class="n">Runnable</span> <span class="n">runnable</span><span class="o">,</span> <span class="n">T</span> <span class="n">value</span><span class="o">)</span> <span class="o">{</span>
+        <span class="k">return</span> <span class="k">new</span> <span class="n">FutureTask</span><span class="o">&lt;</span><span class="n">T</span><span class="o">&gt;(</span><span class="n">runnable</span><span class="o">,</span> <span class="n">value</span><span class="o">);</span>
+    <span class="o">}</span>
+
+	<span class="c1">//futureTask有两个重要的对象，组合了 Runnable对象 和 一个用于任务执行完毕返回的//Object</span>
+	<span class="kd">public</span> <span class="nf">FutureTask</span><span class="o">(</span><span class="n">Runnable</span> <span class="n">runnable</span><span class="o">,</span> <span class="n">V</span> <span class="n">result</span><span class="o">)</span> <span class="o">{</span>
+        <span class="k">this</span><span class="o">.</span><span class="na">callable</span> <span class="o">=</span> <span class="n">Executors</span><span class="o">.</span><span class="na">callable</span><span class="o">(</span><span class="n">runnable</span><span class="o">,</span> <span class="n">result</span><span class="o">);</span>
+        <span class="k">this</span><span class="o">.</span><span class="na">state</span> <span class="o">=</span> <span class="n">NEW</span><span class="o">;</span>       <span class="c1">// ensure visibility of callable</span>
+    <span class="o">}</span>
+
+	<span class="c1">//FutureTask的run方法，我们调用了Callable的call方法后，得到一个结果对象，存储好</span>
+	<span class="kd">public</span> <span class="kt">void</span> <span class="nf">run</span><span class="o">()</span> <span class="o">{</span>
+        <span class="k">if</span> <span class="o">(</span><span class="n">state</span> <span class="o">!=</span> <span class="n">NEW</span> <span class="o">||</span>
+            <span class="o">!</span><span class="n">UNSAFE</span><span class="o">.</span><span class="na">compareAndSwapObject</span><span class="o">(</span><span class="k">this</span><span class="o">,</span> <span class="n">runnerOffset</span><span class="o">,</span>
+                                         <span class="kc">null</span><span class="o">,</span> <span class="n">Thread</span><span class="o">.</span><span class="na">currentThread</span><span class="o">()))</span>
+            <span class="k">return</span><span class="o">;</span>
+        <span class="k">try</span> <span class="o">{</span>
+            <span class="n">Callable</span><span class="o">&lt;</span><span class="n">V</span><span class="o">&gt;</span> <span class="n">c</span> <span class="o">=</span> <span class="n">callable</span><span class="o">;</span>
+            <span class="k">if</span> <span class="o">(</span><span class="n">c</span> <span class="o">!=</span> <span class="kc">null</span> <span class="o">&amp;&amp;</span> <span class="n">state</span> <span class="o">==</span> <span class="n">NEW</span><span class="o">)</span> <span class="o">{</span>
+                <span class="n">V</span> <span class="n">result</span><span class="o">;</span>
+                <span class="kt">boolean</span> <span class="n">ran</span><span class="o">;</span>
+                <span class="k">try</span> <span class="o">{</span>
+                    <span class="n">result</span> <span class="o">=</span> <span class="n">c</span><span class="o">.</span><span class="na">call</span><span class="o">();</span>
+                    <span class="n">ran</span> <span class="o">=</span> <span class="kc">true</span><span class="o">;</span>
+                <span class="o">}</span> <span class="k">catch</span> <span class="o">(</span><span class="n">Throwable</span> <span class="n">ex</span><span class="o">)</span> <span class="o">{</span>
+                    <span class="n">result</span> <span class="o">=</span> <span class="kc">null</span><span class="o">;</span>
+                    <span class="n">ran</span> <span class="o">=</span> <span class="kc">false</span><span class="o">;</span>
+                    <span class="n">setException</span><span class="o">(</span><span class="n">ex</span><span class="o">);</span>
+                <span class="o">}</span>
+                <span class="k">if</span> <span class="o">(</span><span class="n">ran</span><span class="o">)</span>
+                    <span class="n">set</span><span class="o">(</span><span class="n">result</span><span class="o">);</span>
+            <span class="o">}</span>
+        <span class="o">}</span> <span class="k">finally</span> <span class="o">{</span>
+            <span class="c1">// runner must be non-null until state is settled to</span>
+            <span class="c1">// prevent concurrent calls to run()</span>
+            <span class="n">runner</span> <span class="o">=</span> <span class="kc">null</span><span class="o">;</span>
+            <span class="c1">// state must be re-read after nulling runner to prevent</span>
+            <span class="c1">// leaked interrupts</span>
+            <span class="kt">int</span> <span class="n">s</span> <span class="o">=</span> <span class="n">state</span><span class="o">;</span>
+            <span class="k">if</span> <span class="o">(</span><span class="n">s</span> <span class="o">&gt;=</span> <span class="n">INTERRUPTING</span><span class="o">)</span>
+                <span class="n">handlePossibleCancellationInterrupt</span><span class="o">(</span><span class="n">s</span><span class="o">);</span>
+        <span class="o">}</span>
+    <span class="o">}</span>
+	
+	
+
+	<span class="kd">public</span> <span class="kd">interface</span> <span class="nc">RunnableFuture</span><span class="o">&lt;</span><span class="n">V</span><span class="o">&gt;</span> <span class="kd">extends</span> <span class="n">Runnable</span><span class="o">,</span> <span class="n">Future</span><span class="o">&lt;</span><span class="n">V</span><span class="o">&gt;</span> <span class="o">{</span>
+    <span class="cm">/**
+     * Sets this Future to the result of its computation
+     * unless it has been cancelled.
+     */</span>
+    <span class="kt">void</span> <span class="nf">run</span><span class="o">();</span>
+	<span class="o">}</span></code></pre></figure>
+
+<p>因为RunnableFuture对象实现了Future接口，所以当调用get方法获取返回结果时，如果FutureTask的的已经处于运行结束状态，就可以获取到结果，否则就会进行循环等待，知道任务结束，将状态改变，才退出循环，把结果返回。。  <strong>是通过运行状态来确保线程安全</strong></p>
+
+<figure class="highlight"><pre><code class="language-java" data-lang="java">	<span class="kd">public</span> <span class="n">V</span> <span class="nf">get</span><span class="o">()</span> <span class="kd">throws</span> <span class="n">InterruptedException</span><span class="o">,</span> <span class="n">ExecutionException</span> <span class="o">{</span>
+        <span class="kt">int</span> <span class="n">s</span> <span class="o">=</span> <span class="n">state</span><span class="o">;</span>
+        <span class="k">if</span> <span class="o">(</span><span class="n">s</span> <span class="o">&lt;=</span> <span class="n">COMPLETING</span><span class="o">)</span>
+            <span class="n">s</span> <span class="o">=</span> <span class="n">awaitDone</span><span class="o">(</span><span class="kc">false</span><span class="o">,</span> <span class="mi">0L</span><span class="o">);</span>
+        <span class="k">return</span> <span class="nf">report</span><span class="o">(</span><span class="n">s</span><span class="o">);</span>
+    <span class="o">}</span>
+
+	<span class="kd">private</span> <span class="n">V</span> <span class="nf">report</span><span class="o">(</span><span class="kt">int</span> <span class="n">s</span><span class="o">)</span> <span class="kd">throws</span> <span class="n">ExecutionException</span> <span class="o">{</span>
+        <span class="n">Object</span> <span class="n">x</span> <span class="o">=</span> <span class="n">outcome</span><span class="o">;</span>
+        <span class="k">if</span> <span class="o">(</span><span class="n">s</span> <span class="o">==</span> <span class="n">NORMAL</span><span class="o">)</span>
+            <span class="k">return</span> <span class="o">(</span><span class="n">V</span><span class="o">)</span><span class="n">x</span><span class="o">;</span>
+        <span class="k">if</span> <span class="o">(</span><span class="n">s</span> <span class="o">&gt;=</span> <span class="n">CANCELLED</span><span class="o">)</span>
+            <span class="k">throw</span> <span class="k">new</span> <span class="nf">CancellationException</span><span class="o">();</span>
+        <span class="k">throw</span> <span class="k">new</span> <span class="nf">ExecutionException</span><span class="o">((</span><span class="n">Throwable</span><span class="o">)</span><span class="n">x</span><span class="o">);</span>
+    <span class="o">}</span>
+
+	<span class="c1">//循环确认当前线程状态</span>
+	<span class="kd">private</span> <span class="kt">int</span> <span class="nf">awaitDone</span><span class="o">(</span><span class="kt">boolean</span> <span class="n">timed</span><span class="o">,</span> <span class="kt">long</span> <span class="n">nanos</span><span class="o">)</span>
+        <span class="kd">throws</span> <span class="n">InterruptedException</span> <span class="o">{</span>
+        <span class="kd">final</span> <span class="kt">long</span> <span class="n">deadline</span> <span class="o">=</span> <span class="n">timed</span> <span class="o">?</span> <span class="n">System</span><span class="o">.</span><span class="na">nanoTime</span><span class="o">()</span> <span class="o">+</span> <span class="n">nanos</span> <span class="o">:</span> <span class="mi">0L</span><span class="o">;</span>
+        <span class="n">WaitNode</span> <span class="n">q</span> <span class="o">=</span> <span class="kc">null</span><span class="o">;</span>
+        <span class="kt">boolean</span> <span class="n">queued</span> <span class="o">=</span> <span class="kc">false</span><span class="o">;</span>
+        <span class="k">for</span> <span class="o">(;;)</span> <span class="o">{</span>
+            <span class="k">if</span> <span class="o">(</span><span class="n">Thread</span><span class="o">.</span><span class="na">interrupted</span><span class="o">())</span> <span class="o">{</span>
+                <span class="n">removeWaiter</span><span class="o">(</span><span class="n">q</span><span class="o">);</span>
+                <span class="k">throw</span> <span class="k">new</span> <span class="nf">InterruptedException</span><span class="o">();</span>
+            <span class="o">}</span>
+
+            <span class="kt">int</span> <span class="n">s</span> <span class="o">=</span> <span class="n">state</span><span class="o">;</span>
+            <span class="k">if</span> <span class="o">(</span><span class="n">s</span> <span class="o">&gt;</span> <span class="n">COMPLETING</span><span class="o">)</span> <span class="o">{</span>
+                <span class="k">if</span> <span class="o">(</span><span class="n">q</span> <span class="o">!=</span> <span class="kc">null</span><span class="o">)</span>
+                    <span class="n">q</span><span class="o">.</span><span class="na">thread</span> <span class="o">=</span> <span class="kc">null</span><span class="o">;</span>
+                <span class="k">return</span> <span class="n">s</span><span class="o">;</span>
+            <span class="o">}</span>
+            <span class="k">else</span> <span class="nf">if</span> <span class="o">(</span><span class="n">s</span> <span class="o">==</span> <span class="n">COMPLETING</span><span class="o">)</span> <span class="c1">// cannot time out yet</span>
+                <span class="n">Thread</span><span class="o">.</span><span class="na">yield</span><span class="o">();</span>
+            <span class="k">else</span> <span class="nf">if</span> <span class="o">(</span><span class="n">q</span> <span class="o">==</span> <span class="kc">null</span><span class="o">)</span>
+                <span class="n">q</span> <span class="o">=</span> <span class="k">new</span> <span class="n">WaitNode</span><span class="o">();</span>
+            <span class="k">else</span> <span class="nf">if</span> <span class="o">(!</span><span class="n">queued</span><span class="o">)</span>
+                <span class="n">queued</span> <span class="o">=</span> <span class="n">UNSAFE</span><span class="o">.</span><span class="na">compareAndSwapObject</span><span class="o">(</span><span class="k">this</span><span class="o">,</span> <span class="n">waitersOffset</span><span class="o">,</span>
+                                                     <span class="n">q</span><span class="o">.</span><span class="na">next</span> <span class="o">=</span> <span class="n">waiters</span><span class="o">,</span> <span class="n">q</span><span class="o">);</span>
+            <span class="k">else</span> <span class="nf">if</span> <span class="o">(</span><span class="n">timed</span><span class="o">)</span> <span class="o">{</span>
+                <span class="n">nanos</span> <span class="o">=</span> <span class="n">deadline</span> <span class="o">-</span> <span class="n">System</span><span class="o">.</span><span class="na">nanoTime</span><span class="o">();</span>
+                <span class="k">if</span> <span class="o">(</span><span class="n">nanos</span> <span class="o">&lt;=</span> <span class="mi">0L</span><span class="o">)</span> <span class="o">{</span>
+                    <span class="n">removeWaiter</span><span class="o">(</span><span class="n">q</span><span class="o">);</span>
+                    <span class="k">return</span> <span class="n">state</span><span class="o">;</span>
+                <span class="o">}</span>
+                <span class="n">LockSupport</span><span class="o">.</span><span class="na">parkNanos</span><span class="o">(</span><span class="k">this</span><span class="o">,</span> <span class="n">nanos</span><span class="o">);</span>
+            <span class="o">}</span>
+            <span class="k">else</span>
+                <span class="n">LockSupport</span><span class="o">.</span><span class="na">park</span><span class="o">(</span><span class="k">this</span><span class="o">);</span>
+        <span class="o">}</span>
+    <span class="o">}</span></code></pre></figure>
+
+<p>##死锁</p>
+
+<p>死锁要满足下面四种情况：</p>
+
+<ol>
+  <li>互斥条件，任务使用的资源至少有一个是不能共享的。 例如哲学家问题中的一根筷子，一根筷子只能由一个philosopher拥有</li>
+  <li>至少有一个任务它必须持有一个资源，并且正在等待获取一个由其他线程线程持有的资源，例如哲学家中的 一个哲学家持有一根筷子，还等待其他哲学家的一根筷子</li>
+  <li>资源不能抢占。即必须等待其他线程释放资源，才能占有，不能抢占资源。就像哲学家很有礼貌，不会抢占其他哲学家中手上的筷子</li>
+  <li>必须有循环等待，一个任务等待其他任务所持有的资源，后者又等待另一个任务持有的资源。这样一直下去，又到最后一个任务等待第一个任务手上的资源，使得大家都被锁住了。</li>
+</ol>
+
+<p>避免死锁，只要破坏上述四种条件任一一种即可，我们常常通过破坏第四个条件来避免死锁</p>
+
+<p>#Concurrent包</p>
+
+<p>##CountDownLatch</p>
+
+<p>这个多线程工具类的作用是：同步一个或多个任务，强制它们等待一个或多个任务的结束后运行</p>
+
+<p>就好像跑步一样，裁判等待所有运动员准备好后才会开枪，所有跑步运动员都需要等到裁判开枪后才能跑。因此，每位运动员准备好，都要告诉裁判，然后等待起跑指令。假如所有运动员准备好了，裁判员开枪后，运动员就开始跑</p>
+
+<p>程序代码如下：</p>
+
+<figure class="highlight"><pre><code class="language-java" data-lang="java">	
+
+	<span class="kd">class</span> <span class="nc">CountDownTest</span> <span class="o">{</span>
+	<span class="kd">static</span> <span class="n">AtomicInteger</span> <span class="n">sort</span> <span class="o">=</span> <span class="k">new</span> <span class="n">AtomicInteger</span><span class="o">(</span><span class="mi">0</span><span class="o">);</span>
+	<span class="kd">private</span> <span class="kd">static</span> <span class="n">CountDownLatch</span> <span class="n">count</span><span class="o">;</span>
+	<span class="kd">public</span> <span class="kd">static</span> <span class="kt">void</span> <span class="nf">main</span><span class="o">(</span><span class="n">String</span><span class="o">[]</span> <span class="n">args</span><span class="o">)</span> <span class="o">{</span>
+		<span class="kt">int</span> <span class="n">size</span> <span class="o">=</span> <span class="mi">4</span><span class="o">;</span>
+		<span class="n">count</span> <span class="o">=</span> <span class="k">new</span> <span class="n">CountDownLatch</span><span class="o">(</span><span class="n">size</span><span class="o">);</span>
+		<span class="n">ExecutorService</span> <span class="n">exec</span> <span class="o">=</span> <span class="n">Executors</span><span class="o">.</span><span class="na">newCachedThreadPool</span><span class="o">();</span>
+		<span class="k">for</span><span class="o">(</span><span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span> <span class="o">;</span> <span class="n">i</span><span class="o">&lt;</span><span class="n">size</span> <span class="o">;</span> <span class="n">i</span><span class="o">++){</span>
+			<span class="n">exec</span><span class="o">.</span><span class="na">execute</span><span class="o">(</span><span class="k">new</span> <span class="n">Runner</span><span class="o">(</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="o">,</span><span class="n">count</span><span class="o">,</span><span class="n">sort</span><span class="o">));</span>
+		<span class="o">}</span>
+		<span class="k">try</span> <span class="o">{</span>
+			<span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="s">"裁判：各就位，预备，跑。。。"</span><span class="o">);</span>
+			<span class="n">count</span><span class="o">.</span><span class="na">await</span><span class="o">();</span>
+			<span class="n">TimeUnit</span><span class="o">.</span><span class="na">SECONDS</span><span class="o">.</span><span class="na">sleep</span><span class="o">(</span><span class="mi">10</span><span class="o">);</span>
+		<span class="o">}</span> <span class="k">catch</span> <span class="o">(</span><span class="n">InterruptedException</span> <span class="n">e</span><span class="o">)</span> <span class="o">{</span>
+			<span class="c1">// TODO Auto-generated catch block</span>
+			<span class="n">e</span><span class="o">.</span><span class="na">printStackTrace</span><span class="o">();</span>
+		<span class="o">}</span>
+		
+		<span class="n">exec</span><span class="o">.</span><span class="na">shutdown</span><span class="o">();</span>
+		
+	<span class="o">}</span>
+	<span class="o">}</span>
+
+	<span class="kd">class</span> <span class="nc">Runner</span> <span class="kd">implements</span> <span class="n">Runnable</span><span class="o">{</span>
+
+	<span class="kd">private</span> <span class="n">CountDownLatch</span> <span class="n">count</span><span class="o">;</span>
+	<span class="kd">private</span> <span class="kt">long</span> <span class="n">id</span><span class="o">;</span>
+	<span class="kd">private</span> <span class="n">AtomicInteger</span> <span class="n">sort</span><span class="o">;</span>
+	<span class="kd">public</span> <span class="nf">Runner</span><span class="o">(</span><span class="kt">long</span> <span class="n">id</span><span class="o">,</span><span class="n">CountDownLatch</span> <span class="n">latch</span><span class="o">,</span><span class="n">AtomicInteger</span> <span class="n">sort</span><span class="o">)</span> <span class="o">{</span>
+		<span class="c1">// TODO Auto-generated constructor stub</span>
+		<span class="k">this</span><span class="o">.</span><span class="na">id</span> <span class="o">=</span> <span class="n">id</span><span class="o">;</span>
+		<span class="n">count</span> <span class="o">=</span> <span class="n">latch</span><span class="o">;</span>
+		<span class="k">this</span><span class="o">.</span><span class="na">sort</span> <span class="o">=</span> <span class="n">sort</span><span class="o">;</span>
+	<span class="o">}</span>
+	<span class="nd">@Override</span>
+	<span class="kd">public</span> <span class="kt">void</span> <span class="nf">run</span><span class="o">()</span> <span class="o">{</span>
+		<span class="c1">// TODO Auto-generated method stub</span>
+		<span class="n">count</span><span class="o">.</span><span class="na">countDown</span><span class="o">();</span>
+		<span class="k">try</span> <span class="o">{</span>
+			<span class="n">TimeUnit</span><span class="o">.</span><span class="na">SECONDS</span><span class="o">.</span><span class="na">sleep</span><span class="o">(</span><span class="mi">3</span><span class="o">);</span>
+			<span class="kd">synchronized</span> <span class="o">(</span><span class="n">sort</span><span class="o">)</span> <span class="o">{</span>
+				<span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="s">"NO "</span><span class="o">+</span><span class="n">id</span><span class="o">+</span><span class="s">" : 到达终点。。。第"</span> <span class="o">+</span> <span class="n">sort</span><span class="o">.</span><span class="na">incrementAndGet</span><span class="o">()</span> <span class="o">+</span> <span class="s">"名"</span><span class="o">);</span>
+			<span class="o">}</span>
+		<span class="o">}</span> <span class="k">catch</span> <span class="o">(</span><span class="n">InterruptedException</span> <span class="n">e</span><span class="o">)</span> <span class="o">{</span>
+			<span class="c1">// TODO Auto-generated catch block</span>
+			<span class="n">e</span><span class="o">.</span><span class="na">printStackTrace</span><span class="o">();</span>
+		<span class="o">}</span>
+	<span class="o">}</span>
+	<span class="o">}</span></code></pre></figure>
+
+<p>调用await方法的线程，如果countDownLatch内部的计数器不为0时，就会阻塞。我们一般在初始时给CountDownLatch指定一个整数作为计数器的值，每一次调用countDown()方法后就会减1，直到为0，当CountDownLatch为0时，调用await方法进入阻塞状态的，立刻被唤醒</p>
+
+<p>##CyclicBarrier</p>
+
+<p>CyclicBarrier适用于这种情况：当你创建一组任务，他们并行地执行工作，然后在进行下一个步骤之前等待，直到所有任务都完成(所有任务都达到栅栏点)。 跟CountDownLatch非常像，只不过CountDownLatch只能触发一次的事件，而CyclicBarrier可以多次重用</p>
+
+<figure class="highlight"><pre><code class="language-java" data-lang="java">	<span class="kd">public</span> <span class="kd">class</span> <span class="nc">CyclicBarrierTest</span> <span class="o">{</span>
+	
+	<span class="kd">private</span> <span class="kd">static</span> <span class="kd">final</span> <span class="kt">int</span> <span class="n">threadNums</span> <span class="o">=</span> <span class="mi">5</span><span class="o">;</span>
+	<span class="kd">private</span> <span class="kd">static</span> <span class="n">ArrayList</span><span class="o">&lt;</span><span class="n">SoldCount</span><span class="o">&gt;</span> <span class="n">list</span><span class="o">;</span>
+	<span class="kd">private</span> <span class="kd">static</span> <span class="n">CountDownLatch</span> <span class="n">latch</span> <span class="o">=</span> <span class="k">new</span> <span class="n">CountDownLatch</span><span class="o">(</span><span class="mi">1</span><span class="o">);</span>
+	
+	<span class="kd">public</span> <span class="kd">static</span> <span class="kt">void</span> <span class="nf">main</span><span class="o">(</span><span class="n">String</span><span class="o">[]</span> <span class="n">args</span><span class="o">)</span> <span class="o">{</span>
+		<span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="s">"统计集团销售余额。。"</span><span class="o">);</span>
+		<span class="n">ExecutorService</span> <span class="n">exec</span> <span class="o">=</span> <span class="n">Executors</span><span class="o">.</span><span class="na">newCachedThreadPool</span><span class="o">();</span>
+		<span class="c1">//当有threadNums等待时，会调用Runnable里面的run方法，同时run方法调用完毕后，</span>
+		<span class="c1">//会重复上述步骤，如果继续有threadnums的线程await它，继续调用run方法</span>
+		<span class="n">CyclicBarrier</span> <span class="n">barrier</span> <span class="o">=</span> <span class="k">new</span> <span class="n">CyclicBarrier</span><span class="o">(</span><span class="n">threadNums</span><span class="o">,</span> <span class="k">new</span> <span class="n">Runnable</span><span class="o">()</span> <span class="o">{</span>
+			
+			<span class="kd">private</span> <span class="kt">int</span> <span class="n">total</span> <span class="o">=</span> <span class="mi">0</span><span class="o">;</span>
+			<span class="kd">private</span> <span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">1</span><span class="o">;</span>
+			
+			<span class="nd">@Override</span>
+			<span class="kd">public</span> <span class="kt">void</span> <span class="nf">run</span><span class="o">()</span> <span class="o">{</span>
+				<span class="c1">// TODO Auto-generated method stub</span>
+				<span class="kt">int</span> <span class="n">sum</span> <span class="o">=</span> <span class="mi">0</span> <span class="o">;</span>
+				<span class="k">for</span><span class="o">(</span><span class="n">SoldCount</span> <span class="nl">item:</span><span class="n">list</span><span class="o">){</span>
+					<span class="n">sum</span><span class="o">+=</span><span class="n">item</span><span class="o">.</span><span class="na">count</span><span class="o">();</span>
+				<span class="o">}</span>
+				<span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="s">"根据各子公司汇总所得，"</span><span class="o">+</span><span class="s">"第"</span><span class="o">+</span><span class="n">i</span><span class="o">+</span><span class="s">"季度"</span><span class="o">+</span><span class="s">"总销售额为："</span><span class="o">+</span><span class="n">sum</span><span class="o">+</span><span class="s">"元"</span><span class="o">);</span>
+				<span class="n">total</span><span class="o">+=</span><span class="n">sum</span><span class="o">;</span>
+				<span class="n">i</span><span class="o">++;</span>
+				<span class="k">if</span><span class="o">(</span><span class="n">i</span><span class="o">==</span><span class="mi">5</span><span class="o">){</span>
+					<span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="s">"根据各子公司汇总所得，总销售额为："</span><span class="o">+</span><span class="n">total</span><span class="o">+</span><span class="s">"元"</span><span class="o">);</span>
+					<span class="n">latch</span><span class="o">.</span><span class="na">countDown</span><span class="o">();</span>
+				<span class="o">}</span>
+			<span class="o">}</span>
+		<span class="o">});</span>
+		<span class="n">list</span> <span class="o">=</span> <span class="k">new</span> <span class="n">ArrayList</span><span class="o">&lt;&gt;();</span>
+		<span class="k">for</span><span class="o">(</span><span class="kt">int</span> <span class="n">i</span><span class="o">=</span><span class="mi">0</span><span class="o">;</span><span class="n">i</span><span class="o">&lt;</span><span class="n">threadNums</span><span class="o">;</span><span class="n">i</span><span class="o">++){</span>
+			<span class="n">SubCompany</span> <span class="n">item</span> <span class="o">=</span> <span class="k">new</span> <span class="n">SubCompany</span><span class="o">(</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="o">,</span> <span class="n">barrier</span><span class="o">);</span>
+			<span class="n">list</span><span class="o">.</span><span class="na">add</span><span class="o">(</span><span class="n">item</span><span class="o">);</span>
+			<span class="n">exec</span><span class="o">.</span><span class="na">execute</span><span class="o">(</span><span class="n">item</span><span class="o">);</span>
+		<span class="o">}</span>
+		
+		<span class="k">try</span> <span class="o">{</span>
+			<span class="n">latch</span><span class="o">.</span><span class="na">await</span><span class="o">();</span>
+			<span class="n">exec</span><span class="o">.</span><span class="na">shutdown</span><span class="o">();</span>
+			<span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="s">"统计完成"</span><span class="o">);</span>
+		<span class="o">}</span> <span class="k">catch</span> <span class="o">(</span><span class="n">InterruptedException</span> <span class="n">e</span><span class="o">)</span> <span class="o">{</span>
+			<span class="c1">// TODO Auto-generated catch block</span>
+			<span class="n">e</span><span class="o">.</span><span class="na">printStackTrace</span><span class="o">();</span>
+		<span class="o">}</span>
+	<span class="o">}</span>	
+	<span class="o">}</span>
+	<span class="kd">class</span> <span class="nc">SubCompany</span> <span class="kd">implements</span> <span class="n">Runnable</span><span class="o">,</span><span class="n">SoldCount</span><span class="o">{</span>
+	
+	<span class="kd">private</span> <span class="n">CyclicBarrier</span> <span class="n">cb</span><span class="o">;</span>
+	<span class="kd">private</span> <span class="kd">static</span> <span class="n">Random</span> <span class="n">random</span> <span class="o">=</span> <span class="k">new</span> <span class="n">Random</span><span class="o">(</span><span class="mi">47</span><span class="o">);</span>
+	<span class="kd">private</span> <span class="kt">int</span> <span class="n">soldCount</span><span class="o">;</span>
+	<span class="kd">private</span> <span class="kt">int</span> <span class="n">id</span><span class="o">;</span>
+	
+	<span class="kd">public</span> <span class="nf">SubCompany</span><span class="o">(</span><span class="kt">int</span> <span class="n">_id</span> <span class="o">,</span> <span class="n">CyclicBarrier</span> <span class="n">_c</span><span class="o">)</span> <span class="o">{</span>
+		<span class="c1">// TODO Auto-generated constructor stub</span>
+		<span class="n">cb</span> <span class="o">=</span> <span class="n">_c</span><span class="o">;</span>
+		<span class="n">id</span> <span class="o">=</span> <span class="n">_id</span><span class="o">;</span>
+	<span class="o">}</span>
+	
+	<span class="nd">@Override</span>
+	<span class="kd">public</span> <span class="kt">void</span> <span class="nf">run</span><span class="o">()</span> <span class="o">{</span>
+		<span class="c1">// TODO Auto-generated method stub</span>
+		<span class="k">try</span> <span class="o">{</span>
+			<span class="k">for</span><span class="o">(</span><span class="kt">int</span> <span class="n">i</span><span class="o">=</span><span class="mi">1</span><span class="o">;</span><span class="n">i</span><span class="o">&lt;</span><span class="mi">5</span><span class="o">;</span><span class="n">i</span><span class="o">++){</span>
+				<span class="n">TimeUnit</span><span class="o">.</span><span class="na">SECONDS</span><span class="o">.</span><span class="na">sleep</span><span class="o">(</span><span class="mi">3</span><span class="o">);</span>
+				<span class="n">soldCount</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="na">nextInt</span><span class="o">(</span><span class="mi">20000</span><span class="o">);</span>
+				<span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="s">"子公司 "</span><span class="o">+</span><span class="n">id</span><span class="o">+</span> <span class="s">"第"</span><span class="o">+</span><span class="n">i</span><span class="o">+</span><span class="s">"季度  销售"</span><span class="o">+</span><span class="n">soldCount</span><span class="o">+</span><span class="s">"元"</span><span class="o">);</span>
+				<span class="n">cb</span><span class="o">.</span><span class="na">await</span><span class="o">();</span>
+			<span class="o">}</span>
+		<span class="o">}</span> <span class="k">catch</span> <span class="o">(</span><span class="n">InterruptedException</span> <span class="n">e</span><span class="o">)</span> <span class="o">{</span>
+			<span class="c1">// TODO Auto-generated catch block</span>
+			<span class="n">e</span><span class="o">.</span><span class="na">printStackTrace</span><span class="o">();</span>
+		<span class="o">}</span> <span class="k">catch</span> <span class="o">(</span><span class="n">BrokenBarrierException</span> <span class="n">e</span><span class="o">)</span> <span class="o">{</span>
+			<span class="c1">// TODO Auto-generated catch block</span>
+			<span class="n">e</span><span class="o">.</span><span class="na">printStackTrace</span><span class="o">();</span>
+		<span class="o">}</span>
+		
+	<span class="o">}</span>
+
+	<span class="nd">@Override</span>
+	<span class="kd">public</span> <span class="kt">int</span> <span class="nf">count</span><span class="o">()</span> <span class="o">{</span>
+		<span class="c1">// TODO Auto-generated method stub</span>
+		<span class="k">return</span> <span class="n">soldCount</span><span class="o">;</span>
+	<span class="o">}}</span>
+
+	<span class="kd">interface</span> <span class="nc">SoldCount</span><span class="o">{</span>
+	<span class="kt">int</span> <span class="nf">count</span><span class="o">();</span>
+	<span class="o">}</span>
+
+	<span class="c1">//============================================打印结果</span>
+	<span class="err">统计集团销售余额。。</span>
+    <span class="err">子公司</span> <span class="mi">4</span><span class="err">第</span><span class="mi">1</span><span class="err">季度</span>  <span class="err">销售</span><span class="mi">1861</span><span class="err">元</span>
+    <span class="err">子公司</span> <span class="mi">2</span><span class="err">第</span><span class="mi">1</span><span class="err">季度</span>  <span class="err">销售</span><span class="mi">16693</span><span class="err">元</span>
+    <span class="err">子公司</span> <span class="mi">3</span><span class="err">第</span><span class="mi">1</span><span class="err">季度</span>  <span class="err">销售</span><span class="mi">961</span><span class="err">元</span>
+    <span class="err">子公司</span> <span class="mi">1</span><span class="err">第</span><span class="mi">1</span><span class="err">季度</span>  <span class="err">销售</span><span class="mi">555</span><span class="err">元</span>
+    <span class="err">子公司</span> <span class="mi">5</span><span class="err">第</span><span class="mi">1</span><span class="err">季度</span>  <span class="err">销售</span><span class="mi">9258</span><span class="err">元</span>
+    <span class="err">根据各子公司汇总所得，第</span><span class="mi">1</span><span class="err">季度总销售额为：</span><span class="mi">29328</span><span class="err">元</span>
+    <span class="err">子公司</span> <span class="mi">4</span><span class="err">第</span><span class="mi">2</span><span class="err">季度</span>  <span class="err">销售</span><span class="mi">14868</span><span class="err">元</span>
+    <span class="err">子公司</span> <span class="mi">1</span><span class="err">第</span><span class="mi">2</span><span class="err">季度</span>  <span class="err">销售</span><span class="mi">6207</span><span class="err">元</span>
+    <span class="err">子公司</span> <span class="mi">3</span><span class="err">第</span><span class="mi">2</span><span class="err">季度</span>  <span class="err">销售</span><span class="mi">429</span><span class="err">元</span>
+    <span class="err">子公司</span> <span class="mi">2</span><span class="err">第</span><span class="mi">2</span><span class="err">季度</span>  <span class="err">销售</span><span class="mi">14522</span><span class="err">元</span>
+    <span class="err">子公司</span> <span class="mi">5</span><span class="err">第</span><span class="mi">2</span><span class="err">季度</span>  <span class="err">销售</span><span class="mi">10200</span><span class="err">元</span>
+    <span class="err">根据各子公司汇总所得，第</span><span class="mi">2</span><span class="err">季度总销售额为：</span><span class="mi">46226</span><span class="err">元</span>
+    <span class="err">子公司</span> <span class="mi">1</span><span class="err">第</span><span class="mi">3</span><span class="err">季度</span>  <span class="err">销售</span><span class="mi">8551</span><span class="err">元</span>
+    <span class="err">子公司</span> <span class="mi">4</span><span class="err">第</span><span class="mi">3</span><span class="err">季度</span>  <span class="err">销售</span><span class="mi">14589</span><span class="err">元</span>
+    <span class="err">子公司</span> <span class="mi">3</span><span class="err">第</span><span class="mi">3</span><span class="err">季度</span>  <span class="err">销售</span><span class="mi">18288</span><span class="err">元</span>
+    <span class="err">子公司</span> <span class="mi">5</span><span class="err">第</span><span class="mi">3</span><span class="err">季度</span>  <span class="err">销售</span><span class="mi">128</span><span class="err">元</span>
+    <span class="err">子公司</span> <span class="mi">2</span><span class="err">第</span><span class="mi">3</span><span class="err">季度</span>  <span class="err">销售</span><span class="mi">16809</span><span class="err">元</span>
+    <span class="err">根据各子公司汇总所得，第</span><span class="mi">3</span><span class="err">季度总销售额为：</span><span class="mi">58365</span><span class="err">元</span>
+    <span class="err">子公司</span> <span class="mi">5</span><span class="err">第</span><span class="mi">4</span><span class="err">季度</span>  <span class="err">销售</span><span class="mi">9258</span><span class="err">元</span>
+    <span class="err">子公司</span> <span class="mi">3</span><span class="err">第</span><span class="mi">4</span><span class="err">季度</span>  <span class="err">销售</span><span class="mi">5520</span><span class="err">元</span>
+    <span class="err">子公司</span> <span class="mi">4</span><span class="err">第</span><span class="mi">4</span><span class="err">季度</span>  <span class="err">销售</span><span class="mi">7278</span><span class="err">元</span>
+    <span class="err">子公司</span> <span class="mi">1</span><span class="err">第</span><span class="mi">4</span><span class="err">季度</span>  <span class="err">销售</span><span class="mi">14861</span><span class="err">元</span>
+    <span class="err">子公司</span> <span class="mi">2</span><span class="err">第</span><span class="mi">4</span><span class="err">季度</span>  <span class="err">销售</span><span class="mi">5998</span><span class="err">元</span>
+    <span class="err">根据各子公司汇总所得，第</span><span class="mi">4</span><span class="err">季度总销售额为：</span><span class="mi">42915</span><span class="err">元</span>
+    <span class="err">根据各子公司汇总所得，总销售额为：</span><span class="mi">176834</span><span class="err">元</span>
+    <span class="err">统计完成</span>	</code></pre></figure>
+
+<p>##Semaphore信号量
+<a href="http://blog.csdn.net/lmj623565791/article/details/26810813">参考博客：鸿洋大神</a></p>
+
+<p>Semaphore中管理着一组虚拟的许可，许可的初始数量可通过构造函数来指定【new Semaphore(1);】，执行操作时可以首先获得许可【semaphore.acquire();】，并在使用后释放许可【semaphore.release();】。如果没有许可，那么acquire方法将会一直阻塞直到有许可（或者直到被终端或者操作超时）。</p>
+
+<p>作用：可以用来控制同时访问某个特定资源的操作数量，或者某个操作的数量。</p>
+
+<p>连接池的模拟实现</p>
+
+<p>在项目中处理高并发时，一般数据库都会使用数据库连接池，假设现在数据库连接池最大连接数为10，当10个连接都分配出去以后，现在有用户继续请求连接，可能的处理：</p>
+
+<p>a、手动抛出异常，用户界面显示，服务器忙，稍后再试</p>
+
+<p>b、阻塞，等待其他连接的释放</p>
+
+<p>从用户体验上来说，更好的选择当然是阻塞，等待其他连接的释放，用户只会觉得稍微慢了一点，并不影响他的操作。下面使用Semaphore模拟实现一个数据库连接池：</p>
+
+<figure class="highlight"><pre><code class="language-java" data-lang="java">	<span class="kd">public</span> <span class="kd">class</span> <span class="nc">ConnectPool</span>
+	<span class="o">{</span>
+	<span class="kd">private</span> <span class="kd">final</span> <span class="n">List</span><span class="o">&lt;</span><span class="n">Conn</span><span class="o">&gt;</span> <span class="n">pool</span> <span class="o">=</span> <span class="k">new</span> <span class="n">ArrayList</span><span class="o">&lt;</span><span class="n">Conn</span><span class="o">&gt;(</span><span class="mi">3</span><span class="o">);</span>
+	<span class="kd">private</span> <span class="kd">final</span> <span class="n">Semaphore</span> <span class="n">semaphore</span> <span class="o">=</span> <span class="k">new</span> <span class="n">Semaphore</span><span class="o">(</span><span class="mi">3</span><span class="o">);</span>
+
+	<span class="cm">/**
+	 * 初始化分配3个连接
+	 */</span>
+	<span class="kd">public</span> <span class="nf">ConnectPool</span><span class="o">()</span>
+	<span class="o">{</span>
+		<span class="n">pool</span><span class="o">.</span><span class="na">add</span><span class="o">(</span><span class="k">new</span> <span class="n">Conn</span><span class="o">());</span>
+		<span class="n">pool</span><span class="o">.</span><span class="na">add</span><span class="o">(</span><span class="k">new</span> <span class="n">Conn</span><span class="o">());</span>
+		<span class="n">pool</span><span class="o">.</span><span class="na">add</span><span class="o">(</span><span class="k">new</span> <span class="n">Conn</span><span class="o">());</span>
+	<span class="o">}</span>
+
+	<span class="cm">/**
+	 * 请求分配连接
+	 * @return
+	 * @throws InterruptedException
+	 */</span>
+	<span class="kd">public</span> <span class="n">Conn</span> <span class="nf">getConn</span><span class="o">()</span> <span class="kd">throws</span> <span class="n">InterruptedException</span>
+	<span class="o">{</span>
+		<span class="c1">//当信号量==0，则会一直阻塞，知道获取到信号量</span>
+		<span class="n">semaphore</span><span class="o">.</span><span class="na">acquire</span><span class="o">();</span>
+		<span class="n">Conn</span> <span class="n">c</span> <span class="o">=</span> <span class="kc">null</span>  <span class="o">;</span>
+		<span class="kd">synchronized</span> <span class="o">(</span><span class="n">pool</span><span class="o">)</span>
+		<span class="o">{</span>
+			<span class="n">c</span> <span class="o">=</span> <span class="n">pool</span><span class="o">.</span><span class="na">remove</span><span class="o">(</span><span class="mi">0</span><span class="o">);</span>
+		<span class="o">}</span>
+		<span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="n">Thread</span><span class="o">.</span><span class="na">currentThread</span><span class="o">().</span><span class="na">getName</span><span class="o">()+</span><span class="s">" get a conn "</span> <span class="o">+</span> <span class="n">c</span><span class="o">);</span>
+		<span class="k">return</span> <span class="n">c</span> <span class="o">;</span>
+	<span class="o">}</span>
+	
+	<span class="cm">/**
+	 * 释放连接
+	 * @param c
+	 */</span>
+	<span class="kd">public</span> <span class="kt">void</span> <span class="nf">release</span><span class="o">(</span><span class="n">Conn</span> <span class="n">c</span><span class="o">)</span>
+	<span class="o">{</span>
+		<span class="n">pool</span><span class="o">.</span><span class="na">add</span><span class="o">(</span><span class="n">c</span><span class="o">);</span>
+		<span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="n">Thread</span><span class="o">.</span><span class="na">currentThread</span><span class="o">().</span><span class="na">getName</span><span class="o">()+</span><span class="s">" release a conn "</span> <span class="o">+</span> <span class="n">c</span><span class="o">);</span>
+		<span class="n">semaphore</span><span class="o">.</span><span class="na">release</span><span class="o">();</span>
+	<span class="o">}</span>
+
+	<span class="kd">public</span> <span class="kd">static</span> <span class="kt">void</span> <span class="nf">main</span><span class="o">(</span><span class="n">String</span><span class="o">[]</span> <span class="n">args</span><span class="o">)</span>
+	<span class="o">{</span>
+
+		<span class="kd">final</span> <span class="n">ConnectPool</span> <span class="n">pool</span> <span class="o">=</span> <span class="k">new</span> <span class="n">ConnectPool</span><span class="o">();</span>
+		
+		<span class="cm">/**
+		 * 第一个线程占用1个连接3秒
+		 */</span>
+		<span class="k">new</span> <span class="nf">Thread</span><span class="o">()</span>
+		<span class="o">{</span>
+			<span class="kd">public</span> <span class="kt">void</span> <span class="nf">run</span><span class="o">()</span>
+			<span class="o">{</span>
+				<span class="k">try</span>
+				<span class="o">{</span>
+					<span class="n">Conn</span> <span class="n">c</span> <span class="o">=</span> <span class="n">pool</span><span class="o">.</span><span class="na">getConn</span><span class="o">();</span>
+					<span class="n">Thread</span><span class="o">.</span><span class="na">sleep</span><span class="o">(</span><span class="mi">3000</span><span class="o">);</span>
+					<span class="n">pool</span><span class="o">.</span><span class="na">release</span><span class="o">(</span><span class="n">c</span><span class="o">);</span>
+				<span class="o">}</span> <span class="k">catch</span> <span class="o">(</span><span class="n">InterruptedException</span> <span class="n">e</span><span class="o">)</span>
+				<span class="o">{</span>
+					<span class="n">e</span><span class="o">.</span><span class="na">printStackTrace</span><span class="o">();</span>
+				<span class="o">}</span>
+			<span class="o">};</span>
+		<span class="o">}.</span><span class="na">start</span><span class="o">();</span>
+		<span class="cm">/**
+		 * 开启3个线程请求分配连接
+		 */</span>
+		<span class="k">for</span> <span class="o">(</span><span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="o">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="mi">3</span><span class="o">;</span> <span class="n">i</span><span class="o">++)</span>
+		<span class="o">{</span>
+			<span class="k">new</span> <span class="nf">Thread</span><span class="o">()</span>
+			<span class="o">{</span>
+				<span class="kd">public</span> <span class="kt">void</span> <span class="nf">run</span><span class="o">()</span>
+				<span class="o">{</span>
+					<span class="k">try</span>
+					<span class="o">{</span>
+						<span class="n">Conn</span> <span class="n">c</span> <span class="o">=</span> <span class="n">pool</span><span class="o">.</span><span class="na">getConn</span><span class="o">();</span>
+					<span class="o">}</span> <span class="k">catch</span> <span class="o">(</span><span class="n">InterruptedException</span> <span class="n">e</span><span class="o">)</span>
+					<span class="o">{</span>
+						<span class="n">e</span><span class="o">.</span><span class="na">printStackTrace</span><span class="o">();</span>
+					<span class="o">}</span>
+				<span class="o">};</span>
+			<span class="o">}.</span><span class="na">start</span><span class="o">();</span>
+		<span class="o">}</span>
+
+	<span class="o">}</span>
+
+	<span class="kd">private</span> <span class="kd">class</span> <span class="nc">Conn</span>
+	<span class="o">{</span>
+	<span class="o">}</span>
+	<span class="o">}</span>
+
+	<span class="c1">//打印结果----------------------------------------------------------</span>
+	<span class="n">Thread</span><span class="o">-</span><span class="mi">0</span> <span class="n">get</span> <span class="n">a</span> <span class="n">conn</span> <span class="n">com</span><span class="o">.</span><span class="na">zhy</span><span class="o">.</span><span class="na">concurrency</span><span class="o">.</span><span class="na">semaphore</span><span class="o">.</span><span class="na">ConnectPool</span><span class="n">$Conn</span><span class="err">@</span><span class="mi">12</span><span class="n">b6651</span>
+	<span class="n">Thread</span><span class="o">-</span><span class="mi">2</span> <span class="n">get</span> <span class="n">a</span> <span class="n">conn</span> <span class="n">com</span><span class="o">.</span><span class="na">zhy</span><span class="o">.</span><span class="na">concurrency</span><span class="o">.</span><span class="na">semaphore</span><span class="o">.</span><span class="na">ConnectPool</span><span class="n">$Conn</span><span class="nd">@e53108</span>
+	<span class="n">Thread</span><span class="o">-</span><span class="mi">1</span> <span class="n">get</span> <span class="n">a</span> <span class="n">conn</span> <span class="n">com</span><span class="o">.</span><span class="na">zhy</span><span class="o">.</span><span class="na">concurrency</span><span class="o">.</span><span class="na">semaphore</span><span class="o">.</span><span class="na">ConnectPool</span><span class="n">$Conn</span><span class="err">@</span><span class="mi">1888759</span>
+	<span class="n">Thread</span><span class="o">-</span><span class="mi">0</span> <span class="n">release</span> <span class="n">a</span> <span class="n">conn</span> <span class="n">com</span><span class="o">.</span><span class="na">zhy</span><span class="o">.</span><span class="na">concurrency</span><span class="o">.</span><span class="na">semaphore</span><span class="o">.</span><span class="na">ConnectPool</span><span class="n">$Conn</span><span class="err">@</span><span class="mi">12</span><span class="n">b6651</span>
+	<span class="n">Thread</span><span class="o">-</span><span class="mi">3</span> <span class="n">get</span> <span class="n">a</span> <span class="n">conn</span> <span class="n">com</span><span class="o">.</span><span class="na">zhy</span><span class="o">.</span><span class="na">concurrency</span><span class="o">.</span><span class="na">semaphore</span><span class="o">.</span><span class="na">ConnectPool</span><span class="n">$Conn</span><span class="err">@</span><span class="mi">12</span><span class="n">b6651</span></code></pre></figure>
+
+<p>##DelayBlockingQueue</p>
+
+<p>延迟队列，放进DelayBlockingQueue队列的对象必须实现了Delay接口</p>
+
+<figure class="highlight"><pre><code class="language-java" data-lang="java">	<span class="kd">class</span> <span class="nc">DelayObj</span> <span class="kd">implements</span> <span class="n">Delayed</span><span class="o">{</span>
+		
+		<span class="c1">//纳秒级</span>
+		<span class="kd">private</span> <span class="kt">long</span> <span class="n">delayTime</span><span class="o">;</span>
+		
+		<span class="c1">//compareTo 有三种返回值 负数，0，正数，分别对应 当前Delayed对象与指定对象的大小比较，分别是 less,equal,more</span>
+
+		<span class="nd">@Override</span>
+		<span class="kd">public</span> <span class="kt">int</span> <span class="nf">compareTo</span><span class="o">(</span><span class="n">Delayed</span> <span class="n">o</span><span class="o">)</span> <span class="o">{</span>
+			<span class="c1">// TODO Auto-generated method stub</span>
+			<span class="k">if</span><span class="o">(</span><span class="n">o</span><span class="o">.</span><span class="na">getDelay</span><span class="o">(</span><span class="n">TimeUnit</span><span class="o">.</span><span class="na">MILLISECONDS</span><span class="o">)</span> <span class="o">&lt;</span> <span class="n">getDelay</span><span class="o">(</span><span class="n">TimeUnit</span><span class="o">.</span><span class="na">MILLISECONDS</span><span class="o">))</span> <span class="k">return</span> <span class="mi">1</span><span class="o">;</span>
+			<span class="k">else</span> <span class="nf">if</span><span class="o">(</span><span class="n">o</span><span class="o">.</span><span class="na">getDelay</span><span class="o">(</span><span class="n">TimeUnit</span><span class="o">.</span><span class="na">MILLISECONDS</span><span class="o">)</span> <span class="o">&gt;</span> <span class="n">getDelay</span><span class="o">(</span><span class="n">TimeUnit</span><span class="o">.</span><span class="na">MILLISECONDS</span><span class="o">))</span> <span class="k">return</span> <span class="o">-</span><span class="mi">1</span><span class="o">;</span>
+			<span class="k">return</span> <span class="mi">0</span><span class="o">;</span>
+		<span class="o">}</span>
+
+		
+		<span class="nd">@Override</span>
+		<span class="kd">public</span> <span class="kt">long</span> <span class="nf">getDelay</span><span class="o">(</span><span class="n">TimeUnit</span> <span class="n">unit</span><span class="o">)</span> <span class="o">{</span>
+			<span class="c1">// TODO Auto-generated method stub</span>
+			<span class="c1">//将原来的时间单位改变成参数指定的时间单位，一般是 compareTo 调用的时候对时间要求</span>
+			<span class="k">return</span> <span class="n">unit</span><span class="o">.</span><span class="na">convert</span><span class="o">(</span><span class="n">delayTime</span><span class="o">,</span> <span class="n">TimeUnit</span><span class="o">.</span><span class="na">NANOSECONDS</span><span class="o">);</span>
+		<span class="o">}}</span></code></pre></figure>
+
+<h2 id="priorityblockingqueue">PriorityBlockingQueue</h2>
+<p>优先级队列，放进PriorityBlockingQueue队列的对象必须实现 Comparable<T> 接口</T></p>
+
+<h2 id="scheduledthreadpoolexecutor">ScheduledThreadPoolExecutor</h2>
+<p>这是一个线程池对象，跟线程池的用法差不多，不过这个线程池主要用来对执行预定时间后才运行任务，下面有几个比较重要的方法：</p>
+
+<figure class="highlight"><pre><code class="language-java" data-lang="java">	<span class="n">ScheduledThreadPoolExecutor</span> <span class="n">exec</span> <span class="o">=</span> <span class="k">new</span> <span class="n">ScheduledThreadPoolExecutor</span><span class="o">(</span><span class="mi">10</span><span class="o">);</span>
+	<span class="c1">//指定long个单位时间后，执行Runnable任务</span>
+	<span class="n">exec</span><span class="o">.</span><span class="na">schedule</span><span class="o">(</span><span class="n">Runnable</span><span class="o">,</span><span class="kt">long</span><span class="o">,</span><span class="n">TimeUnit</span><span class="o">);</span>
+	
+	<span class="c1">//指定从initialTime开始，每个period个单位时间，执行一次Runnable</span>
+	<span class="n">exec</span><span class="o">.</span><span class="na">scheduleAtFixedRate</span><span class="o">(</span><span class="n">Runnable</span><span class="o">,</span><span class="nl">initialTime:</span><span class="kt">long</span><span class="o">,</span><span class="nl">period:</span><span class="kt">long</span><span class="o">,</span><span class="n">TimeUnit</span><span class="o">);</span></code></pre></figure>
+
+<h2 id="具体应用可以看一下银行的仿真项目">具体应用可以看一下银行的仿真项目</h2>
+
+<p>项目设计ScheduledThreadPoolExecutor、BlockingQueue、Semaphore、CountDownLatch、Executor</p>
+
+
+                <hr>
+
+                
+                <!-- 多说 Share start -->
+                </style>
+                <div class="ds-share"
+                    style="text-align: right"
+                    data-thread-key="/2017/01/10/Java-multiThread"
+                    data-title="Java 多线程详解"
+                    data-url="http://localhost:4000/drearming.github.com/2017/01/10/Java-multiThread/"
+                    data-images="http://localhost:4000/drearming.github.com/img/post-bg-2015.jpg"
+                    data-content="多线程
+
+ThreadLocal
+
+ThreadLocal，其机制是每一条线程都拥有一个ThreadLocalMap的公有属性，调用get或者set方法，... | 陈俊杰 | MVCoder " >
+                    <div class="ds-share-inline">
+                      <ul  class="ds-share-icons-16">
+                        <li data-toggle="ds-share-icons-more"><a class="ds-more" href="#">分享到：</a></li>
+                        <li><a class="ds-wechat flat" href="javascript:void(0);" data-service="wechat">微信</a></li>
+                        <li><a class="ds-weibo flat" href="javascript:void(0);" data-service="weibo">微博</a></li>
+                        <li><a class="ds-douban flat" href="javascript:void(0);" data-service="douban">豆瓣</a></li>
+                      </ul>
+                      <div class="ds-share-icons-more">
+                      </div>
+                    </div>
+                <hr>
+                </div>
+                <!-- 多说 Share end-->
+                
+
+
+                <ul class="pager">
+                    
+                    <li class="previous">
+                        <a href="/drearming.github.com/2017/01/03/Java_virtual_machine/" data-toggle="tooltip" data-placement="top" title="Java虚拟机全面了解">&larr; Previous Post</a>
+                    </li>
+                    
+                    
+                    <li class="next">
+                        <a href="/drearming.github.com/2017/02/10/Android-network-retrofit/" data-toggle="tooltip" data-placement="top" title="Retrofit原理">Next Post &rarr;</a>
+                    </li>
+                    
+                </ul>
+
+
+                
+                <!-- 多说评论框 start -->
+                <div class="comment">
+                    <div class="ds-thread"
+                        data-thread-key="/2017/01/10/Java-multiThread"
+                        data-title="Java 多线程详解"
+                        data-url="http://localhost:4000/drearming.github.com/2017/01/10/Java-multiThread/" >
+                    </div>
+                </div>
+                <!-- 多说评论框 end -->
+                
+
+                
+
+            </div>
+
+    <!-- Sidebar Container -->
+            <div class="
+                col-lg-8 col-lg-offset-2
+                col-md-10 col-md-offset-1
+                sidebar-container">
+
+                <!-- Featured Tags -->
+                
+                <section>
+                    <hr class="hidden-sm hidden-xs">
+                    <h5><a href="/tags/">FEATURED TAGS</a></h5>
+                    <div class="tags">
+        				
+                            
+        				
+                            
+                				<a href="/drearming.github.com/tags/#Android" title="Android" rel="3">
+                                    Android
+                                </a>
+                            
+        				
+                            
+                				<a href="/drearming.github.com/tags/#Java" title="Java" rel="4">
+                                    Java
+                                </a>
+                            
+        				
+                            
+        				
+                            
+                				<a href="/drearming.github.com/tags/#前端开发" title="前端开发" rel="3">
+                                    前端开发
+                                </a>
+                            
+        				
+                            
+                				<a href="/drearming.github.com/tags/#JavaScript" title="JavaScript" rel="3">
+                                    JavaScript
+                                </a>
+                            
+        				
+                            
+        				
+                            
+        				
+                            
+        				
+                            
+        				
+                            
+        				
+        			</div>
+                </section>
+                
+
+                <!-- Friends Blog -->
+                
+                <hr>
+                <h5>FRIENDS</h5>
+                <ul class="list-inline">
+                    
+                        <li><a href="https://github.com/DREARMING">MVCoder</a></li>
+                    
+                        <li><a href="http://blog.csdn.net/lmj623565791/article/details/48129405">鸿洋</a></li>
+                    
+                        <li><a href="http://blog.csdn.net/guolin_blog/article/details/9097463/">郭霖</a></li>
+                    
+                        <li><a href="http://blog.csdn.net/aigestudio">爱歌</a></li>
+                    
+                        <li><a href="http://www.jianshu.com/p/6a8c2ae0b1c6?utm_campaign=haruki">死党</a></li>
+                    
+                </ul>
+                
+            </div>
+        </div>
+    </div>
+</article>
+
+
+<!-- 多说公共JS代码 start (一个网页只需插入一次) -->
+<script type="text/javascript">
+    // dynamic User by Hux
+    var _user = 'MVCoder';
+
+    // duoshuo comment query.
+    var duoshuoQuery = {short_name: _user };
+    (function() {
+        var ds = document.createElement('script');
+        ds.type = 'text/javascript';ds.async = true;
+        ds.src = (document.location.protocol == 'https:' ? 'https:' : 'http:') + '//static.duoshuo.com/embed.js';
+        ds.charset = 'UTF-8';
+        (document.getElementsByTagName('head')[0]
+         || document.getElementsByTagName('body')[0]).appendChild(ds);
+    })();
+</script>
+<!-- 多说公共JS代码 end -->
+
+
+
+
+
+
+
+<!-- async load function -->
+<script>
+    function async(u, c) {
+      var d = document, t = 'script',
+          o = d.createElement(t),
+          s = d.getElementsByTagName(t)[0];
+      o.src = u;
+      if (c) { o.addEventListener('load', function (e) { c(null, e); }, false); }
+      s.parentNode.insertBefore(o, s);
+    }
+</script>
+<!-- anchor-js, Doc:http://bryanbraun.github.io/anchorjs/ -->
+<script>
+    async("http://cdn.bootcss.com/anchor-js/1.1.1/anchor.min.js",function(){
+        anchors.options = {
+          visible: 'always',
+          placement: 'right',
+          icon: '#'
+        };
+        anchors.add().remove('.intro-header h1').remove('.subheading').remove('.sidebar-container h5');
+    })
+</script>
+<style>
+    /* place left on bigger screen */
+    @media all and (min-width: 800px) {
+        .anchorjs-link{
+            position: absolute;
+            left: -0.75em;
+            font-size: 1.1em;
+            margin-top : -0.1em;
+        }
+    }
+</style>
+
+
+
+    <!-- Footer -->
+<footer>
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+                <ul class="list-inline text-center">
+                    
+                    
+
+                    <!-- add Weibo, Zhihu by Hux, add target = "_blank" to <a> by Hux -->
+                    
+                    
+
+
+                    
+                    
+                    <li>
+                        <a target="_blank" href="https://github.com/drearming">
+                            <span class="fa-stack fa-lg">
+                                <i class="fa fa-circle fa-stack-2x"></i>
+                                <i class="fa fa-github fa-stack-1x fa-inverse"></i>
+                            </span>
+                        </a>
+                    </li>
+                    
+                </ul>
+                <p class="copyright text-muted">
+                    Copyright &copy; MVCoder Blog 2017
+                    <br>
+                    Theme by <a href="http://huangxuan.me">Hux</a> |
+                    <iframe
+                        style="margin-left: 2px; margin-bottom:-5px;"
+                        frameborder="0" scrolling="0" width="91px" height="20px"
+                        src="https://ghbtns.com/github-btn.html?user=huxpro&repo=huxpro.github.io&type=star&count=true" >
+                    </iframe>
+                </p>
+            </div>
+        </div>
+    </div>
+</footer>
+
+<!-- jQuery -->
+<script src="/drearming.github.com/js/jquery.min.js "></script>
+
+<!-- Bootstrap Core JavaScript -->
+<script src="/drearming.github.com/js/bootstrap.min.js "></script>
+
+<!-- Custom Theme JavaScript -->
+<script src="/drearming.github.com/js/hux-blog.min.js "></script>
+
+
+<!-- async load function -->
+<script>
+    function async(u, c) {
+      var d = document, t = 'script',
+          o = d.createElement(t),
+          s = d.getElementsByTagName(t)[0];
+      o.src = u;
+      if (c) { o.addEventListener('load', function (e) { c(null, e); }, false); }
+      s.parentNode.insertBefore(o, s);
+    }
+</script>
+
+<!-- 
+     Because of the native support for backtick-style fenced code blocks 
+     right within the Markdown is landed in Github Pages, 
+     From V1.6, There is no need for Highlight.js, 
+     so Huxblog drops it officially.
+
+     - https://github.com/blog/2100-github-pages-now-faster-and-simpler-with-jekyll-3-0  
+     - https://help.github.com/articles/creating-and-highlighting-code-blocks/    
+-->
+<!--
+    <script>
+        async("http://cdn.bootcss.com/highlight.js/8.6/highlight.min.js", function(){
+            hljs.initHighlightingOnLoad();
+        })
+    </script>
+    <link href="http://cdn.bootcss.com/highlight.js/8.6/styles/github.min.css" rel="stylesheet">
+-->
+
+
+<!-- jquery.tagcloud.js -->
+<script>
+    // only load tagcloud.js in tag.html
+    if($('#tag_cloud').length !== 0){
+        async("/js/jquery.tagcloud.js",function(){
+            $.fn.tagcloud.defaults = {
+                //size: {start: 1, end: 1, unit: 'em'},
+                color: {start: '#bbbbee', end: '#0085a1'},
+            };
+            $('#tag_cloud a').tagcloud();
+        })
+    }
+</script>
+
+<!--fastClick.js -->
+<script>
+    async("http://cdn.bootcss.com/fastclick/1.0.6/fastclick.min.js", function(){
+        var $nav = document.querySelector("nav");
+        if($nav) FastClick.attach($nav);
+    })
+</script>
+
+
+<!-- Google Analytics -->
+
+<script>
+    // dynamic User by Hux
+    var _gaId = 'UA-49627206-1';
+    var _gaDomain = 'drearming.github.io';
+
+    // Originial
+    (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+    (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+    m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+    })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+    ga('create', _gaId, _gaDomain);
+    ga('send', 'pageview');
+</script>
+
+
+
+<!-- Baidu Tongji -->
+
+<script>
+    // dynamic User by Hux
+    var _baId = '4cc1f2d8f3067386cc5cdb626a202900';
+
+    // Originial
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "//hm.baidu.com/hm.js?" + _baId;
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+</script>
+
+
+
+
+<!-- Image to hack wechat -->
+<img src="/img/icon_wechat.png" width="0" height="0" />
+<!-- Migrate from head to bottom, no longer block render and still work -->
+
+</body>
+
+</html>

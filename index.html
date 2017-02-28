@@ -155,6 +155,115 @@
             ">
     			
 <div class="post-preview">
+    <a href="/drearming.github.com/2017/02/10/Android-network-retrofit/">
+        <h2 class="post-title">
+            Retrofit原理
+        </h2>
+        
+        <h3 class="post-subtitle">
+            带你揭开retrofit的神秘面纱
+        </h3>
+        
+        <div class="post-content-preview">
+            Retrofit基本用法：
+
+	//首先通过动态代理获取到一个接口(GetService)的代理对象，
+	//当通过代理对象执行接口的任意方法时，都会调用代理对象的 
+	//InvocationHandler 的public Object invoke(Object proxy, Method method, Object... args)方法（参考下面的源码）
+
+	GetService s...
+        </div>
+    </a>
+    <p class="post-meta">
+        Posted by MVCoder on February 10, 2017
+    </p>
+</div>
+<hr>
+
+<div class="post-preview">
+    <a href="/drearming.github.com/2017/01/10/Java-multiThread/">
+        <h2 class="post-title">
+            Java 多线程详解
+        </h2>
+        
+        <h3 class="post-subtitle">
+            涉及ThreadLocal，同步机制，CAS，BlockingQueue等
+        </h3>
+        
+        <div class="post-content-preview">
+            多线程
+
+ThreadLocal
+
+ThreadLocal，其机制是每一条线程都拥有一个ThreadLocalMap的公有属性，调用get或者set方法，就会确认当前是哪条线程？比如是A线程，通过getMap方法，获取A线程的ThreadLocalMap的变量，然后通过ThreadLocal作为key值存取Value
+
+	//使用ThreadLocal，每一条线程都可以通过这个ThreadL...
+        </div>
+    </a>
+    <p class="post-meta">
+        Posted by MVCoder on January 10, 2017
+    </p>
+</div>
+<hr>
+
+<div class="post-preview">
+    <a href="/drearming.github.com/2017/01/03/Java_virtual_machine/">
+        <h2 class="post-title">
+            Java虚拟机全面了解
+        </h2>
+        
+        <h3 class="post-subtitle">
+            关于Java虚拟的内存布局，类加载机制，垃圾回收算法等等
+        </h3>
+        
+        <div class="post-content-preview">
+            Java虚拟机
+
+Java虚拟机的作用是什么？它如何实现这些基本功能的？
+
+作用：通过将.java文件编译成目标字节码.class文件，Java虚拟机通过加载.class文件，解析，将Java指令替换成系统底层指令，从而能够使Java程序无差别运行在各种平台上
+
+生命周期
+在Java虚拟机内部有两种线程：守护线程和非守护线程。守护线程通常是由虚拟机自己使用的，比如执行垃圾收集任务的线程。但是...
+        </div>
+    </a>
+    <p class="post-meta">
+        Posted by MVCoder on January 3, 2017
+    </p>
+</div>
+<hr>
+
+<div class="post-preview">
+    <a href="/drearming.github.com/2016/11/02/java-hashmap/">
+        <h2 class="post-title">
+            从源码去了解HashMap
+        </h2>
+        
+        <h3 class="post-subtitle">
+            HashMap到底是如何实现的呢？
+        </h3>
+        
+        <div class="post-content-preview">
+            HashMap
+
+参考链接
+
+HashMap是我们经常使用的键值对集合，它的内部原理是如何实现的呢？
+
+在要理解hashmap的内部机制前，我们先要来了解一下一种数据结构hash表，我们常常使用的数据结构是Array，链表，Array在查询的时候非常快，但是删除操作却比较慢；而链表是查询比较慢，而插入删除比较快，有没有一种相对来说，更好的数据结构？有，这就是hash表
+
+hash表
+
+has...
+        </div>
+    </a>
+    <p class="post-meta">
+        Posted by MVCoder on November 2, 2016
+    </p>
+</div>
+<hr>
+
+<div class="post-preview">
     <a href="/drearming.github.com/2016/10/15/android/">
         <h2 class="post-title">
             消息队列机制
@@ -357,11 +466,15 @@ Hux 的 Blog 就这么开通了。
                             
                         
                             
-                                <a href="/drearming.github.com/tags/#Android" title="Android" rel="2">
+                                <a href="/drearming.github.com/tags/#Android" title="Android" rel="3">
                                     Android
                                 </a>
                             
                         
+                            
+                                <a href="/drearming.github.com/tags/#Java" title="Java" rel="4">
+                                    Java
+                                </a>
                             
                         
                             
@@ -376,6 +489,14 @@ Hux 的 Blog 就这么开通了。
                                 <a href="/drearming.github.com/tags/#JavaScript" title="JavaScript" rel="3">
                                     JavaScript
                                 </a>
+                            
+                        
+                            
+                        
+                            
+                        
+                            
+                        
                             
                         
                             
