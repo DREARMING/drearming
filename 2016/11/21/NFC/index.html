@@ -177,25 +177,15 @@
 
 <h2 id="如何检测手机是否支持nfc功能或者是否打开了nfc功能">如何检测手机是否支持NFC功能，或者是否打开了NFC功能</h2>
 
-<p>&lt;% highlight java %&gt;</p>
-
-<div class="highlighter-rouge">&lt;uses-feature android:name="android.hardware.nfc" android:required="true" /&gt;
-</div>
-
-<p>&lt;% endhighlight %&gt;</p>
+<figure class="highlight"><pre><code class="language-java" data-lang="java">    <span class="o">&lt;</span><span class="n">uses</span><span class="o">-</span><span class="n">feature</span> <span class="nl">android:</span><span class="n">name</span><span class="o">=</span><span class="s">"android.hardware.nfc"</span> <span class="nl">android:</span><span class="n">required</span><span class="o">=</span><span class="s">"true"</span> <span class="o">/&gt;</span></code></pre></figure>
 
 <p>筛选掉不支持NFC功能的手机</p>
 
 <p><strong>或者在应用中进行检测</strong></p>
 
-<p>&lt;% highlight java %&gt;</p>
-
-<div class="highlighter-rouge">NFCAdapter adapter = NFCAdapter.getDefaultAdapter();
-adapter==null  设备不支持NFC功能
-adapter.isEnable() == false; 设备没有打开NFC功能
-</div>
-
-<p>&lt;% endhighlight %&gt;</p>
+<figure class="highlight"><pre><code class="language-java" data-lang="java">    <span class="n">NFCAdapter</span> <span class="n">adapter</span> <span class="o">=</span> <span class="n">NFCAdapter</span><span class="o">.</span><span class="na">getDefaultAdapter</span><span class="o">();</span>
+	<span class="n">adapter</span><span class="o">==</span><span class="kc">null</span>  <span class="err">设备不支持</span><span class="n">NFC</span><span class="err">功能</span>
+    <span class="n">adapter</span><span class="o">.</span><span class="na">isEnable</span><span class="o">()</span> <span class="o">==</span> <span class="kc">false</span><span class="o">;</span> <span class="err">设备没有打开</span><span class="n">NFC</span><span class="err">功能</span></code></pre></figure>
 
 <hr />
 
@@ -235,76 +225,67 @@ adapter.isEnable() == false; 设备没有打开NFC功能
 
 <hr />
 
-<p>&lt;% highlight java %&gt;</p>
+<figure class="highlight"><pre><code class="language-java" data-lang="java">	<span class="n">Activity</span><span class="err">中如何定义</span><span class="n">Intent</span><span class="o">-</span><span class="n">filter</span><span class="err">来筛选</span><span class="n">NDEF_DISCOVERD</span><span class="err">的</span><span class="n">tag</span><span class="err">，其</span><span class="n">MIME</span> <span class="n">TYPE</span> <span class="err">类型是</span><span class="n">text</span><span class="o">/</span><span class="n">plain</span>
 
-<div class="highlighter-rouge">Activity中如何定义Intent-filter来筛选NDEF_DISCOVERD的tag，其MIME TYPE 类型是text/plain
+	<span class="o">&lt;</span><span class="n">intent</span><span class="o">-</span><span class="n">filter</span><span class="o">&gt;</span>
+    <span class="o">&lt;</span><span class="n">action</span> <span class="nl">android:</span><span class="n">name</span><span class="o">=</span><span class="s">"android.nfc.action.NDEF_DISCOVERED"</span><span class="o">/&gt;</span>
+    <span class="o">&lt;</span><span class="n">category</span> <span class="nl">android:</span><span class="n">name</span><span class="o">=</span><span class="s">"android.intent.category.DEFAULT"</span><span class="o">/&gt;</span>
+    <span class="o">&lt;</span><span class="n">data</span> <span class="nl">android:</span><span class="n">mimeType</span><span class="o">=</span><span class="s">"text/plain"</span> <span class="o">/&gt;</span>
+	<span class="o">&lt;/</span><span class="n">intent</span><span class="o">-</span><span class="n">filter</span><span class="o">&gt;</span>
+	
 
-&lt;intent-filter&gt;
-&lt;action android:name="android.nfc.action.NDEF_DISCOVERED"/&gt;
-&lt;category android:name="android.intent.category.DEFAULT"/&gt;
-&lt;data android:mimeType="text/plain" /&gt;
-&lt;/intent-filter&gt;
+	<span class="c1">//筛选的同样是NDEF_DISCOVERD，其类型是uri</span>
+	<span class="o">&lt;</span><span class="n">intent</span><span class="o">-</span><span class="n">filter</span><span class="o">&gt;</span>
+    <span class="o">&lt;</span><span class="n">action</span> <span class="nl">android:</span><span class="n">name</span><span class="o">=</span><span class="s">"android.nfc.action.NDEF_DISCOVERED"</span><span class="o">/&gt;</span>
+    <span class="o">&lt;</span><span class="n">category</span> <span class="nl">android:</span><span class="n">name</span><span class="o">=</span><span class="s">"android.intent.category.DEFAULT"</span><span class="o">/&gt;</span>
+  	 <span class="o">&lt;</span><span class="n">data</span> <span class="nl">android:</span><span class="n">scheme</span><span class="o">=</span><span class="s">"http"</span>
+              <span class="nl">android:</span><span class="n">host</span><span class="o">=</span><span class="s">"developer.android.com"</span>
+              <span class="nl">android:</span><span class="n">pathPrefix</span><span class="o">=</span><span class="s">"/index.html"</span> <span class="o">/&gt;</span>
+	<span class="o">/</span><span class="n">intent</span><span class="o">-</span><span class="n">filter</span><span class="o">&gt;</span>
 
-
-//筛选的同样是NDEF_DISCOVERD，其类型是uri
-&lt;intent-filter&gt;
-&lt;action android:name="android.nfc.action.NDEF_DISCOVERED"/&gt;
-&lt;category android:name="android.intent.category.DEFAULT"/&gt;
-  	 &lt;data android:scheme="http"
-          android:host="developer.android.com"
-          android:pathPrefix="/index.html" /&gt;
-/intent-filter&gt;
-</div>
-
-<p>&lt;% endhighlight %&gt;</p>
+  </code></pre></figure>
 
 <hr />
 
 <p>创建一个<strong>URI TAG</strong> 记录 – TNF_ABSOLUTE_URI</p>
 
-<p>&lt;% highlight java %&gt;</p>
+<figure class="highlight"><pre><code class="language-java" data-lang="java">	
+	<span class="c1">//参数如上面解释的：</span>
+	<span class="c1">//1.是TNF，这里指定是URI类型  2.RTN 指定的URI，3.一个tag 的id，这里为空 4.数据</span>
+    <span class="n">NdefRecord</span> <span class="n">uriRecord</span> <span class="o">=</span> <span class="k">new</span> <span class="n">NdefRecord</span><span class="o">(</span>
+    <span class="n">NdefRecord</span><span class="o">.</span><span class="na">TNF_ABSOLUTE_URI</span> <span class="o">,</span>
+    <span class="s">"http://developer.android.com/index.html"</span><span class="o">.</span><span class="na">getBytes</span><span class="o">(</span><span class="n">Charset</span><span class="o">.</span><span class="na">forName</span><span class="o">(</span><span class="s">"US-ASCII"</span><span class="o">)),</span>
+    <span class="k">new</span> <span class="kt">byte</span><span class="o">[</span><span class="mi">0</span><span class="o">],</span> <span class="k">new</span> <span class="kt">byte</span><span class="o">[</span><span class="mi">0</span><span class="o">]);</span>
 
-<div class="highlighter-rouge">//参数如上面解释的：
-//1.是TNF，这里指定是URI类型  2.RTN 指定的URI，3.一个tag 的id，这里为空 4.数据
-NdefRecord uriRecord = new NdefRecord(
-NdefRecord.TNF_ABSOLUTE_URI ,
-"http://developer.android.com/index.html".getBytes(Charset.forName("US-ASCII")),
-new byte[0], new byte[0]);
+	<span class="c1">//上面的tag可以筛选的标签</span>
+	<span class="o">&lt;</span><span class="n">intent</span><span class="o">-</span><span class="n">filter</span><span class="o">&gt;</span>
+    <span class="o">&lt;</span><span class="n">action</span> <span class="nl">android:</span><span class="n">name</span><span class="o">=</span><span class="s">"android.nfc.action.NDEF_DISCOVERED"</span> <span class="o">/&gt;</span>
+    <span class="o">&lt;</span><span class="n">category</span> <span class="nl">android:</span><span class="n">name</span><span class="o">=</span><span class="s">"android.intent.category.DEFAULT"</span> <span class="o">/&gt;</span>
+    <span class="o">&lt;</span><span class="n">data</span> <span class="nl">android:</span><span class="n">scheme</span><span class="o">=</span><span class="s">"http"</span>
+        <span class="nl">android:</span><span class="n">host</span><span class="o">=</span><span class="s">"developer.android.com"</span>
+        <span class="nl">android:</span><span class="n">pathPrefix</span><span class="o">=</span><span class="s">"/index.html"</span> <span class="o">/&gt;</span>
+	<span class="o">&lt;/</span><span class="n">intent</span><span class="o">-</span><span class="n">filter</span><span class="o">&gt;</span>
 
-//上面的tag可以筛选的标签
-&lt;intent-filter&gt;
-&lt;action android:name="android.nfc.action.NDEF_DISCOVERED" /&gt;
-&lt;category android:name="android.intent.category.DEFAULT" /&gt;
-&lt;data android:scheme="http"
-    android:host="developer.android.com"
-    android:pathPrefix="/index.html" /&gt;
-&lt;/intent-filter&gt;
-</div>
-
-<p>&lt;% endhighlight %&gt;</p>
+  </code></pre></figure>
 
 <p>create a <strong>TNF_MIME_MEDIA NDEF</strong> record in the following ways:</p>
 
-<p>&lt;% highlight java %&gt;</p>
+<figure class="highlight"><pre><code class="language-java" data-lang="java">	
+	<span class="n">NdefRecord</span> <span class="n">mimeRecord</span> <span class="o">=</span> <span class="n">NdefRecord</span><span class="o">.</span><span class="na">createMime</span><span class="o">(</span><span class="s">"application/vnd.com.example.android.beam"</span><span class="o">,</span>
+    <span class="s">"Beam me up, Android"</span><span class="o">.</span><span class="na">getBytes</span><span class="o">(</span><span class="n">Charset</span><span class="o">.</span><span class="na">forName</span><span class="o">(</span><span class="s">"US-ASCII"</span><span class="o">)));</span>
 
-<div class="highlighter-rouge">NdefRecord mimeRecord = NdefRecord.createMime("application/vnd.com.example.android.beam",
-"Beam me up, Android".getBytes(Charset.forName("US-ASCII")));
+	<span class="c1">//也可以写成</span>
+	<span class="n">NdefRecord</span> <span class="n">mimeRecord</span> <span class="o">=</span> <span class="k">new</span> <span class="n">NdefRecord</span><span class="o">(</span>
+    <span class="n">NdefRecord</span><span class="o">.</span><span class="na">TNF_MIME_MEDIA</span> <span class="o">,</span>
+    <span class="s">"application/vnd.com.example.android.beam"</span><span class="o">.</span><span class="na">getBytes</span><span class="o">(</span><span class="n">Charset</span><span class="o">.</span><span class="na">forName</span><span class="o">(</span><span class="s">"US-ASCII"</span><span class="o">)),</span>
+    <span class="k">new</span> <span class="kt">byte</span><span class="o">[</span><span class="mi">0</span><span class="o">],</span> <span class="s">"Beam me up, Android!"</span><span class="o">.</span><span class="na">getBytes</span><span class="o">(</span><span class="n">Charset</span><span class="o">.</span><span class="na">forName</span><span class="o">(</span><span class="s">"US-ASCII"</span><span class="o">)));</span>
+	
 
-//也可以写成
-NdefRecord mimeRecord = new NdefRecord(
-NdefRecord.TNF_MIME_MEDIA ,
-"application/vnd.com.example.android.beam".getBytes(Charset.forName("US-ASCII")),
-new byte[0], "Beam me up, Android!".getBytes(Charset.forName("US-ASCII")));
-
-
-&lt;intent-filter&gt;
-&lt;action android:name="android.nfc.action.NDEF_DISCOVERED" /&gt;
-&lt;category android:name="android.intent.category.DEFAULT" /&gt;
-&lt;data android:mimeType="application/vnd.com.example.android.beam" /&gt;
-&lt;/intent-filter&gt;
-</div>
-
-<p>&lt;% endhighlight %&gt;</p>
+	<span class="o">&lt;</span><span class="n">intent</span><span class="o">-</span><span class="n">filter</span><span class="o">&gt;</span>
+    <span class="o">&lt;</span><span class="n">action</span> <span class="nl">android:</span><span class="n">name</span><span class="o">=</span><span class="s">"android.nfc.action.NDEF_DISCOVERED"</span> <span class="o">/&gt;</span>
+    <span class="o">&lt;</span><span class="n">category</span> <span class="nl">android:</span><span class="n">name</span><span class="o">=</span><span class="s">"android.intent.category.DEFAULT"</span> <span class="o">/&gt;</span>
+    <span class="o">&lt;</span><span class="n">data</span> <span class="nl">android:</span><span class="n">mimeType</span><span class="o">=</span><span class="s">"application/vnd.com.example.android.beam"</span> <span class="o">/&gt;</span>
+	<span class="o">&lt;/</span><span class="n">intent</span><span class="o">-</span><span class="n">filter</span><span class="o">&gt;</span></code></pre></figure>
 
 <p>###对于非NDEF数据的Tag，即类似饭卡那些不是标准的NDEF数据，如何筛选到**</p>
 
@@ -312,28 +293,23 @@ new byte[0], "Beam me up, Android!".getBytes(Charset.forName("US-ASCII")));
 
 <p>当tag发送的Intent的action是 ACTION_TECH_DISCOVERED ,必须定义一个tech-list的xml文档，当xml文档中有一个tech-list是tag所支持的技术的子集，就会被认为筛选到了，从而打开activity；<strong>我们可以通过getTechLIst()来获取tag中所支持的技术，获取到技术后，就能够通过这种技术的静态get(Tag tag)方法，对tag进行读写</strong></p>
 
-<p>&lt;% highlight java %&gt;</p>
-
-<div class="highlighter-rouge">manifest文件中：
-&lt;meta-data android:name="android.nfc.action.TECH_DISCOVERED"
-android:resource="@xml/nfc_tech_filter" /&gt;
+<figure class="highlight"><pre><code class="language-java" data-lang="java">	<span class="n">manifest</span><span class="err">文件中：</span>
+	<span class="o">&lt;</span><span class="n">meta</span><span class="o">-</span><span class="n">data</span> <span class="nl">android:</span><span class="n">name</span><span class="o">=</span><span class="s">"android.nfc.action.TECH_DISCOVERED"</span>
+    <span class="nl">android:</span><span class="n">resource</span><span class="o">=</span><span class="s">"@xml/nfc_tech_filter"</span> <span class="o">/&gt;</span>
 
 
-nfc_tech_filter.xml文件
-&lt;resources xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2" &gt;
-&lt;tech-list&gt;
-    &lt;tech&gt;android.nfc.tech.MifareClassic&lt;/tech&gt;
-&lt;/tech-list&gt;
-&lt;tech-list&gt;
-    &lt;tech&gt;android.nfc.tech.MifareUltralight&lt;/tech&gt;
-&lt;/tech-list&gt;
-&lt;tech-list&gt;
-    &lt;tech&gt;android.nfc.tech.NfcA&lt;/tech&gt;
-&lt;/tech-list&gt;
-&lt;/resources&gt;
-</div>
-
-<p>&lt;% endhighlight %&gt;</p>
+	<span class="n">nfc_tech_filter</span><span class="o">.</span><span class="na">xml</span><span class="err">文件</span>
+	<span class="o">&lt;</span><span class="n">resources</span> <span class="nl">xmlns:</span><span class="n">xliff</span><span class="o">=</span><span class="s">"urn:oasis:names:tc:xliff:document:1.2"</span> <span class="o">&gt;</span>
+    <span class="o">&lt;</span><span class="n">tech</span><span class="o">-</span><span class="n">list</span><span class="o">&gt;</span>
+        <span class="o">&lt;</span><span class="n">tech</span><span class="o">&gt;</span><span class="n">android</span><span class="o">.</span><span class="na">nfc</span><span class="o">.</span><span class="na">tech</span><span class="o">.</span><span class="na">MifareClassic</span><span class="o">&lt;/</span><span class="n">tech</span><span class="o">&gt;</span>
+    <span class="o">&lt;/</span><span class="n">tech</span><span class="o">-</span><span class="n">list</span><span class="o">&gt;</span>
+    <span class="o">&lt;</span><span class="n">tech</span><span class="o">-</span><span class="n">list</span><span class="o">&gt;</span>
+        <span class="o">&lt;</span><span class="n">tech</span><span class="o">&gt;</span><span class="n">android</span><span class="o">.</span><span class="na">nfc</span><span class="o">.</span><span class="na">tech</span><span class="o">.</span><span class="na">MifareUltralight</span><span class="o">&lt;/</span><span class="n">tech</span><span class="o">&gt;</span>
+    <span class="o">&lt;/</span><span class="n">tech</span><span class="o">-</span><span class="n">list</span><span class="o">&gt;</span>
+    <span class="o">&lt;</span><span class="n">tech</span><span class="o">-</span><span class="n">list</span><span class="o">&gt;</span>
+        <span class="o">&lt;</span><span class="n">tech</span><span class="o">&gt;</span><span class="n">android</span><span class="o">.</span><span class="na">nfc</span><span class="o">.</span><span class="na">tech</span><span class="o">.</span><span class="na">NfcA</span><span class="o">&lt;/</span><span class="n">tech</span><span class="o">&gt;</span>
+    <span class="o">&lt;/</span><span class="n">tech</span><span class="o">-</span><span class="n">list</span><span class="o">&gt;</span>
+	<span class="o">&lt;/</span><span class="n">resources</span><span class="o">&gt;</span></code></pre></figure>
 
 <h2 id="aar---android-application-records-指定唯一应用能接受此tag-40以后">AAR  – Android Application Records 指定唯一应用能接受此tag （4.0以后）</h2>
 
@@ -341,161 +317,139 @@ nfc_tech_filter.xml文件
 
 <p>AAR记录写入，<strong>最好不要是第一条NdefRecord，第一条是用来标识uri和mine type的</strong>，除非你的应用只筛选 AAR</p>
 
-<p>&lt;% highlight java %&gt;</p>
-
-<div class="highlighter-rouge">NdefMessage msg = new NdefMessage(
-    new NdefRecord[] {
-        ...,
-        NdefRecord.createApplicationRecord("com.example.android.beam")}
-</div>
-
-<p>&lt;% endhighlight %&gt;</p>
+<figure class="highlight"><pre><code class="language-java" data-lang="java">	<span class="n">NdefMessage</span> <span class="n">msg</span> <span class="o">=</span> <span class="k">new</span> <span class="n">NdefMessage</span><span class="o">(</span>
+        <span class="k">new</span> <span class="n">NdefRecord</span><span class="o">[]</span> <span class="o">{</span>
+            <span class="o">...,</span>
+            <span class="n">NdefRecord</span><span class="o">.</span><span class="na">createApplicationRecord</span><span class="o">(</span><span class="s">"com.example.android.beam"</span><span class="o">)}</span></code></pre></figure>
 
 <h2 id="如何读取ndef-tag的内容">如何读取NDEF Tag的内容？</h2>
 
-<p>&lt;% highlight java %&gt;</p>
-
-<div class="highlighter-rouge">@Override
-protected void onNewIntent(Intent intent) {
-super.onNewIntent(intent);
-...
-if (intent != null &amp;&amp; NfcAdapter.ACTION_NDEF_DISCOVERED.equals(intent.getAction())) {
-    Parcelable[] rawMessages =
-        intent.getParcelableArrayExtra(NfcAdapter.EXTRA_NDEF_MESSAGES);
-    if (rawMessages != null) {
-        NdefMessage[] messages = new NdefMessage[rawMessages.length];
-        for (int i = 0; i &lt; rawMessages.length; i++) {
-            messages[i] = (NdefMessage) rawMessages[i];
-        }
-        // Process the messages array.
-        ...
-    }
-}
-} &lt;% endhighlight %&gt;
-</div>
+<figure class="highlight"><pre><code class="language-java" data-lang="java">	<span class="nd">@Override</span>
+	<span class="kd">protected</span> <span class="kt">void</span> <span class="nf">onNewIntent</span><span class="o">(</span><span class="n">Intent</span> <span class="n">intent</span><span class="o">)</span> <span class="o">{</span>
+    <span class="kd">super</span><span class="o">.</span><span class="na">onNewIntent</span><span class="o">(</span><span class="n">intent</span><span class="o">);</span>
+    <span class="o">...</span>
+    <span class="k">if</span> <span class="o">(</span><span class="n">intent</span> <span class="o">!=</span> <span class="kc">null</span> <span class="o">&amp;&amp;</span> <span class="n">NfcAdapter</span><span class="o">.</span><span class="na">ACTION_NDEF_DISCOVERED</span><span class="o">.</span><span class="na">equals</span><span class="o">(</span><span class="n">intent</span><span class="o">.</span><span class="na">getAction</span><span class="o">()))</span> <span class="o">{</span>
+        <span class="n">Parcelable</span><span class="o">[]</span> <span class="n">rawMessages</span> <span class="o">=</span>
+            <span class="n">intent</span><span class="o">.</span><span class="na">getParcelableArrayExtra</span><span class="o">(</span><span class="n">NfcAdapter</span><span class="o">.</span><span class="na">EXTRA_NDEF_MESSAGES</span><span class="o">);</span>
+        <span class="k">if</span> <span class="o">(</span><span class="n">rawMessages</span> <span class="o">!=</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span>
+            <span class="n">NdefMessage</span><span class="o">[]</span> <span class="n">messages</span> <span class="o">=</span> <span class="k">new</span> <span class="n">NdefMessage</span><span class="o">[</span><span class="n">rawMessages</span><span class="o">.</span><span class="na">length</span><span class="o">];</span>
+            <span class="k">for</span> <span class="o">(</span><span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="o">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">rawMessages</span><span class="o">.</span><span class="na">length</span><span class="o">;</span> <span class="n">i</span><span class="o">++)</span> <span class="o">{</span>
+                <span class="n">messages</span><span class="o">[</span><span class="n">i</span><span class="o">]</span> <span class="o">=</span> <span class="o">(</span><span class="n">NdefMessage</span><span class="o">)</span> <span class="n">rawMessages</span><span class="o">[</span><span class="n">i</span><span class="o">];</span>
+            <span class="o">}</span>
+            <span class="c1">// Process the messages array.</span>
+            <span class="o">...</span>
+        <span class="o">}</span>
+    <span class="o">}</span>
+	<span class="o">}</span></code></pre></figure>
 
 <h2 id="非ndef的tag的操作">非NDEF的TAG的操作</h2>
 
 <p>首先用getTechList()获取到支持的技术(字符串数组形式返回)，然后匹配一下是哪种技术，比如支持的是MifareClassic技术，那么它的读写操作如下：</p>
 
-<p>&lt;% highlight java %&gt;</p>
+<figure class="highlight"><pre><code class="language-java" data-lang="java">	
+	<span class="c1">//订餐系统中当有卡临近手机时，会打开NfcReaderActivity，调用这个find()方法；</span>
 
-<div class="highlighter-rouge">//订餐系统中当有卡临近手机时，会打开NfcReaderActivity，调用这个find()方法；
+	<span class="kd">public</span> <span class="kt">boolean</span> <span class="nf">find</span><span class="o">(</span><span class="n">Intent</span> <span class="n">_intent</span><span class="o">)</span> <span class="o">{</span>
+		<span class="c1">// 得到是否检测到ACTION_TECH_DISCOVERED触发</span>
+		<span class="n">String</span> <span class="n">mAction</span> <span class="o">=</span> <span class="n">_intent</span><span class="o">.</span><span class="na">getAction</span><span class="o">();</span>
+		<span class="k">if</span> <span class="o">(</span><span class="n">NfcAdapter</span><span class="o">.</span><span class="na">ACTION_NDEF_DISCOVERED</span><span class="o">.</span><span class="na">equals</span><span class="o">(</span><span class="n">mAction</span><span class="o">))</span> <span class="o">{</span>
+		
+		<span class="o">}</span> <span class="k">else</span> <span class="k">if</span> <span class="o">(</span><span class="n">NfcAdapter</span><span class="o">.</span><span class="na">ACTION_TECH_DISCOVERED</span><span class="o">.</span><span class="na">equals</span><span class="o">(</span><span class="n">mAction</span><span class="o">))</span> <span class="o">{</span>
+			<span class="n">Tag</span> <span class="n">tag</span> <span class="o">=</span> <span class="n">_intent</span><span class="o">.</span><span class="na">getParcelableExtra</span><span class="o">(</span><span class="n">NfcAdapter</span><span class="o">.</span><span class="na">EXTRA_TAG</span><span class="o">);</span>
+			<span class="n">Log</span><span class="o">.</span><span class="na">d</span><span class="o">(</span><span class="s">"nfc"</span><span class="o">,</span> <span class="s">""</span><span class="o">+</span><span class="n">NFunc</span><span class="o">.</span><span class="na">bytesToHexString</span><span class="o">(</span><span class="n">tag</span><span class="o">.</span><span class="na">getId</span><span class="o">()));</span>
+			<span class="k">if</span> <span class="o">(</span><span class="n">tag</span> <span class="o">!=</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span>
+				<span class="n">String</span><span class="o">[]</span> <span class="n">techList</span> <span class="o">=</span> <span class="n">tag</span><span class="o">.</span><span class="na">getTechList</span><span class="o">();</span>
+				<span class="k">if</span> <span class="o">(</span><span class="n">techList</span> <span class="o">!=</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span>
+					<span class="k">for</span> <span class="o">(</span><span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="o">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">techList</span><span class="o">.</span><span class="na">length</span><span class="o">;</span> <span class="n">i</span><span class="o">++)</span> <span class="o">{</span>
+						<span class="n">String</span> <span class="n">name</span> <span class="o">=</span> <span class="n">techList</span><span class="o">[</span><span class="n">i</span><span class="o">];</span>
+						<span class="k">try</span> <span class="o">{</span>
+							<span class="n">mCardHandles</span><span class="o">[</span><span class="n">fixTagIndex</span><span class="o">(</span><span class="n">name</span><span class="o">)]</span> <span class="o">=</span> <span class="n">fixCardTag</span><span class="o">(</span><span class="n">name</span><span class="o">,</span> <span class="n">tag</span><span class="o">);</span>
+						<span class="o">}</span> <span class="k">catch</span> <span class="o">(</span><span class="n">Exception</span> <span class="n">e</span><span class="o">)</span> <span class="o">{</span> <span class="o">}</span>
+					<span class="o">}</span>
+				<span class="o">}</span>
+				<span class="k">return</span> <span class="kc">true</span><span class="o">;</span>
+			<span class="o">}</span>
+		<span class="o">}</span> <span class="k">else</span> <span class="k">if</span> <span class="o">(</span><span class="n">NfcAdapter</span><span class="o">.</span><span class="na">ACTION_TAG_DISCOVERED</span><span class="o">.</span><span class="na">equals</span><span class="o">(</span><span class="n">mAction</span><span class="o">))</span> <span class="o">{</span>
 
-public boolean find(Intent _intent) {
-	// 得到是否检测到ACTION_TECH_DISCOVERED触发
-	String mAction = _intent.getAction();
-	if (NfcAdapter.ACTION_NDEF_DISCOVERED.equals(mAction)) {
-	
-	} else if (NfcAdapter.ACTION_TECH_DISCOVERED.equals(mAction)) {
-		Tag tag = _intent.getParcelableExtra(NfcAdapter.EXTRA_TAG);
-		Log.d("nfc", ""+NFunc.bytesToHexString(tag.getId()));
-		if (tag != null) {
-			String[] techList = tag.getTechList();
-			if (techList != null) {
-				for (int i = 0; i &lt; techList.length; i++) {
-					String name = techList[i];
-					try {
-						mCardHandles[fixTagIndex(name)] = fixCardTag(name, tag);
-					} catch (Exception e) { }
-				}
-			}
-			return true;
-		}
-	} else if (NfcAdapter.ACTION_TAG_DISCOVERED.equals(mAction)) {
-
-	}
-	return false;
-}
+		<span class="o">}</span>
+		<span class="k">return</span> <span class="kc">false</span><span class="o">;</span>
+	<span class="o">}</span>
 
 
-	private NCardHandle fixCardTag(String _name, Tag _tag) {
-	if (_name != null) {
-		_name = _name.substring(_name.lastIndexOf('.') + 1);
-		if ("NfcA".equals(_name)) {
-			return NNfcA.create(_tag);
-		} else if ("NfcB".equals(_name)) {
-			
-		} else if ("NfcF".equals(_name)) {
-			
-		} else if ("NfcV".equals(_name)) {
-			
-		} else if ("IsoDep".equals(_name)) {
-			return NIsoDep.create(_tag);
-		} else if ("Ndef".equals(_name)) {
-			
-		} else if ("NdefFormatable".equals(_name)) {
-			
-		} else if ("MifareClassic".equals(_name)) {
-			return NMifareClassic.create(_tag);
-		} else if ("MifareUltralight".equals(_name)) {
-			
-		}
-	}
-	return null;
-}
-</div>
-
-<p>&lt;% endhighlight %&gt;</p>
+		<span class="kd">private</span> <span class="n">NCardHandle</span> <span class="nf">fixCardTag</span><span class="o">(</span><span class="n">String</span> <span class="n">_name</span><span class="o">,</span> <span class="n">Tag</span> <span class="n">_tag</span><span class="o">)</span> <span class="o">{</span>
+		<span class="k">if</span> <span class="o">(</span><span class="n">_name</span> <span class="o">!=</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span>
+			<span class="n">_name</span> <span class="o">=</span> <span class="n">_name</span><span class="o">.</span><span class="na">substring</span><span class="o">(</span><span class="n">_name</span><span class="o">.</span><span class="na">lastIndexOf</span><span class="o">(</span><span class="sc">'.'</span><span class="o">)</span> <span class="o">+</span> <span class="mi">1</span><span class="o">);</span>
+			<span class="k">if</span> <span class="o">(</span><span class="s">"NfcA"</span><span class="o">.</span><span class="na">equals</span><span class="o">(</span><span class="n">_name</span><span class="o">))</span> <span class="o">{</span>
+				<span class="k">return</span> <span class="n">NNfcA</span><span class="o">.</span><span class="na">create</span><span class="o">(</span><span class="n">_tag</span><span class="o">);</span>
+			<span class="o">}</span> <span class="k">else</span> <span class="k">if</span> <span class="o">(</span><span class="s">"NfcB"</span><span class="o">.</span><span class="na">equals</span><span class="o">(</span><span class="n">_name</span><span class="o">))</span> <span class="o">{</span>
+				
+			<span class="o">}</span> <span class="k">else</span> <span class="k">if</span> <span class="o">(</span><span class="s">"NfcF"</span><span class="o">.</span><span class="na">equals</span><span class="o">(</span><span class="n">_name</span><span class="o">))</span> <span class="o">{</span>
+				
+			<span class="o">}</span> <span class="k">else</span> <span class="k">if</span> <span class="o">(</span><span class="s">"NfcV"</span><span class="o">.</span><span class="na">equals</span><span class="o">(</span><span class="n">_name</span><span class="o">))</span> <span class="o">{</span>
+				
+			<span class="o">}</span> <span class="k">else</span> <span class="k">if</span> <span class="o">(</span><span class="s">"IsoDep"</span><span class="o">.</span><span class="na">equals</span><span class="o">(</span><span class="n">_name</span><span class="o">))</span> <span class="o">{</span>
+				<span class="k">return</span> <span class="n">NIsoDep</span><span class="o">.</span><span class="na">create</span><span class="o">(</span><span class="n">_tag</span><span class="o">);</span>
+			<span class="o">}</span> <span class="k">else</span> <span class="k">if</span> <span class="o">(</span><span class="s">"Ndef"</span><span class="o">.</span><span class="na">equals</span><span class="o">(</span><span class="n">_name</span><span class="o">))</span> <span class="o">{</span>
+				
+			<span class="o">}</span> <span class="k">else</span> <span class="k">if</span> <span class="o">(</span><span class="s">"NdefFormatable"</span><span class="o">.</span><span class="na">equals</span><span class="o">(</span><span class="n">_name</span><span class="o">))</span> <span class="o">{</span>
+				
+			<span class="o">}</span> <span class="k">else</span> <span class="k">if</span> <span class="o">(</span><span class="s">"MifareClassic"</span><span class="o">.</span><span class="na">equals</span><span class="o">(</span><span class="n">_name</span><span class="o">))</span> <span class="o">{</span>
+				<span class="k">return</span> <span class="n">NMifareClassic</span><span class="o">.</span><span class="na">create</span><span class="o">(</span><span class="n">_tag</span><span class="o">);</span>
+			<span class="o">}</span> <span class="k">else</span> <span class="k">if</span> <span class="o">(</span><span class="s">"MifareUltralight"</span><span class="o">.</span><span class="na">equals</span><span class="o">(</span><span class="n">_name</span><span class="o">))</span> <span class="o">{</span>
+				
+			<span class="o">}</span>
+		<span class="o">}</span>
+		<span class="k">return</span> <span class="kc">null</span><span class="o">;</span>
+	<span class="o">}</span></code></pre></figure>
 
 <p><strong>务必注意：这个代码样例中，TAG里面封装的数据都是一开始定好的，比如这个块写什么，这个块能读出什么，哪个块是读密码，哪个块是写密码块，下面的例子只是单纯地展示一些读写的操作，而跟指定的块和扇区的值不存在必然关系</strong></p>
 
 <h3 id="读操作">读操作</h3>
 
-<p>&lt;% highlight java %&gt;</p>
-
-<div class="highlighter-rouge">@Override
-public byte[] read(int _sector, int _block, byte[] _key) {
-	MifareClassic mMifareClassic = MifareClassic.get(mTag);
-	try {
-		mMifareClassic.connect();
-		//读保护，只有给定的_key数组跟卡里面的读密码字节数组 匹配时，才能进行读卡操作；
-		if (mMifareClassic.authenticateSectorWithKeyA(_sector, _key == null ? MifareClassic.KEY_DEFAULT : _key)) {
-			return mMifareClassic.readBlock(mMifareClassic.sectorToBlock(_sector) + _block);
-		}
-	} catch (Exception e) {
-		Log.e("", e.toString());
-	} finally {
-		try {
-			mMifareClassic.close();
-		} catch (Exception e2) {
-		}
-	}
-	return null;
-}
-</div>
-
-<p>&lt;% endhighlight %&gt;</p>
+<figure class="highlight"><pre><code class="language-java" data-lang="java">	<span class="nd">@Override</span>
+	<span class="kd">public</span> <span class="kt">byte</span><span class="o">[]</span> <span class="nf">read</span><span class="o">(</span><span class="kt">int</span> <span class="n">_sector</span><span class="o">,</span> <span class="kt">int</span> <span class="n">_block</span><span class="o">,</span> <span class="kt">byte</span><span class="o">[]</span> <span class="n">_key</span><span class="o">)</span> <span class="o">{</span>
+		<span class="n">MifareClassic</span> <span class="n">mMifareClassic</span> <span class="o">=</span> <span class="n">MifareClassic</span><span class="o">.</span><span class="na">get</span><span class="o">(</span><span class="n">mTag</span><span class="o">);</span>
+		<span class="k">try</span> <span class="o">{</span>
+			<span class="n">mMifareClassic</span><span class="o">.</span><span class="na">connect</span><span class="o">();</span>
+			<span class="c1">//读保护，只有给定的_key数组跟卡里面的读密码字节数组 匹配时，才能进行读卡操作；</span>
+			<span class="k">if</span> <span class="o">(</span><span class="n">mMifareClassic</span><span class="o">.</span><span class="na">authenticateSectorWithKeyA</span><span class="o">(</span><span class="n">_sector</span><span class="o">,</span> <span class="n">_key</span> <span class="o">==</span> <span class="kc">null</span> <span class="o">?</span> <span class="n">MifareClassic</span><span class="o">.</span><span class="na">KEY_DEFAULT</span> <span class="o">:</span> <span class="n">_key</span><span class="o">))</span> <span class="o">{</span>
+				<span class="k">return</span> <span class="n">mMifareClassic</span><span class="o">.</span><span class="na">readBlock</span><span class="o">(</span><span class="n">mMifareClassic</span><span class="o">.</span><span class="na">sectorToBlock</span><span class="o">(</span><span class="n">_sector</span><span class="o">)</span> <span class="o">+</span> <span class="n">_block</span><span class="o">);</span>
+			<span class="o">}</span>
+		<span class="o">}</span> <span class="k">catch</span> <span class="o">(</span><span class="n">Exception</span> <span class="n">e</span><span class="o">)</span> <span class="o">{</span>
+			<span class="n">Log</span><span class="o">.</span><span class="na">e</span><span class="o">(</span><span class="s">""</span><span class="o">,</span> <span class="n">e</span><span class="o">.</span><span class="na">toString</span><span class="o">());</span>
+		<span class="o">}</span> <span class="k">finally</span> <span class="o">{</span>
+			<span class="k">try</span> <span class="o">{</span>
+				<span class="n">mMifareClassic</span><span class="o">.</span><span class="na">close</span><span class="o">();</span>
+			<span class="o">}</span> <span class="k">catch</span> <span class="o">(</span><span class="n">Exception</span> <span class="n">e2</span><span class="o">)</span> <span class="o">{</span>
+			<span class="o">}</span>
+		<span class="o">}</span>
+		<span class="k">return</span> <span class="kc">null</span><span class="o">;</span>
+	<span class="o">}</span></code></pre></figure>
 
 <h3 id="写操作">写操作</h3>
 
-<p>&lt;% highlight java %&gt;</p>
-
-<div class="highlighter-rouge">@Override
-public boolean write(byte[] _data, int _sector, int _block, byte[] _key) {
-	MifareClassic mMifareClassic = MifareClassic.get(mTag);
-	try {
-		mMifareClassic.connect();
-		//写保护验证
-		if (mMifareClassic.authenticateSectorWithKeyB(_sector, _key == null ? MifareClassic.KEY_DEFAULT : _key)) {
-			byte[] dataToWrite = new byte[16];
-			System.arraycopy(_data, 0, dataToWrite, 0, _data.length &lt;= 16 ? _data.length : 16);
-			mMifareClassic.writeBlock(mMifareClassic.sectorToBlock(_sector) + _block, dataToWrite);
-			return true;
-		}
-	} catch (Exception e) {
-		Log.e("", e.toString());
-	} finally {
-		try {
-			mMifareClassic.close();
-		} catch (Exception e2) {
-		}
-	}
-	return false;
-}
-</div>
-
-<p>&lt;% endhighlight %&gt;</p>
+<figure class="highlight"><pre><code class="language-java" data-lang="java">	<span class="nd">@Override</span>
+	<span class="kd">public</span> <span class="kt">boolean</span> <span class="nf">write</span><span class="o">(</span><span class="kt">byte</span><span class="o">[]</span> <span class="n">_data</span><span class="o">,</span> <span class="kt">int</span> <span class="n">_sector</span><span class="o">,</span> <span class="kt">int</span> <span class="n">_block</span><span class="o">,</span> <span class="kt">byte</span><span class="o">[]</span> <span class="n">_key</span><span class="o">)</span> <span class="o">{</span>
+		<span class="n">MifareClassic</span> <span class="n">mMifareClassic</span> <span class="o">=</span> <span class="n">MifareClassic</span><span class="o">.</span><span class="na">get</span><span class="o">(</span><span class="n">mTag</span><span class="o">);</span>
+		<span class="k">try</span> <span class="o">{</span>
+			<span class="n">mMifareClassic</span><span class="o">.</span><span class="na">connect</span><span class="o">();</span>
+			<span class="c1">//写保护验证</span>
+			<span class="k">if</span> <span class="o">(</span><span class="n">mMifareClassic</span><span class="o">.</span><span class="na">authenticateSectorWithKeyB</span><span class="o">(</span><span class="n">_sector</span><span class="o">,</span> <span class="n">_key</span> <span class="o">==</span> <span class="kc">null</span> <span class="o">?</span> <span class="n">MifareClassic</span><span class="o">.</span><span class="na">KEY_DEFAULT</span> <span class="o">:</span> <span class="n">_key</span><span class="o">))</span> <span class="o">{</span>
+				<span class="kt">byte</span><span class="o">[]</span> <span class="n">dataToWrite</span> <span class="o">=</span> <span class="k">new</span> <span class="kt">byte</span><span class="o">[</span><span class="mi">16</span><span class="o">];</span>
+				<span class="n">System</span><span class="o">.</span><span class="na">arraycopy</span><span class="o">(</span><span class="n">_data</span><span class="o">,</span> <span class="mi">0</span><span class="o">,</span> <span class="n">dataToWrite</span><span class="o">,</span> <span class="mi">0</span><span class="o">,</span> <span class="n">_data</span><span class="o">.</span><span class="na">length</span> <span class="o">&lt;=</span> <span class="mi">16</span> <span class="o">?</span> <span class="n">_data</span><span class="o">.</span><span class="na">length</span> <span class="o">:</span> <span class="mi">16</span><span class="o">);</span>
+				<span class="n">mMifareClassic</span><span class="o">.</span><span class="na">writeBlock</span><span class="o">(</span><span class="n">mMifareClassic</span><span class="o">.</span><span class="na">sectorToBlock</span><span class="o">(</span><span class="n">_sector</span><span class="o">)</span> <span class="o">+</span> <span class="n">_block</span><span class="o">,</span> <span class="n">dataToWrite</span><span class="o">);</span>
+				<span class="k">return</span> <span class="kc">true</span><span class="o">;</span>
+			<span class="o">}</span>
+		<span class="o">}</span> <span class="k">catch</span> <span class="o">(</span><span class="n">Exception</span> <span class="n">e</span><span class="o">)</span> <span class="o">{</span>
+			<span class="n">Log</span><span class="o">.</span><span class="na">e</span><span class="o">(</span><span class="s">""</span><span class="o">,</span> <span class="n">e</span><span class="o">.</span><span class="na">toString</span><span class="o">());</span>
+		<span class="o">}</span> <span class="k">finally</span> <span class="o">{</span>
+			<span class="k">try</span> <span class="o">{</span>
+				<span class="n">mMifareClassic</span><span class="o">.</span><span class="na">close</span><span class="o">();</span>
+			<span class="o">}</span> <span class="k">catch</span> <span class="o">(</span><span class="n">Exception</span> <span class="n">e2</span><span class="o">)</span> <span class="o">{</span>
+			<span class="o">}</span>
+		<span class="o">}</span>
+		<span class="k">return</span> <span class="kc">false</span><span class="o">;</span>
+	<span class="o">}</span></code></pre></figure>
 
 
 

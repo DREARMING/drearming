@@ -261,9 +261,9 @@ Java虚拟机的作用是什么？它如何实现这些基本功能的？
 二维码的生成
 调用Zxing第三方库可以很容易生成二维码，我们用到的类是 MultiFormatWriter
 
-&lt;% highlight java %&gt;
+	public final class MultiFormatWriter implements Writer {
 
-public final class MultiFormatW...
+...
         </div>
     </a>
     <p class="post-meta">
@@ -321,9 +321,7 @@ public final class MultiFormatW...
 
 如何检测手机是否支持NFC功能，或者是否打开了NFC功能
 
-&lt;% highlight java %&gt;
-
-&lt;uses-fe...
+    &lt;uses-feature android:name="andr...
         </div>
     </a>
     <p class="post-meta">
