@@ -1,0 +1,765 @@
+<!DOCTYPE html>
+
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="google-site-verification" content="xBT4GhYoi5qRD5tr338pgPM5OWHHIDR6mNg1a3euekI" />
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="So live a life you will remember">
+    <meta name="keyword"  content="Android Java Web">
+    <link rel="shortcut icon" href="/drearming.github.com/img/favicon.ico">
+
+    <title>Activity栈和回退机制 - 陈俊杰 | MVCoder</title>
+
+    <link rel="canonical" href="http://localhost:4000/drearming.github.com/2016/10/10/Activity-stack/">
+
+    <!-- Bootstrap Core CSS -->
+    <link rel="stylesheet" href="/drearming.github.com/css/bootstrap.min.css">
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="/drearming.github.com/css/hux-blog.min.css">
+
+    <!-- Pygments Github CSS -->
+    <link rel="stylesheet" href="/drearming.github.com/css/syntax.css">
+
+    <!-- Custom Fonts -->
+    <!-- <link href="http://maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css" rel="stylesheet" type="text/css"> -->
+    <!-- Hux change font-awesome CDN to qiniu -->
+    <link href="http://cdn.staticfile.org/font-awesome/4.2.0/css/font-awesome.min.css" rel="stylesheet" type="text/css">
+
+
+    <!-- Hux Delete, sad but pending in China
+    <link href='http://fonts.googleapis.com/css?family=Lora:400,700,400italic,700italic' rel='stylesheet' type='text/css'>
+    <link href='http://fonts.googleapis.com/css?family=Open+Sans:300italic,400italic,600italic,700italic,800italic,400,300,600,700,800' rel='stylesheet' type='text/
+    css'>
+    -->
+
+
+    <!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
+    <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
+    <!--[if lt IE 9]>
+        <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+        <script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
+    <![endif]-->
+
+    <!-- ga & ba script hoook -->
+    <script></script>
+</head>
+
+
+<!-- hack iOS CSS :active style -->
+<body ontouchstart="">
+
+    <!-- Navigation -->
+<nav class="navbar navbar-default navbar-custom navbar-fixed-top">
+    <div class="container-fluid">
+        <!-- Brand and toggle get grouped for better mobile display -->
+        <div class="navbar-header page-scroll">
+            <button type="button" class="navbar-toggle">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+            <a class="navbar-brand" href="/drearming.github.com/">MVCoder Blog</a>
+        </div>
+
+        <!-- Collect the nav links, forms, and other content for toggling -->
+        <!-- Known Issue, found by Hux:
+            <nav>'s height woule be hold on by its content.
+            so, when navbar scale out, the <nav> will cover tags.
+            also mask any touch event of tags, unfortunately.
+        -->
+        <div id="huxblog_navbar">
+            <div class="navbar-collapse">
+                <ul class="nav navbar-nav navbar-right">
+                    <li>
+                        <a href="/drearming.github.com/">Home</a>
+                    </li>
+                    
+                    <li>
+                        <a href="/drearming.github.com/about/">About</a>
+                    </li>
+                    
+                    <li>
+                        <a href="/drearming.github.com/tags/">Tags</a>
+                    </li>
+                    
+                </ul>
+            </div>
+        </div>
+        <!-- /.navbar-collapse -->
+    </div>
+    <!-- /.container -->
+</nav>
+<script>
+    // Drop Bootstarp low-performance Navbar
+    // Use customize navbar with high-quality material design animation
+    // in high-perf jank-free CSS3 implementation
+    var $body   = document.body;
+    var $toggle = document.querySelector('.navbar-toggle');
+    var $navbar = document.querySelector('#huxblog_navbar');
+    var $collapse = document.querySelector('.navbar-collapse');
+
+    $toggle.addEventListener('click', handleMagic)
+    function handleMagic(e){
+        if ($navbar.className.indexOf('in') > 0) {
+        // CLOSE
+            $navbar.className = " ";
+            // wait until animation end.
+            setTimeout(function(){
+                // prevent frequently toggle
+                if($navbar.className.indexOf('in') < 0) {
+                    $collapse.style.height = "0px"
+                }
+            },400)
+        }else{
+        // OPEN
+            $collapse.style.height = "auto"
+            $navbar.className += " in";
+        }
+    }
+</script>
+
+
+    <!-- Image to hack wechat -->
+<!-- <img src="/img/icon_wechat.png" width="0" height="0"> -->
+<!-- <img src="/drearming.github.com/img/post-bg-2015.jpg" width="0" height="0"> -->
+
+<!-- Post Header -->
+<style type="text/css">
+    header.intro-header{
+        background-image: url('/drearming.github.com/img/post-bg-2015.jpg')
+    }
+</style>
+<header class="intro-header" >
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+                <div class="post-heading">
+                    <div class="tags">
+                        
+                        <a class="tag" href="/drearming.github.com/tags/#四大组件" title="四大组件">四大组件</a>
+                        
+                        <a class="tag" href="/drearming.github.com/tags/#MealOrder" title="MealOrder">MealOrder</a>
+                        
+                        <a class="tag" href="/drearming.github.com/tags/#Android" title="Android">Android</a>
+                        
+                    </div>
+                    <h1>Activity栈和回退机制</h1>
+                    
+                    
+                    <h2 class="subheading">或许你要自己维护一个Activity栈</h2>
+                    
+                    <span class="meta">Posted by MVCoder on October 10, 2016</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</header>
+
+<!-- Post Content -->
+<article>
+    <div class="container">
+        <div class="row">
+
+    <!-- Post Container -->
+            <div class="
+                col-lg-8 col-lg-offset-2
+                col-md-10 col-md-offset-1
+                post-container">
+
+				<h2 id="activity栈和回退机制">Activity栈和回退机制</h2>
+
+<p>因为系统有很多的Activity，若是单纯由Android自带的Acitivity栈来维护的栈顺序，或许我们会遇到下面一些问题：</p>
+
+<ol>
+  <li>我们无法直接返回到指定的页面</li>
+  <li>我们无法把数据传输到位于activity栈中其他activity（非栈顶），进行数据更新</li>
+</ol>
+
+<p>Activity自定义栈在系统中的作用是明显的，例如：当设备遇到卡时，会触发NFC功能，打开一个Activity，这个时候，会在这个Activity自定义栈中，把卡信息发送到指定的Activity，实现数据更新，再销毁读卡的activity，详情参考：NFC刷卡原理这个文章</p>
+
+<h3 id="实现">实现</h3>
+
+<p>系统中定义了一个抽象基类，NActivityBase</p>
+
+<figure class="highlight"><pre><code class="language-java" data-lang="java">	
+    <span class="kd">public</span> <span class="kd">abstract</span> <span class="kd">class</span> <span class="nc">NActivityBase</span> <span class="kd">extends</span> <span class="n">Activity</span><span class="o">{</span>
+    	<span class="kd">abstract</span> <span class="kd">public</span> <span class="kt">void</span> <span class="nf">refresh</span><span class="o">(</span><span class="n">String</span><span class="o">...</span> <span class="n">_data</span><span class="o">);</span>
+    <span class="o">}</span></code></pre></figure>
+
+<p>很简单，只有一个抽象函数，refresh函数，参数是不定长字符串数组，这个基类主要用于上面所说的，从其他界面传递数据所用到的</p>
+
+<p>核心基类<strong>BaseActivity</strong></p>
+
+<figure class="highlight"><pre><code class="language-java" data-lang="java">	<span class="kd">public</span> <span class="kd">abstract</span> <span class="kd">class</span> <span class="nc">BaseActivity</span> <span class="kd">extends</span> <span class="n">NActivityBase</span><span class="o">{</span>
+	<span class="c1">//返回按钮</span>
+	<span class="kd">protected</span> <span class="n">ImageButton</span> <span class="n">mStepback</span><span class="o">;</span>
+	<span class="c1">//title</span>
+	<span class="kd">protected</span> <span class="n">TextView</span> <span class="n">mWndTitle</span><span class="o">;</span>
+	<span class="c1">//位于titlebar的右边，一个确认按钮</span>
+	<span class="kd">protected</span> <span class="n">Button</span> <span class="n">mConfirm</span><span class="o">;</span>
+	<span class="kd">protected</span> <span class="n">Spinner</span> <span class="n">mSpinner</span><span class="o">;</span>
+	<span class="c1">//放置内容的布局</span>
+	<span class="kd">protected</span> <span class="n">FrameLayout</span> <span class="n">mContentLayout</span><span class="o">;</span>
+	
+	<span class="nd">@Override</span>
+	<span class="kd">protected</span> <span class="kt">void</span> <span class="nf">onCreate</span><span class="o">(</span><span class="n">Bundle</span> <span class="n">_savedInstanceState</span><span class="o">)</span> <span class="o">{</span>
+		<span class="kd">super</span><span class="o">.</span><span class="na">onCreate</span><span class="o">(</span><span class="n">_savedInstanceState</span><span class="o">);</span>
+		<span class="n">requestWindowFeature</span><span class="o">(</span><span class="n">Window</span><span class="o">.</span><span class="na">FEATURE_NO_TITLE</span><span class="o">);</span>
+		
+		<span class="n">UIControler2</span><span class="o">.</span><span class="na">uiCtl</span><span class="o">.</span><span class="na">putActivity</span><span class="o">(</span><span class="k">this</span><span class="o">);</span>
+		
+		<span class="n">setContentView</span><span class="o">(</span><span class="n">R</span><span class="o">.</span><span class="na">layout</span><span class="o">.</span><span class="na">view_spacewnd</span><span class="o">);</span>
+		<span class="c1">// 回退按钮</span>
+		<span class="n">mStepback</span> <span class="o">=</span> <span class="o">(</span><span class="n">ImageButton</span><span class="o">)</span> <span class="n">findViewById</span><span class="o">(</span><span class="n">R</span><span class="o">.</span><span class="na">id</span><span class="o">.</span><span class="na">spaceWnd_back</span><span class="o">);</span>
+		<span class="n">mStepback</span><span class="o">.</span><span class="na">setOnClickListener</span><span class="o">(</span><span class="n">clickListener</span><span class="o">);</span>
+		<span class="n">mStepback</span><span class="o">.</span><span class="na">setImageDrawable</span><span class="o">(</span><span class="n">getResources</span><span class="o">().</span><span class="na">getDrawable</span><span class="o">(</span><span class="n">R</span><span class="o">.</span><span class="na">drawable</span><span class="o">.</span><span class="na">backtrackbtnbg_idle</span><span class="o">));</span>
+		
+		<span class="n">mContentLayout</span> <span class="o">=</span> <span class="o">(</span><span class="n">FrameLayout</span><span class="o">)</span> <span class="n">findViewById</span><span class="o">(</span><span class="n">R</span><span class="o">.</span><span class="na">id</span><span class="o">.</span><span class="na">spaceWnd_content</span><span class="o">);</span>
+		<span class="c1">// 窗口标题文字</span>
+		<span class="n">mWndTitle</span> <span class="o">=</span> <span class="o">(</span><span class="n">TextView</span><span class="o">)</span> <span class="n">findViewById</span><span class="o">(</span><span class="n">R</span><span class="o">.</span><span class="na">id</span><span class="o">.</span><span class="na">spaceWnd_wndTitle</span><span class="o">);</span>
+		<span class="c1">// 确认按钮</span>
+		<span class="n">mConfirm</span> <span class="o">=</span> <span class="o">(</span><span class="n">Button</span><span class="o">)</span> <span class="n">findViewById</span><span class="o">(</span><span class="n">R</span><span class="o">.</span><span class="na">id</span><span class="o">.</span><span class="na">spaceWnd_submit</span><span class="o">);</span>
+		<span class="c1">// 下拉列表</span>
+		<span class="n">mSpinner</span> <span class="o">=</span> <span class="o">(</span><span class="n">Spinner</span><span class="o">)</span> <span class="n">findViewById</span><span class="o">(</span><span class="n">R</span><span class="o">.</span><span class="na">id</span><span class="o">.</span><span class="na">spaceWnd_spinner</span><span class="o">);</span>
+		
+	<span class="o">}</span>
+	
+	
+	<span class="kd">public</span> <span class="kt">void</span> <span class="nf">setContentView</span><span class="o">(</span><span class="n">NChildrenViewBase</span> <span class="n">_view</span><span class="o">)</span> <span class="o">{</span>
+		<span class="n">_view</span><span class="o">.</span><span class="na">addto</span><span class="o">(</span><span class="n">mContentLayout</span><span class="o">,</span> <span class="k">new</span> <span class="n">FrameLayout</span><span class="o">.</span><span class="na">LayoutParams</span><span class="o">(</span><span class="n">LayoutParams</span><span class="o">.</span><span class="na">MATCH_PARENT</span><span class="o">,</span> <span class="n">LayoutParams</span><span class="o">.</span><span class="na">MATCH_PARENT</span><span class="o">));</span>
+	<span class="o">}</span>
+	
+	<span class="nd">@Override</span>
+	<span class="kd">public</span> <span class="kt">boolean</span> <span class="nf">onKeyDown</span><span class="o">(</span><span class="kt">int</span> <span class="n">keyCode</span><span class="o">,</span> <span class="n">KeyEvent</span> <span class="n">event</span><span class="o">)</span> <span class="o">{</span>
+		<span class="k">if</span> <span class="o">(</span><span class="n">keyCode</span> <span class="o">==</span> <span class="n">KeyEvent</span><span class="o">.</span><span class="na">KEYCODE_BACK</span><span class="o">)</span> <span class="o">{</span>
+			<span class="n">UIControler2</span><span class="o">.</span><span class="na">uiCtl</span><span class="o">.</span><span class="na">stepback</span><span class="o">();</span>
+		<span class="o">}</span>
+		<span class="k">return</span> <span class="kd">super</span><span class="o">.</span><span class="na">onKeyDown</span><span class="o">(</span><span class="n">keyCode</span><span class="o">,</span> <span class="n">event</span><span class="o">);</span>
+	<span class="o">}</span>
+
+	<span class="kd">private</span> <span class="n">View</span><span class="o">.</span><span class="na">OnClickListener</span> <span class="n">clickListener</span> <span class="o">=</span> <span class="k">new</span> <span class="n">View</span><span class="o">.</span><span class="na">OnClickListener</span><span class="o">()</span> <span class="o">{</span>
+		<span class="nd">@Override</span>
+		<span class="kd">public</span> <span class="kt">void</span> <span class="nf">onClick</span><span class="o">(</span><span class="n">View</span> <span class="n">v</span><span class="o">)</span> <span class="o">{</span>
+			<span class="k">switch</span> <span class="o">(</span><span class="n">v</span><span class="o">.</span><span class="na">getId</span><span class="o">())</span> <span class="o">{</span>
+			<span class="k">case</span> <span class="n">R</span><span class="o">.</span><span class="na">id</span><span class="o">.</span><span class="na">spaceWnd_back</span><span class="o">:</span>
+				<span class="n">UIControler2</span><span class="o">.</span><span class="na">uiCtl</span><span class="o">.</span><span class="na">stepback</span><span class="o">();</span>
+				<span class="k">break</span><span class="o">;</span>
+				
+			<span class="k">default</span><span class="o">:</span>
+				<span class="k">break</span><span class="o">;</span>
+			<span class="o">}</span>
+		<span class="o">}</span>
+	<span class="o">};</span>
+	<span class="o">}</span></code></pre></figure>
+
+<p>这个基类涉及到Activity回退栈的代码，需要注意的是：</p>
+
+<figure class="highlight"><pre><code class="language-java" data-lang="java">	
+
+	<span class="c1">//我们每一个Acitivity都会继承于BaseActivity基类，那么当activity调用oncreate()方法时，都会把它添加到UIController这个类中，这个类是维护Activity栈的</span>
+	<span class="kd">protected</span> <span class="kt">void</span> <span class="nf">onCreate</span><span class="o">(</span><span class="n">Bundle</span> <span class="n">_savedInstanceState</span><span class="o">)</span> <span class="o">{</span>
+    <span class="kd">super</span><span class="o">.</span><span class="na">onCreate</span><span class="o">(</span><span class="n">_savedInstanceState</span><span class="o">);</span>
+    <span class="n">UIControler2</span><span class="o">.</span><span class="na">uiCtl</span><span class="o">.</span><span class="na">putActivity</span><span class="o">(</span><span class="k">this</span><span class="o">);</span>
+	<span class="o">}</span>
+	
+	<span class="c1">//我们重载了返回键，当返回键被按的时候，我们把当前activity从UIController2的栈中移除，调用其finish方法；</span>
+	<span class="nd">@Override</span>
+	<span class="kd">public</span> <span class="kt">boolean</span> <span class="nf">onKeyDown</span><span class="o">(</span><span class="kt">int</span> <span class="n">keyCode</span><span class="o">,</span> <span class="n">KeyEvent</span> <span class="n">event</span><span class="o">)</span> <span class="o">{</span>
+    <span class="k">if</span> <span class="o">(</span><span class="n">keyCode</span> <span class="o">==</span> <span class="n">KeyEvent</span><span class="o">.</span><span class="na">KEYCODE_BACK</span><span class="o">)</span> <span class="o">{</span>
+        <span class="n">UIControler2</span><span class="o">.</span><span class="na">uiCtl</span><span class="o">.</span><span class="na">stepback</span><span class="o">();</span>
+    <span class="o">}</span>
+    <span class="k">return</span> <span class="kd">super</span><span class="o">.</span><span class="na">onKeyDown</span><span class="o">(</span><span class="n">keyCode</span><span class="o">,</span> <span class="n">event</span><span class="o">);</span>
+	<span class="o">}</span></code></pre></figure>
+
+<p>通过继承BaseAcitivity基类，我们就可以很轻松地实现自定义Activity栈；</p>
+
+<h2 id="uicontroller2类的用法">UIController2类的用法</h2>
+<blockquote>
+  <p>我们上面提到UIController2是我们维护Acitivity栈的类，下面我们来讨论一下它内部的机制</p>
+</blockquote>
+
+<figure class="highlight"><pre><code class="language-java" data-lang="java">	<span class="kd">public</span> <span class="kd">class</span> <span class="nc">UIControler2</span> <span class="kd">extends</span> <span class="n">NUIControlerBase</span><span class="o">{</span>
+	
+	<span class="kd">public</span> <span class="kd">static</span> <span class="n">UIControler2</span> <span class="n">uiCtl</span><span class="o">;</span>
+	
+	<span class="kd">private</span> <span class="n">HashMap</span><span class="o">&lt;</span><span class="n">String</span><span class="o">,</span> <span class="n">NActivityBase</span><span class="o">&gt;</span> <span class="n">mHmActViews</span><span class="o">;</span>
+	<span class="kd">protected</span> <span class="nf">UIControler2</span><span class="o">(</span><span class="n">Context</span> <span class="n">_context</span><span class="o">)</span> <span class="o">{</span>
+		<span class="kd">super</span><span class="o">(</span><span class="n">_context</span><span class="o">);</span>
+		<span class="n">mHmActViews</span> <span class="o">=</span> <span class="k">new</span> <span class="n">HashMap</span><span class="o">&lt;</span><span class="n">String</span><span class="o">,</span> <span class="n">NActivityBase</span><span class="o">&gt;();</span>
+	<span class="o">}</span>
+	
+	<span class="kd">public</span> <span class="kd">static</span> <span class="n">UIControler2</span> <span class="nf">create</span><span class="o">(</span><span class="n">Context</span> <span class="n">_context</span><span class="o">)</span> <span class="o">{</span>
+		<span class="k">if</span> <span class="o">(</span><span class="n">uiCtl</span> <span class="o">==</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span>
+			<span class="n">uiCtl</span> <span class="o">=</span> <span class="k">new</span> <span class="n">UIControler2</span><span class="o">(</span><span class="n">_context</span><span class="o">);</span>
+		<span class="o">}</span>
+		<span class="k">return</span> <span class="n">uiCtl</span><span class="o">;</span>
+	<span class="o">}</span>
+
+	<span class="kd">public</span> <span class="kt">void</span> <span class="nf">onStart</span><span class="o">(</span><span class="n">NActivityBase</span> <span class="n">_mainAct</span><span class="o">)</span> <span class="o">{</span>
+		<span class="c1">// 设置视图</span>
+		<span class="n">mCurState</span> <span class="o">=</span> <span class="n">UISTATE_MAINPAGE</span><span class="o">;</span>
+		<span class="n">putActivity</span><span class="o">(</span><span class="n">_mainAct</span><span class="o">);</span>
+	<span class="o">}</span>
+
+	<span class="c1">//有请求码的打开新的Activity，第二个参数的含义是我们为每一个Activity定义的标识字符串，用于自定义Activity栈的维护；</span>
+	<span class="kd">public</span> <span class="kt">void</span> <span class="nf">stepForward</span><span class="o">(</span><span class="n">Context</span> <span class="n">_act</span><span class="o">,</span> <span class="n">String</span> <span class="n">_state</span><span class="o">,</span> <span class="n">Intent</span> <span class="n">_intent</span><span class="o">,</span> <span class="kt">int</span> <span class="n">_requestCode</span><span class="o">)</span> <span class="o">{</span>
+		<span class="n">mStateStack</span><span class="o">.</span><span class="na">push</span><span class="o">(</span><span class="n">mCurState</span><span class="o">);</span>
+		<span class="n">mCurState</span> <span class="o">=</span> <span class="n">_state</span><span class="o">;</span>
+		<span class="o">((</span><span class="n">Activity</span><span class="o">)</span><span class="n">_act</span><span class="o">).</span><span class="na">startActivityForResult</span><span class="o">(</span><span class="n">_intent</span><span class="o">,</span> <span class="n">_requestCode</span><span class="o">);</span>
+	<span class="o">}</span>
+	
+	<span class="c1">//没有请求码地打开一个新的Activity</span>
+	<span class="kd">public</span> <span class="kt">void</span> <span class="nf">stepForward</span><span class="o">(</span><span class="n">Activity</span> <span class="n">_act</span><span class="o">,</span> <span class="n">String</span> <span class="n">_state</span><span class="o">,</span> <span class="n">Intent</span> <span class="n">_intent</span><span class="o">)</span> <span class="o">{</span>
+		<span class="n">mStateStack</span><span class="o">.</span><span class="na">push</span><span class="o">(</span><span class="n">mCurState</span><span class="o">);</span>
+		<span class="n">mCurState</span> <span class="o">=</span> <span class="n">_state</span><span class="o">;</span>
+		<span class="n">_act</span><span class="o">.</span><span class="na">startActivity</span><span class="o">(</span><span class="n">_intent</span><span class="o">);</span>
+	<span class="o">}</span>
+	
+	<span class="c1">//这是将Activity的引用添加到UiController2对象中，应用涉及到的界面都继承NActivity基类，这个函数都写进去了，我们不用管</span>
+	<span class="kd">public</span> <span class="kt">void</span> <span class="nf">putActivity</span><span class="o">(</span><span class="n">NActivityBase</span> <span class="n">_act</span><span class="o">)</span> <span class="o">{</span>
+		<span class="n">mHmActViews</span><span class="o">.</span><span class="na">put</span><span class="o">(</span><span class="n">mCurState</span><span class="o">,</span> <span class="n">_act</span><span class="o">);</span>
+	<span class="o">}</span>
+	
+	<span class="kd">public</span> <span class="n">NActivityBase</span> <span class="nf">getActivity</span><span class="o">(</span><span class="n">String</span> <span class="n">_state</span><span class="o">)</span> <span class="o">{</span>
+		<span class="k">return</span> <span class="n">mHmActViews</span><span class="o">.</span><span class="na">get</span><span class="o">(</span><span class="n">_state</span><span class="o">);</span>
+	<span class="o">}</span>
+	
+	<span class="cm">/**
+	 * @return 当前顶层Activity
+	 */</span>
+	<span class="kd">public</span> <span class="n">NActivityBase</span> <span class="nf">getActivity</span><span class="o">()</span> <span class="o">{</span>
+		<span class="n">Log</span><span class="o">.</span><span class="na">v</span><span class="o">(</span><span class="s">""</span><span class="o">,</span> <span class="s">"current UIState is "</span> <span class="o">+</span> <span class="n">mCurState</span><span class="o">);</span>
+		<span class="k">return</span> <span class="n">mHmActViews</span><span class="o">.</span><span class="na">get</span><span class="o">(</span><span class="n">mCurState</span><span class="o">);</span>
+	<span class="o">}</span>
+
+	<span class="cm">/**
+	 * 界面回退
+	 * @return 空栈时返回false
+	 */</span>
+	<span class="kd">public</span> <span class="kt">boolean</span> <span class="nf">stepback</span><span class="o">()</span> <span class="o">{</span>
+		<span class="n">Log</span><span class="o">.</span><span class="na">v</span><span class="o">(</span><span class="s">""</span><span class="o">,</span> <span class="s">"uiStepback"</span><span class="o">);</span>
+		<span class="kd">final</span> <span class="n">Activity</span> <span class="n">curAct</span> <span class="o">=</span> <span class="n">mHmActViews</span><span class="o">.</span><span class="na">get</span><span class="o">(</span><span class="n">mCurState</span><span class="o">);</span>
+		<span class="k">if</span> <span class="o">(</span><span class="n">curAct</span> <span class="o">!=</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span>
+			<span class="n">curAct</span><span class="o">.</span><span class="na">finish</span><span class="o">();</span>
+		<span class="o">}</span>
+		<span class="k">if</span> <span class="o">(!</span><span class="n">mStateStack</span><span class="o">.</span><span class="na">isEmpty</span><span class="o">())</span> <span class="o">{</span>
+			<span class="n">mCurState</span> <span class="o">=</span> <span class="n">mStateStack</span><span class="o">.</span><span class="na">pop</span><span class="o">();</span>
+			<span class="n">Log</span><span class="o">.</span><span class="na">v</span><span class="o">(</span><span class="s">""</span><span class="o">,</span> <span class="s">"after finish curState="</span> <span class="o">+</span> <span class="n">mCurState</span><span class="o">);</span>
+			<span class="k">return</span> <span class="kc">true</span><span class="o">;</span>
+		<span class="o">}</span>
+		<span class="k">return</span> <span class="kc">false</span><span class="o">;</span>
+	<span class="o">}</span>
+	
+	<span class="c1">//返回主页面</span>
+	<span class="kd">public</span> <span class="kt">void</span> <span class="nf">stepbackToMainPage</span><span class="o">()</span> <span class="o">{</span>
+		<span class="k">while</span> <span class="o">(</span><span class="n">mCurState</span> <span class="o">!=</span> <span class="kc">null</span> <span class="o">&amp;&amp;</span> <span class="o">!</span><span class="n">mCurState</span><span class="o">.</span><span class="na">equals</span><span class="o">(</span><span class="n">UISTATE_MAINPAGE</span><span class="o">))</span> <span class="o">{</span>
+			<span class="n">Activity</span> <span class="n">curAct</span> <span class="o">=</span> <span class="n">mHmActViews</span><span class="o">.</span><span class="na">get</span><span class="o">(</span><span class="n">mCurState</span><span class="o">);</span>
+			<span class="n">curAct</span><span class="o">.</span><span class="na">finish</span><span class="o">();</span>
+			<span class="n">mCurState</span> <span class="o">=</span> <span class="n">mStateStack</span><span class="o">.</span><span class="na">pop</span><span class="o">();</span>
+		<span class="o">}</span>
+	<span class="o">}</span>
+	
+	<span class="c1">//通过这个全局单例，更新处于栈顶的Activity；</span>
+	<span class="kd">public</span> <span class="kt">void</span> <span class="nf">refresh</span><span class="o">(</span><span class="n">String</span><span class="o">...</span> <span class="n">_data</span><span class="o">)</span> <span class="o">{</span>
+		<span class="n">NActivityBase</span> <span class="n">curAct</span> <span class="o">=</span> <span class="n">mHmActViews</span><span class="o">.</span><span class="na">get</span><span class="o">(</span><span class="n">mCurState</span><span class="o">);</span>
+		<span class="k">if</span> <span class="o">(</span><span class="n">curAct</span> <span class="o">!=</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span>
+			<span class="n">curAct</span><span class="o">.</span><span class="na">refresh</span><span class="o">(</span><span class="n">_data</span><span class="o">);</span>
+		<span class="o">}</span>
+	<span class="o">}</span>
+
+	<span class="c1">//在程序结束时，即MainActivity调用finish方法时，应该要把UIController2的数据清空，释放内存；</span>
+	<span class="kd">public</span> <span class="kd">static</span> <span class="kt">void</span> <span class="nf">release</span><span class="o">()</span> <span class="o">{</span>
+		<span class="k">if</span> <span class="o">(</span><span class="n">uiCtl</span> <span class="o">!=</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span>
+			<span class="n">uiCtl</span><span class="o">.</span><span class="na">mHmActViews</span><span class="o">.</span><span class="na">clear</span><span class="o">();</span>
+			<span class="n">uiCtl</span><span class="o">.</span><span class="na">mStateStack</span><span class="o">.</span><span class="na">clear</span><span class="o">();</span>
+			<span class="n">uiCtl</span> <span class="o">=</span> <span class="kc">null</span><span class="o">;</span>
+		<span class="o">}</span>
+	<span class="o">}</span>
+	<span class="c1">//将所有Activity退出</span>
+	<span class="kd">public</span> <span class="kt">void</span> <span class="nf">exit</span><span class="o">()</span> <span class="o">{</span>
+		<span class="k">while</span> <span class="o">(</span><span class="n">stepback</span><span class="o">());</span>
+	<span class="o">}</span></code></pre></figure>
+
+<p>UIController我们设计成了一个全局单例uiCtrl，这是毫无疑问的。</p>
+
+<p>它维护着一个Hashmap&lt;string,NActivityBase&gt; ,NActivityBase上面讲过，它属于所有Activity的基类BaseActivity的父类，所以也就是应用中所有Activity的父类；每当打开一个新的Activity，都会通过基类的实现，把Activity添加到这个hashmap中，持有其引用，这就是我们可以在别的Activity中更新其数据，或者直接销毁栈顶中的Activity，跳到指定Activity的原因；</p>
+
+<p>同时，UIController2的抽象父类，NUIControlerBase，持有一个自定义栈</p>
+
+<figure class="highlight"><pre><code class="language-java" data-lang="java">	<span class="c1">//栈顶中Activity的标识字符符</span>
+	<span class="kd">protected</span> <span class="n">String</span> <span class="n">mCurState</span><span class="o">;</span>
+	<span class="kd">protected</span> <span class="n">Stack</span><span class="o">&lt;</span><span class="n">String</span><span class="o">&gt;</span> <span class="n">mStateStack</span> <span class="o">=</span> <span class="k">new</span> <span class="n">Stack</span><span class="o">&lt;</span><span class="n">String</span><span class="o">&gt;();</span> <span class="c1">// UI堆栈</span></code></pre></figure>
+
+<p>需要注意的是，当我们新建一个Activity的时候，需要添加一个字符串作为常量，标识新的Activity，这是必须的步骤；用来维护Activity的栈；</p>
+
+<p>这个栈mStateStack非常重要，跟系统中维护activity的栈是一样原理，它用来标识activity的入栈和出栈顺序，方便我们正确地操作UIController对象</p>
+
+<hr />
+<p>UIController2的用法就不解释了，注释非常清楚了</p>
+
+
+
+                <hr>
+
+                
+                <!-- 多说 Share start -->
+                </style>
+                <div class="ds-share"
+                    style="text-align: right"
+                    data-thread-key="/2016/10/10/Activity-stack"
+                    data-title="Activity栈和回退机制"
+                    data-url="http://localhost:4000/drearming.github.com/2016/10/10/Activity-stack/"
+                    data-images="http://localhost:4000/drearming.github.com/img/post-bg-2015.jpg"
+                    data-content="Activity栈和回退机制
+
+因为系统有很多的Activity，若是单纯由Android自带的Acitivity栈来维护的栈顺序，或许我们会遇到下面一些... | 陈俊杰 | MVCoder " >
+                    <div class="ds-share-inline">
+                      <ul  class="ds-share-icons-16">
+                        <li data-toggle="ds-share-icons-more"><a class="ds-more" href="#">分享到：</a></li>
+                        <li><a class="ds-wechat flat" href="javascript:void(0);" data-service="wechat">微信</a></li>
+                        <li><a class="ds-weibo flat" href="javascript:void(0);" data-service="weibo">微博</a></li>
+                        <li><a class="ds-douban flat" href="javascript:void(0);" data-service="douban">豆瓣</a></li>
+                      </ul>
+                      <div class="ds-share-icons-more">
+                      </div>
+                    </div>
+                <hr>
+                </div>
+                <!-- 多说 Share end-->
+                
+
+
+                <ul class="pager">
+                    
+                    <li class="previous">
+                        <a href="/drearming.github.com/2016/09/26/Google-ProtoBuf/" data-toggle="tooltip" data-placement="top" title="Google ProtoBuf">&larr; Previous Post</a>
+                    </li>
+                    
+                    
+                    <li class="next">
+                        <a href="/drearming.github.com/2016/10/15/android/" data-toggle="tooltip" data-placement="top" title="消息队列机制">Next Post &rarr;</a>
+                    </li>
+                    
+                </ul>
+
+
+                
+                <!-- 多说评论框 start -->
+                <div class="comment">
+                    <div class="ds-thread"
+                        data-thread-key="/2016/10/10/Activity-stack"
+                        data-title="Activity栈和回退机制"
+                        data-url="http://localhost:4000/drearming.github.com/2016/10/10/Activity-stack/" >
+                    </div>
+                </div>
+                <!-- 多说评论框 end -->
+                
+
+                
+
+            </div>
+
+    <!-- Sidebar Container -->
+            <div class="
+                col-lg-8 col-lg-offset-2
+                col-md-10 col-md-offset-1
+                sidebar-container">
+
+                <!-- Featured Tags -->
+                
+                <section>
+                    <hr class="hidden-sm hidden-xs">
+                    <h5><a href="/tags/">FEATURED TAGS</a></h5>
+                    <div class="tags">
+        				
+                            
+        				
+                            
+                				<a href="/drearming.github.com/tags/#Android" title="Android" rel="8">
+                                    Android
+                                </a>
+                            
+        				
+                            
+                				<a href="/drearming.github.com/tags/#Java" title="Java" rel="4">
+                                    Java
+                                </a>
+                            
+        				
+                            
+        				
+                            
+                				<a href="/drearming.github.com/tags/#前端开发" title="前端开发" rel="3">
+                                    前端开发
+                                </a>
+                            
+        				
+                            
+                				<a href="/drearming.github.com/tags/#JavaScript" title="JavaScript" rel="3">
+                                    JavaScript
+                                </a>
+                            
+        				
+                            
+        				
+                            
+        				
+                            
+        				
+                            
+                				<a href="/drearming.github.com/tags/#MealOrder" title="MealOrder" rel="2">
+                                    MealOrder
+                                </a>
+                            
+        				
+                            
+        				
+                            
+        				
+                            
+        				
+                            
+        				
+        			</div>
+                </section>
+                
+
+                <!-- Friends Blog -->
+                
+                <hr>
+                <h5>FRIENDS</h5>
+                <ul class="list-inline">
+                    
+                        <li><a href="https://github.com/DREARMING">MVCoder</a></li>
+                    
+                        <li><a href="http://blog.csdn.net/lmj623565791/article/details/48129405">鸿洋</a></li>
+                    
+                        <li><a href="http://blog.csdn.net/guolin_blog/article/details/9097463/">郭霖</a></li>
+                    
+                        <li><a href="http://blog.csdn.net/aigestudio">爱歌</a></li>
+                    
+                        <li><a href="http://www.jianshu.com/p/6a8c2ae0b1c6?utm_campaign=haruki">死党</a></li>
+                    
+                </ul>
+                
+            </div>
+        </div>
+    </div>
+</article>
+
+
+<!-- 多说公共JS代码 start (一个网页只需插入一次) -->
+<script type="text/javascript">
+    // dynamic User by Hux
+    var _user = 'MVCoder';
+
+    // duoshuo comment query.
+    var duoshuoQuery = {short_name: _user };
+    (function() {
+        var ds = document.createElement('script');
+        ds.type = 'text/javascript';ds.async = true;
+        ds.src = (document.location.protocol == 'https:' ? 'https:' : 'http:') + '//static.duoshuo.com/embed.js';
+        ds.charset = 'UTF-8';
+        (document.getElementsByTagName('head')[0]
+         || document.getElementsByTagName('body')[0]).appendChild(ds);
+    })();
+</script>
+<!-- 多说公共JS代码 end -->
+
+
+
+
+
+
+
+<!-- async load function -->
+<script>
+    function async(u, c) {
+      var d = document, t = 'script',
+          o = d.createElement(t),
+          s = d.getElementsByTagName(t)[0];
+      o.src = u;
+      if (c) { o.addEventListener('load', function (e) { c(null, e); }, false); }
+      s.parentNode.insertBefore(o, s);
+    }
+</script>
+<!-- anchor-js, Doc:http://bryanbraun.github.io/anchorjs/ -->
+<script>
+    async("http://cdn.bootcss.com/anchor-js/1.1.1/anchor.min.js",function(){
+        anchors.options = {
+          visible: 'always',
+          placement: 'right',
+          icon: '#'
+        };
+        anchors.add().remove('.intro-header h1').remove('.subheading').remove('.sidebar-container h5');
+    })
+</script>
+<style>
+    /* place left on bigger screen */
+    @media all and (min-width: 800px) {
+        .anchorjs-link{
+            position: absolute;
+            left: -0.75em;
+            font-size: 1.1em;
+            margin-top : -0.1em;
+        }
+    }
+</style>
+
+
+
+    <!-- Footer -->
+<footer>
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+                <ul class="list-inline text-center">
+                    
+                    
+
+                    <!-- add Weibo, Zhihu by Hux, add target = "_blank" to <a> by Hux -->
+                    
+                    
+
+
+                    
+                    
+                    <li>
+                        <a target="_blank" href="https://github.com/drearming">
+                            <span class="fa-stack fa-lg">
+                                <i class="fa fa-circle fa-stack-2x"></i>
+                                <i class="fa fa-github fa-stack-1x fa-inverse"></i>
+                            </span>
+                        </a>
+                    </li>
+                    
+                </ul>
+                <p class="copyright text-muted">
+                    Copyright &copy; MVCoder Blog 2017
+                    <br>
+                    Theme by <a href="http://huangxuan.me">Hux</a> |
+                    <iframe
+                        style="margin-left: 2px; margin-bottom:-5px;"
+                        frameborder="0" scrolling="0" width="91px" height="20px"
+                        src="https://ghbtns.com/github-btn.html?user=huxpro&repo=huxpro.github.io&type=star&count=true" >
+                    </iframe>
+                </p>
+            </div>
+        </div>
+    </div>
+</footer>
+
+<!-- jQuery -->
+<script src="/drearming.github.com/js/jquery.min.js "></script>
+
+<!-- Bootstrap Core JavaScript -->
+<script src="/drearming.github.com/js/bootstrap.min.js "></script>
+
+<!-- Custom Theme JavaScript -->
+<script src="/drearming.github.com/js/hux-blog.min.js "></script>
+
+
+<!-- async load function -->
+<script>
+    function async(u, c) {
+      var d = document, t = 'script',
+          o = d.createElement(t),
+          s = d.getElementsByTagName(t)[0];
+      o.src = u;
+      if (c) { o.addEventListener('load', function (e) { c(null, e); }, false); }
+      s.parentNode.insertBefore(o, s);
+    }
+</script>
+
+<!-- 
+     Because of the native support for backtick-style fenced code blocks 
+     right within the Markdown is landed in Github Pages, 
+     From V1.6, There is no need for Highlight.js, 
+     so Huxblog drops it officially.
+
+     - https://github.com/blog/2100-github-pages-now-faster-and-simpler-with-jekyll-3-0  
+     - https://help.github.com/articles/creating-and-highlighting-code-blocks/    
+-->
+<!--
+    <script>
+        async("http://cdn.bootcss.com/highlight.js/8.6/highlight.min.js", function(){
+            hljs.initHighlightingOnLoad();
+        })
+    </script>
+    <link href="http://cdn.bootcss.com/highlight.js/8.6/styles/github.min.css" rel="stylesheet">
+-->
+
+
+<!-- jquery.tagcloud.js -->
+<script>
+    // only load tagcloud.js in tag.html
+    if($('#tag_cloud').length !== 0){
+        async("/js/jquery.tagcloud.js",function(){
+            $.fn.tagcloud.defaults = {
+                //size: {start: 1, end: 1, unit: 'em'},
+                color: {start: '#bbbbee', end: '#0085a1'},
+            };
+            $('#tag_cloud a').tagcloud();
+        })
+    }
+</script>
+
+<!--fastClick.js -->
+<script>
+    async("http://cdn.bootcss.com/fastclick/1.0.6/fastclick.min.js", function(){
+        var $nav = document.querySelector("nav");
+        if($nav) FastClick.attach($nav);
+    })
+</script>
+
+
+<!-- Google Analytics -->
+
+<script>
+    // dynamic User by Hux
+    var _gaId = 'UA-49627206-1';
+    var _gaDomain = 'drearming.github.io';
+
+    // Originial
+    (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+    (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+    m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+    })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+    ga('create', _gaId, _gaDomain);
+    ga('send', 'pageview');
+</script>
+
+
+
+<!-- Baidu Tongji -->
+
+<script>
+    // dynamic User by Hux
+    var _baId = '4cc1f2d8f3067386cc5cdb626a202900';
+
+    // Originial
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "//hm.baidu.com/hm.js?" + _baId;
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+</script>
+
+
+
+
+<!-- Image to hack wechat -->
+<img src="/img/icon_wechat.png" width="0" height="0" />
+<!-- Migrate from head to bottom, no longer block render and still work -->
+
+</body>
+
+</html>

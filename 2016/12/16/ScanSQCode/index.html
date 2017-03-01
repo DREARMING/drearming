@@ -11,9 +11,9 @@
     <meta name="keyword"  content="Android Java Web">
     <link rel="shortcut icon" href="/drearming.github.com/img/favicon.ico">
 
-    <title>Welcome to Hux Blog - 陈俊杰 | MVCoder</title>
+    <title>利用zxing实现二维码扫描和生成 - 陈俊杰 | MVCoder</title>
 
-    <link rel="canonical" href="http://localhost:4000/drearming.github.com/2015/01/29/hello-2015/">
+    <link rel="canonical" href="http://localhost:4000/drearming.github.com/2016/12/16/ScanSQCode/">
 
     <!-- Bootstrap Core CSS -->
     <link rel="stylesheet" href="/drearming.github.com/css/bootstrap.min.css">
@@ -141,15 +141,15 @@
                 <div class="post-heading">
                     <div class="tags">
                         
-                        <a class="tag" href="/drearming.github.com/tags/#生活" title="生活">生活</a>
+                        <a class="tag" href="/drearming.github.com/tags/#Android" title="Android">Android</a>
                         
                     </div>
-                    <h1>Welcome to Hux Blog</h1>
+                    <h1>利用zxing实现二维码扫描和生成</h1>
                     
                     
-                    <h2 class="subheading"> "Hello World, Hello Blog"</h2>
+                    <h2 class="subheading">来研究一下这个非常常用的功能-板凳</h2>
                     
-                    <span class="meta">Posted by Hux on January 29, 2015</span>
+                    <span class="meta">Posted by MVCoder on December 16, 2016</span>
                 </div>
             </div>
         </div>
@@ -167,72 +167,395 @@
                 col-md-10 col-md-offset-1
                 post-container">
 
-				<blockquote>
-  <p>“Yeah It’s on. ”</p>
+				<h2 id="二维码扫描和生成">二维码扫描和生成</h2>
+
+<blockquote>
+  <p>参考博客：</p>
+
+  <p><a href="http://blog.csdn.net/sanfye/article/details/45749139">二维码生成</a></p>
+
+  <p><a href="http://blog.csdn.net/xiaanming/article/details/14450809">二维码扫描1</a></p>
+
+  <p><a href="http://m.blog.csdn.net/article/details?id=51683125">二维码扫描2</a></p>
 </blockquote>
 
-<h2 id="前言">前言</h2>
+<p>二维码的生成和识别都是采用了二维码第三方类库 - Zxing</p>
 
-<p>Hux 的 Blog 就这么开通了。</p>
+<h2 id="二维码的生成">二维码的生成</h2>
+<p>调用Zxing第三方库可以很容易生成二维码，我们用到的类是 MultiFormatWriter</p>
 
-<p><a href="#build">跳过废话，直接看技术实现 </a></p>
+<p>&lt;% highlight java %&gt;</p>
 
-<p>2015 年，Hux 总算有个地方可以好好写点东西了。</p>
+<div class="highlighter-rouge">public final class MultiFormatWriter implements Writer {
+</div>
 
-<p>作为一个程序员， Blog 这种轮子要是挂在大众博客程序上就太没意思了。一是觉得大部分 Blog 服务都太丑，二是觉得不能随便定制不好玩。之前因为太懒没有折腾，结果就一直连个写 Blog 的地儿都没有。</p>
+ 	 @Override
+ 	 public BitMatrix encode(String contents,
+<div class="highlighter-rouge">                      BarcodeFormat format,
+                      int width,
+                      int height) throws WriterException {
+return encode(contents, format, width, height, null);
+  	}
+</div>
 
-<p>在玩了一段时间知乎之后，答题的快感又激起了我开博客的冲动。之前的<a href="http://huangxuan.me/portfolio">个人网站</a>是作品集形式的（现在集成进来了），并不适合用来写博文，一不做二不休，花一天搞一个吧！</p>
+ 	 @Override
+<div class="highlighter-rouge">  public BitMatrix encode(String contents,
+                      BarcodeFormat format,
+                      int width, int height,
+                      Map&lt;EncodeHintType,?&gt; hints) throws WriterException {
 
-<p id="build"></p>
-<hr />
+Writer writer;
+switch (format) {
+	...
+  case QR_CODE:
+    writer = new QRCodeWriter();
+    break;
+	...
+  default:
+    throw new IllegalArgumentException("No encoder available for format " + format);
+}
+return writer.encode(contents, format, width, height, hints);
+  	}
 
-<h2 id="正文">正文</h2>
+}
+</div>
 
-<p>接下来说说搭建这个博客的技术细节。</p>
+<p>&lt;% endhighlight %&gt;</p>
 
-<p>正好之前就有关注过 <a href="https://pages.github.com/">GitHub Pages</a> + <a href="http://jekyllrb.com/">Jekyll</a> 快速 Building Blog 的技术方案，非常轻松时尚。</p>
+<p>可以很容易看出，只需要我们这样子使用就可以得到一张二维码矩阵</p>
 
-<p>其优点非常明显：</p>
+<p>&lt;% highlight java %&gt;</p>
 
-<ul>
-  <li><strong>Markdown</strong> 带来的优雅写作体验</li>
-  <li>非常熟悉的 Git workflow ，<strong>Git Commit 即 Blog Post</strong></li>
-  <li>利用 GitHub Pages 的域名和免费无限空间，不用自己折腾主机
-    <ul>
-      <li>如果需要自定义域名，也只需要简单改改 DNS 加个 CNAME 就好了</li>
-    </ul>
-  </li>
-  <li>Jekyll 的自定制非常容易，基本就是个模版引擎</li>
-</ul>
+<div class="highlighter-rouge">/*
+生成一个由点构成的矩阵，矩阵的点分布情况，代表着写进去的内容，可由对应Reader读出
+	@param content 是要写进二维码图片的内容，我们扫描的目的就是获取这内容
+	@param BarCodeFormat.QR_CODE 这个从上面就可以看出，这个是配置哪种Writer，我们指定的是二维码，当然也有一维码这种
+	@param width 指定生成二维码矩阵的宽
+	@param height 指定生成二维码矩阵的高
+	@params hints  是一个map类型，告诉要写contents的writer，如何写这个content（utf-8编码，容错度的大小，等等情况）
+**/
+BitMatrix matrix = new MultiFormatWriter().encode(contents,BarcodeFormat.QR_CODE, width, height,hints);
+</div>
 
-<p>本来觉得最大的缺点可能是 GitHub 在国内访问起来太慢，所以第二天一起床就到 GitCafe(Chinese GitHub Copy) 迁移了一个<a href="http://huxpro.gitcafe.io">镜像</a>出来，结果还是巨慢。</p>
+<p>&lt;% endhighlight %&gt;</p>
 
-<p>哥哥可是个前端好嘛！ 果断开 Chrome DevTool 查了下网络请求，原来是 <strong>pending 在了 Google Fonts</strong> 上，页面渲染一直被阻塞到请求超时为止，难怪这么慢。<br />
-忍痛割爱，只好把 Web Fonts 去了（反正超时看到的也只能是 fallback ），果然一下就正常了，而且 GitHub 和 GitCafe 对比并没有感受到明显的速度差异，虽然 github 的 ping 值明显要高一些，达到了 300ms，于是用 DNSPOD 优化了一下速度。</p>
+<p>我们得到一个二维码矩阵后，再将它转化成一张二维码图片</p>
 
-<hr />
+<p>&lt;% highlight java %&gt;</p>
 
-<p>配置的过程中也没遇到什么坑，基本就是 Git 的流程，相当顺手</p>
+<div class="highlighter-rouge">private static Bitmap matrixToImage(BitMatrix matrix){
 
-<p>大的 Jekyll 主题上直接 fork 了 Clean Blog（这个主题也相当有名，就不多赘述了。唯一的缺点大概就是没有标签支持，于是我给它补上了。）</p>
+	Bitmap image = Bitmap.createBitmap(matrix.getWidth(),matrix.getHeight(),Bitmap.Config.RGB_565);
+	for(int i = 0 ; i&lt;matrix.getWidth();i++){
+		for(int j = 0; j &lt; matrix.getHeight();j++){
+			//假如点矩阵中的这个点存在，就在image中描黑色，当然颜色可以随你定义。
+			//循环结束，我们就完美地在image中描绘出点矩阵
+			image.setPixel(i, j, (matrix.get(i, j)?BLACK:WHITE));
+		}
+	}
+	return image;
+}
+</div>
 
-<p>本地调试环境需要 <code class="highlighter-rouge">gem install jekyll</code>，结果 rubygem 的源居然被墙了……后来手动改成了我大淘宝的镜像源才成功</p>
+<p>&lt;% endhighlight %&gt;</p>
 
-<p>Theme 的 CSS 是基于 Bootstrap 定制的，看得不爽的地方直接在 Less 里改就好了（平时更习惯 SCSS 些），<strong>不过其实我一直觉得 Bootstrap 在移动端的体验做得相当一般，比我在淘宝参与的团队 CSS 框架差多了……</strong>所以为了体验，也补了不少 CSS 进去</p>
+<p>到这里，你就算是完成了二维码图片的生成了，但是有时候我们需要加入logo；</p>
 
-<p>最后就进入了耗时反而最长的<strong>做图、写字</strong>阶段，也算是进入了<strong>写博客</strong>的正轨，因为是类似 Hack Day 的方式去搭这个站的，所以折腾折腾着大半夜就过去了。</p>
+<p>&lt;% highlight java %&gt;</p>
 
-<p>第二天考虑中文字体的渲染，fork 了 <a href="http://www.typeisbeautiful.com/">Type is Beautiful</a> 的 <code class="highlighter-rouge">font</code> CSS，调整了字号，适配了 Win 的渣渲染，中英文混排效果好多了。</p>
+   	 /** 
+<div class="highlighter-rouge"> * 设置 logo  
+ * @param matrixImage 源二维码图片 
+ * @return 返回带有logo的二维码图片 
+ * @throws IOException 
+ * @author Administrator mvp 
+ */  
+ public static Bitmap logoMatrix(Bitmap matrixImage,Bitmap logo){  
+     /** 
+      * 用刚刚生成的二维码图片，构建画布对象 
+      */  
+	 Canvas canvas = new Canvas(matrixImage);
+       
+	 //获取二维码图片的宽高，为了正确计算logo所在的位置
+     int matrixWidth = matrixImage.getWidth();  
+     int matrixHeigh = matrixImage.getHeight();  
 
-<h2 id="后记">后记</h2>
+     Paint paint = new Paint();
+     paint.setStyle(Paint.Style.FILL);
+     
+     //logo的位置，在二维码图片的 2/5 - 3/5间
+     Rect logoRect = new Rect(matrixWidth/5*2,matrixHeigh/5*2, matrixWidth/5*3, matrixHeigh/5*3);
+     paint.setColor(WHITE);
+     //添加一個比logo要大的白色背景
+     //将白色背景生成
+     RectF rectf = new RectF(logoRect.left-3,logoRect.top-3,logoRect.right+3,logoRect.bottom+3);
+     //第二个参数和第三个参数指的是圆角的大小半径
+     canvas.drawRoundRect(rectf, 5, 5, paint);
+     
+     //将logo画上
+     canvas.drawBitmap(logo, null, logoRect, paint);
+     
+     //给logo外围加一条边线
+     paint.setStyle(Paint.Style.STROKE);
+     paint.setStrokeWidth(1);
+     paint.setColor(Color.GRAY);
+     canvas.drawRoundRect(new RectF(logoRect), 5, 5, paint);
+     return matrixImage ;  
+ }  
+</div>
 
-<p>回顾这个博客的诞生，纯粹是出于个人兴趣。在知乎相关问题上回答并获得一定的 star 后，我决定把这个博客主题当作一个小小的开源项目来维护。</p>
+<p>&lt;% endhighlight %&gt;</p>
 
-<p>在经历 v1.0 - v1.5 的蜕变后，这个博客主题愈发完整，不但增加了诸多 UI 层的优化（opinionated）；在代码层面，更加丰富的配置项也使得这个主题拥有了更好的灵活性与可拓展性。而作为一个开源项目，我也积极的为其完善文档与解决 issue。</p>
+<p><img src="http://i.imgur.com/eKrFTh3.jpg" alt="" /></p>
 
-<p>如果你恰好逛到了这里，希望你也能喜欢这个博客主题。</p>
+<h2 id="二维码的扫描">二维码的扫描</h2>
 
-<p>—— Hux 后记于 2015.10</p>
+<p>二维码的扫描原理非常复杂，有兴趣地再往下面看看，现在简单介绍一下项目中的应用</p>
+
+<blockquote>
+  <p>背景：我们项目中有个现成的zxing库，里面有一个现成的扫描界面 – MipcaActivityCapture  ，我们只需要调用这个Activity，就可以打开二维码扫描界面，然后扫到二维码后会自动把读到的信息返回到上一个Activity的onActivityResult方法中</p>
+</blockquote>
+
+<p>先在manifest文件中注册</p>
+
+<p>&lt;% highlight java %&gt;</p>
+
+<div class="highlighter-rouge">&lt;activity 
+        android:name="com.xxx.xxx.zxing.MipcaActivityCapture"
+        android:configChanges="orientation|keyboardHidden"
+        android:screenOrientation="portrait"
+        android:windowSoftInputMode="stateAlwaysHidden"&gt;
+</div>
+
+<p>&lt;% endhighlight %&gt;</p>
+
+<p>我们定义了一个button，设置监听事件,用于打开扫描界面</p>
+
+<p>&lt;% highlight java %&gt;</p>
+
+<div class="highlighter-rouge">class ScanSQCodeListener implements OnClickListener{
+
+	@Override
+	public void onClick(View v) {
+		// TODO Auto-generated method stub
+		Intent intent = new Intent();
+		intent.setClass(mContext, MipcaActivityCapture.class);
+		startActivityForResult(intent, SCANNIN_GREQUEST_CODE);
+	}}
+</div>
+
+<p>&lt;% endhighlight %&gt;</p>
+
+<p>###扫描界面
+<img src="http://i.imgur.com/W3kZKLI.jpg" alt="" /></p>
+
+<p>当我们扫到二维码后，在Activity中监听返回结果</p>
+
+<p>&lt;% highlight java %&gt;</p>
+
+<div class="highlighter-rouge">@Override
+protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+    super.onActivityResult(requestCode, resultCode, data);
+    switch (requestCode) {
+	case SCANNIN_GREQUEST_CODE:
+		//程序内部设定的结果码就是RESULT_OK
+		if(resultCode == RESULT_OK){
+			Bundle bundle = data.getExtras();
+			//显示扫描到的内容
+			NNotify.showToast(getApplicationContext(), bundle.getString("result"));	
+			String resultString = bundle.getString("result");
+			//考虑查询数据库，确认userid和cardId是否存在
+			refresh("QRCode_found",resultString);
+		}
+		break;
+	}
+}	
+</div>
+
+<p>&lt;% endhighlight %&gt;</p>
+
+<p>到此，二维码扫描和生成就集成成功了</p>
+
+<p>##扫描界面的流程原理分析</p>
+
+<p>背景：如果不懂Camera的工作方式，请查看官网 <a href="https://developer.android.google.cn/guide/topics/media/camera.html">API Guide</a></p>
+
+<ol>
+  <li>我们先定义个surfaceView用来显示Camera拍到的图像</li>
+  <li>界面中那个ViewfinderView，是一个自定义控件，不断刷新，形成一个扫描动画，同时里面有一个hashset<point>用来存储可能的结果点，在界面刷新时显示不同的颜色，给人一种好像扫描到东西的感觉。(备注：这些结果点是真的存在，是Camera扫到的可能结果，然后动态添加到这个自定义控件中，随着刷新显示出来)</point></li>
+</ol>
+
+<p>###我们来讨论一下是Camera是如何识别到二维码的整个过程</p>
+
+<p>首先我们要清楚Camera的PreviewCallback的工作原理，这个需要sdk等级大于3</p>
+
+<p>&lt;% highlight java %&gt;</p>
+
+<div class="highlighter-rouge">//当调用camera.setOneShotPreviewCallback()，那么每当surfaceView 的 preview发生变化时，都会回调PreviewCallBack的
+//public void onPreviewFrame(byte[] data, Camera camera)方法；
+
+public void requestPreviewFrame(Handler handler, int message) {
+if (camera != null &amp;&amp; previewing) {
+  previewCallback.setHandler(handler, message);
+  if (useOneShotPreviewCallback) {
+    camera.setOneShotPreviewCallback(previewCallback);
+  } else {
+    camera.setPreviewCallback(previewCallback);
+  }
+}
+  	}
+
+
+//PreviewCallback 代码
+//data是当前拍到的照片数据，会不断返回给传递给PreviewCallBack的handler，这里是DecodeHandler解码线程的handler；
+ public void onPreviewFrame(byte[] data, Camera camera) {
+Point cameraResolution = configManager.getCameraResolution();
+if (!useOneShotPreviewCallback) {
+  camera.setPreviewCallback(null);
+}
+if (previewHandler != null) {
+  Message message = previewHandler.obtainMessage(previewMessage, cameraResolution.x,
+      cameraResolution.y, data);
+  message.sendToTarget();
+  //这里至为null是因为，为了避免不断向解码线程的handler发送图片数据，
+  //这是不正确的行为，正确的行为是：解析完拍到的图片后，如果解析失败后，才有必要重新设绑定handler，再接收新拍到的图片；
+  previewHandler = null;
+} else {
+  Log.d(TAG, "Got preview callback, but no handler for it");
+}
+  	}
+</div>
+
+<p>&lt;% endhighlight %&gt;</p>
+
+<p>从上面的注释我们就明白了，当我们摄像机再移动的过程中，不断在拍照中，会调用PreviewCallback的onPreviewFrame()方法，将拍到图像以byte[]的形式传递进去，这个时候绑定在解码线程的的handler，就会发送信息到解码线程中去；</p>
+
+<p>为什么是解码线程的Handler？来，一步一步追着看</p>
+
+<p>首先MipActivity 在初始化Camera的时候就初始化了CaptureActivityHandler</p>
+
+<p>&lt;% highlight java %&gt;</p>
+
+<div class="highlighter-rouge">private void initCamera(SurfaceHolder surfaceHolder) {
+	try {
+		CameraManager.get().openDriver(surfaceHolder);
+	} catch (IOException ioe) {
+		return;
+	} catch (RuntimeException e) {
+		return;
+	}
+	if (handler == null) {
+		//注意第一个参数，把MipActivity自身传了进去，这个为了方便传递给DecodeHandler
+		handler = new CaptureActivityHandler(this, decodeFormats,
+				characterSet);
+	}
+}
+
+
+//CaptureActivityHandler.java
+
+//初始化CaptureActivityHandler的时候，我们开启了DecodeThread，并且把MipActivity的引用传递进去，又调用了
+//RestartPreviewAndDecode()
+
+public CaptureActivityHandler(MipcaActivityCapture activity, Vector&lt;BarcodeFormat&gt; decodeFormats,
+  String characterSet) {
+this.activity = activity;
+decodeThread = new DecodeThread(activity, decodeFormats, characterSet,
+    new ViewfinderResultPointCallback(activity.getViewfinderView()));
+decodeThread.start();
+state = State.SUCCESS;
+// Start ourselves capturing previews and decoding.
+CameraManager.get().startPreview();
+restartPreviewAndDecode();
+ 	 }
+
+
+//哈哈，看到这里了没有，它调用了PreviewCallback的requestPreviewFrame的方法，把decodeThread的handler传递给
+//PreviewCallback，这样子，上面说的原理就通了
+private void restartPreviewAndDecode() {
+if (state == State.SUCCESS) {
+  state = State.PREVIEW;
+  CameraManager.get().requestPreviewFrame(decodeThread.getHandler(), R.id.decode);
+  CameraManager.get().requestAutoFocus(this, R.id.auto_focus);
+  activity.drawViewfinder();
+}
+  	}	
+</div>
+
+<p>&lt;% endhighlight %&gt;</p>
+
+<p>我们看看解码线程如何处理二维码图片</p>
+
+<p>&lt;% highlight java %&gt;</p>
+
+<div class="highlighter-rouge">//解码线程的handler收到Message时会调用Decode方法，并把ViewFinderView的长和宽作为arg1，arg2传递了进去(上面翻翻就知道我说的有没有错了)
+ @Override
+ 	 public void handleMessage(Message message) {
+switch (message.what) {
+  case R.id.decode:
+    //Log.d(TAG, "Got decode message");
+    decode((byte[]) message.obj, message.arg1, message.arg2);
+    break;
+  case R.id.quit:
+    Looper.myLooper().quit();
+    break;
+}
+  	}
+</div>
+
+ 	 /**
+ 	  * Decode the data within the viewfinder rectangle, and time how long it took. For efficiency,
+ 	 * reuse the same reader objects from one decode to the next.
+  	 *
+ 	  * @param data   The YUV preview frame.
+ 	  * @param width  The width of the preview frame.
+  	 * @param height The height of the preview frame.
+  	 */
+ 	 private void decode(byte[] data, int width, int height) {
+<div class="highlighter-rouge">long start = System.currentTimeMillis();
+Result rawResult = null;
+
+//modify here
+byte[] rotatedData = new byte[data.length];
+for (int y = 0; y &lt; height; y++) {
+    for (int x = 0; x &lt; width; x++)
+        rotatedData[x * height + height - y - 1] = data[x + y * width];
+}
+int tmp = width; // Here we are swapping, that's the difference to #11
+width = height;
+height = tmp;
+
+PlanarYUVLuminanceSource source = CameraManager.get().buildLuminanceSource(rotatedData, width, height);
+BinaryBitmap bitmap = new BinaryBitmap(new HybridBinarizer(source));
+try {
+  rawResult = multiFormatReader.decodeWithState(bitmap);
+} catch (ReaderException re) {
+  // continue
+} finally {
+  multiFormatReader.reset();
+}
+
+if (rawResult != null) {
+  long end = System.currentTimeMillis();
+  Log.d(TAG, "Found barcode (" + (end - start) + " ms):\n" + rawResult.toString());
+  Message message = Message.obtain(activity.getHandler(), R.id.decode_succeeded, rawResult);
+  Bundle bundle = new Bundle();
+  bundle.putParcelable(DecodeThread.BARCODE_BITMAP, source.renderCroppedGreyscaleBitmap());
+  message.setData(bundle);
+  //Log.d(TAG, "Sending decode succeeded message...");
+  message.sendToTarget();
+} else {
+  Message message = Message.obtain(activity.getHandler(), R.id.decode_failed);
+  message.sendToTarget();
+}
+  	}
+</div>
+
+<p>&lt;% endhighlight %&gt;</p>
+
+<p>我也不清楚具体怎么处理图片的，这涉及到里面的内部原理，不是本文的重点，我们看到，当成功的时候会通过MipAcitivity获取到CaptureAcitivity的handler，在把解析到的数据传回去；如果失败的话，我们就会重新调用RestartPreviewAndDecode()方法，再把DecodeHandler的线程绑定到PreviewCallback中，继续接受拍到的新图片；</p>
+
+<p>至此，整个二维码扫描界面的原理解析完成</p>
 
 
                 <hr>
@@ -242,21 +565,23 @@
                 </style>
                 <div class="ds-share"
                     style="text-align: right"
-                    data-thread-key="/2015/01/29/hello-2015"
-                    data-title="Welcome to Hux Blog"
-                    data-url="http://localhost:4000/drearming.github.com/2015/01/29/hello-2015/"
+                    data-thread-key="/2016/12/16/ScanSQCode"
+                    data-title="利用zxing实现二维码扫描和生成"
+                    data-url="http://localhost:4000/drearming.github.com/2016/12/16/ScanSQCode/"
                     data-images="http://localhost:4000/drearming.github.com/img/post-bg-2015.jpg"
-                    data-content="
-  “Yeah It’s on. ”
+                    data-content="二维码扫描和生成
 
 
-前言
+  参考博客：
 
-Hux 的 Blog 就这么开通了。
+  二维码生成
 
-跳过废话，直接看技术实现 
+  二维码扫描1
 
-2015 年，Hux 总算有个地... | 陈俊杰 | MVCoder " >
+  二维码扫描2
+
+
+二维码的生成和识别都是采用了二维码第三方类库 - Zx... | 陈俊杰 | MVCoder " >
                     <div class="ds-share-inline">
                       <ul  class="ds-share-icons-16">
                         <li data-toggle="ds-share-icons-more"><a class="ds-more" href="#">分享到：</a></li>
@@ -275,9 +600,13 @@ Hux 的 Blog 就这么开通了。
 
                 <ul class="pager">
                     
+                    <li class="previous">
+                        <a href="/drearming.github.com/2016/12/10/Camera/" data-toggle="tooltip" data-placement="top" title="Camera 类">&larr; Previous Post</a>
+                    </li>
+                    
                     
                     <li class="next">
-                        <a href="/drearming.github.com/2015/04/14/unix-linux-note/" data-toggle="tooltip" data-placement="top" title="Example Post">Next Post &rarr;</a>
+                        <a href="/drearming.github.com/2017/01/03/Java_virtual_machine/" data-toggle="tooltip" data-placement="top" title="Java虚拟机全面了解">Next Post &rarr;</a>
                     </li>
                     
                 </ul>
@@ -287,9 +616,9 @@ Hux 的 Blog 就这么开通了。
                 <!-- 多说评论框 start -->
                 <div class="comment">
                     <div class="ds-thread"
-                        data-thread-key="/2015/01/29/hello-2015"
-                        data-title="Welcome to Hux Blog"
-                        data-url="http://localhost:4000/drearming.github.com/2015/01/29/hello-2015/" >
+                        data-thread-key="/2016/12/16/ScanSQCode"
+                        data-title="利用zxing实现二维码扫描和生成"
+                        data-url="http://localhost:4000/drearming.github.com/2016/12/16/ScanSQCode/" >
                     </div>
                 </div>
                 <!-- 多说评论框 end -->
