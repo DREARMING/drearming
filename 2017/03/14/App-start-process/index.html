@@ -11,9 +11,9 @@
     <meta name="keyword"  content="Android Java Web">
     <link rel="shortcut icon" href="/drearming.github.com/img/favicon.jpg">
 
-    <title>Google ProtoBuf - 陈俊杰 | MVCoder</title>
+    <title>APP启动流程 - 陈俊杰 | MVCoder</title>
 
-    <link rel="canonical" href="https://drearming.github.io/drearming.github.com/2016/09/26/Google-ProtoBuf/">
+    <link rel="canonical" href="https://drearming.github.io/drearming.github.com/2017/03/14/App-start-process/">
 
     <!-- Bootstrap Core CSS -->
     <link rel="stylesheet" href="/drearming.github.com/css/bootstrap.min.css">
@@ -140,17 +140,17 @@
                 <div class="post-heading">
                     <div class="tags">
                         
-                        <a class="tag" href="/drearming.github.com/tags/#加密" title="加密">加密</a>
+                        <a class="tag" href="/drearming.github.com/tags/#Framework" title="Framework">Framework</a>
                         
                         <a class="tag" href="/drearming.github.com/tags/#Android" title="Android">Android</a>
                         
                     </div>
-                    <h1>Google ProtoBuf</h1>
+                    <h1>APP启动流程</h1>
                     
                     
-                    <h2 class="subheading">如何你数据传输量非常大的时候，或许GPB是一种不错的选择</h2>
+                    <h2 class="subheading">从点击icon图标开始到调用Activity的onCreate方法经历了什么？</h2>
                     
-                    <span class="meta">Posted by MVCoder on September 26, 2016</span>
+                    <span class="meta">Posted by MVCoder on March 14, 2017</span>
                 </div>
             </div>
         </div>
@@ -168,83 +168,131 @@
                 col-md-10 col-md-offset-1
                 post-container">
 
-				<h2 id="google-protobufgpb">Google Protobuf(GPB)</h2>
+				<h1 id="app启动流程">App启动流程</h1>
+
+<p>参考博客：<a href="http://www.jianshu.com/p/97cd4f303774">App启动流程</a></p>
 
 <blockquote>
-  <p>GPB是一种序列化对象的一种协议，一般用于客户端和服务器端的数据交流，具有跨平台、跨语言特性，google开源的；</p>
+  <p>当我知道了如何去开发一个app时候，就对app的整个启动流程非常感兴趣，想看一下，它是怎么实现的。如何从点击一个icon，到调用MainActivity的onCreate方法整个过程，这个过程是如何实现的，像迷一样吸引着我。</p>
 </blockquote>
 
-<h2 id="与其他数据交流协议的区别">与其他数据交流协议的区别</h2>
+<p>背景知识：</p>
 
-<p>gson 通过json格式字符串 完成 C/S 模式的数据交流；是我们常常用的数据交流格式，也支持跨平台。</p>
+<p>我们试想一下，我们常常进行应用之间的切换，打开新的应用，每个应用都有不同的Activity栈，这如何在系统中设计？</p>
 
-<p>XML  是跨平台的，但是XML的解析和数据量传输非常庞大，嵌套着一些额外的数据；</p>
+<p>首先应用之间能够进行切换、调度，这必须需要一个中间对象来存储各个进程的状态，方便我们管理，切换，查看。</p>
 
-<p>而相对于GPB来说，GPB具有跨平台的特性，可以支持JAVA C++ phython 各种语言；另外，经过测试，GPB在传输大量的数据时，所需要占用的空间比GSON要小！</p>
+<p>而每个进程能够让用户看到的就是Activity栈，我们就是需要一个中间对象来管理我们每个应用的Activity栈，而这个中间对象就是我们的ActivityManagerService。</p>
 
-<p>这就是GPB优秀的地方；</p>
+<p>因为本人是非计算机专业，没有学过任何计算机基本知识，对操作系统不太了解，下面的也只是个人见解。。当了解完AMS后，突然懂得了什么叫进程。根据我的理解，进程代表着一个应用，然而应用并不具备显示出来的所有功能，包括Activity的画面的绘制，窗口的显示，这些功能并不是应用的，在Android里面，这就像一种无界的设计，应用进程就是存储一大堆对象，与外界进行交流数据，改变对象的状态，这些绘制View，显示在窗口的，并不是应用集成的功能，它不需要写，而是交给WMS；Activity栈的管理，也不是应用自己管理的，而是交给AMS，这大大刷新我的认知，但是惊叹这种设计，这样无疑使得开发变得更加简单，应用体积更加小，也便于系统的管理</p>
 
-<h2 id="gbp的用法">GBP的用法</h2>
+<p>这也让我开始明白学习Android遇到的第一个介绍，Android应用程序由四大基本组件组成，从Android系统层面看，真的就是由这么几个组件构成，应用程序内部的数据对象（网络，数据库，缓存），都是为其做服务用的。现在才感觉到这句话的简单的复杂性，浓缩了Android的框架设计。</p>
 
-<figure class="highlight"><pre><code class="language-java" data-lang="java">	<span class="c1">//序列化</span>
-    <span class="n">Person</span><span class="o">.</span><span class="na">Persona</span><span class="o">.</span><span class="na">Builder</span> <span class="n">b</span> <span class="o">=</span> <span class="n">Person</span><span class="o">.</span><span class="na">Persona</span><span class="o">.</span><span class="na">newBuilder</span><span class="o">();</span>
-            <span class="n">b</span><span class="o">.</span><span class="na">setId</span><span class="o">(</span><span class="n">i</span><span class="o">);</span>
-            <span class="n">b</span><span class="o">.</span><span class="na">setName</span><span class="o">(</span><span class="s">"ajun"</span><span class="o">+</span><span class="mi">1</span><span class="o">);</span>
-            <span class="n">b</span><span class="o">.</span><span class="na">setSex</span><span class="o">(</span><span class="s">"男"</span><span class="o">);</span>
-            <span class="n">b</span><span class="o">.</span><span class="na">setTel</span><span class="o">(</span><span class="s">"6086666"</span><span class="o">);</span>
-            <span class="n">Person</span><span class="o">.</span><span class="na">Persona</span> <span class="n">p</span> <span class="o">=</span> <span class="n">b</span><span class="o">.</span><span class="na">build</span><span class="o">();</span>
-            <span class="kt">byte</span> <span class="o">[]</span> <span class="n">value</span> <span class="o">=</span> <span class="n">p</span><span class="o">.</span><span class="na">toByteArray</span><span class="o">()</span>
-	
-	<span class="c1">//反序列化</span>
-	<span class="n">Person</span><span class="o">.</span><span class="na">Persona</span> <span class="n">last</span> <span class="o">=</span> <span class="n">Person</span><span class="o">.</span><span class="na">Persona</span><span class="o">.</span><span class="na">parseFrom</span><span class="o">(</span><span class="n">person</span><span class="o">);</span></code></pre></figure>
+<hr />
 
-<p>用法非常简单，但是Person类不是我们自己定义的类，而是由Protobuf编辑器，自动生成的类，</p>
+<p>Binder 跨进程通信机制</p>
 
-<h2 id="如何使用protobuf">如何使用Protobuf？</h2>
-<blockquote>
-  <p>首先下载 protobuf—java的jar包和一个protobuf.exe 的编辑器；</p>
-</blockquote>
+<p><a href="http://www.jianshu.com/p/04a034cbbc27">简单明了，彻底地理解Binder</a> <br />
+<a href="http://blog.csdn.net/singwhatiwanna/article/details/17041691">任玉刚 IPC</a></p>
 
-<blockquote>
-  <p>根据自己的要求，写一个 .proto 文件，用来描述生成的java类的属性；</p>
-</blockquote>
+<h3 id="activitymanagerservice以下简称ams">ActivityManagerService（以下简称AMS）</h3>
 
-<p>创建Person.proto文件</p>
+<p>ActivityManagerService是Android中最核心的服务，主要负责系统中四大组件的启动、切换、调度及应用进程的创建、管理和调度等工作，其职责与操作系统中的进程管理和调度模块相类似，因此它在Android中非常重要。</p>
 
-<figure class="highlight"><pre><code class="language-java" data-lang="java">	<span class="c1">//语法可以参照博客：http://blog.csdn.net/ajun_studio/article/details/7693056 </span>
-	<span class="c1">//官网</span>
-    <span class="n">message</span> <span class="n">Person</span> <span class="o">{</span>
-     <span class="n">optional</span> <span class="n">int64</span> <span class="n">id</span><span class="o">=</span><span class="mi">1</span><span class="o">;</span>
-     <span class="n">optional</span> <span class="n">string</span> <span class="n">name</span><span class="o">=</span><span class="mi">2</span><span class="o">;</span>
-     <span class="n">optional</span> <span class="n">string</span> <span class="n">sex</span><span class="o">=</span><span class="mi">3</span><span class="o">;</span>
-     <span class="n">optional</span> <span class="n">string</span> <span class="n">tel</span><span class="o">=</span><span class="mi">4</span><span class="o">;</span>
-    <span class="o">}</span>
-    
-    
-    <span class="n">Person</span> <span class="err">为定义一个消息类型为</span><span class="n">Person</span>
-    
-    <span class="n">Person</span><span class="err">共有三个字段</span>
-    <span class="err">都为</span><span class="n">optional</span><span class="err">（可选的）</span>
-    <span class="n">int64</span><span class="err">对应</span><span class="n">java</span><span class="err">的</span><span class="kt">long</span>
-    <span class="n">string</span><span class="err">对应</span><span class="n">java</span><span class="err">的</span><span class="n">String</span>
-    <span class="err">在消息定义中，每个字段都有唯一的一个标识符，可以理解为索引，用于识别各个字段</span>
-    <span class="n">id</span><span class="o">=</span><span class="mi">1</span><span class="o">,</span><span class="n">name</span><span class="o">=</span><span class="mi">2</span><span class="o">,</span><span class="n">sex</span><span class="o">=</span><span class="mi">3</span><span class="o">,</span><span class="n">tel</span><span class="o">=</span><span class="mi">4</span><span class="o">,</span><span class="mi">1</span><span class="o">,</span><span class="mi">2</span><span class="o">,</span><span class="mi">3</span><span class="o">,</span><span class="mi">4</span><span class="err">并不是默认值</span>
-    
-    <span class="err">默认值可以这样设置：</span><span class="n">optional</span> <span class="n">int32</span> <span class="n">result_per_page</span> <span class="o">=</span> <span class="mi">3</span> <span class="o">[</span><span class="k">default</span> <span class="o">=</span> <span class="mi">10</span><span class="o">];</span>
-    
-    <span class="n">required</span><span class="err">：一个格式良好的消息一定要含有</span><span class="mi">1</span><span class="err">个这种字段。表示该值是必须要设置的；</span>
-    <span class="n">optional</span><span class="err">：消息格式中该字段可以有</span><span class="mi">0</span><span class="err">个或</span><span class="mi">1</span><span class="err">个值（不超过</span><span class="mi">1</span><span class="err">个）</span>
-    <span class="n">repeated</span><span class="err">：在一个格式良好的消息中，这种字段可以重复任意多次（包括</span><span class="mi">0</span><span class="err">次）。重复的值的顺序会被保留。表示该值可以重复，相当于</span><span class="n">java</span><span class="err">中的</span><span class="n">List</span>
-    
-    <span class="err">由于一些历史原因，基本数值类型的</span><span class="n">repeated</span><span class="err">的字段并没有被尽可能地高效编码。在新的代码中，用户应该使用特殊选项</span><span class="o">[</span><span class="n">packed</span><span class="o">=</span><span class="kc">true</span><span class="o">]</span><span class="err">来保证更高效的编码</span>
-    <span class="n">repeated</span> <span class="n">int32</span> <span class="n">samples</span> <span class="o">=</span> <span class="mi">4</span> <span class="o">[</span><span class="n">packed</span><span class="o">=</span><span class="kc">true</span><span class="o">];</span><span class="err">`</span></code></pre></figure>
+<p>它是系统启动后就运行的进程，所有应用程序通过调用IActivityManager这个Binder类向它发送消息，而AMS通过应用程序传递过来的 IApplicationThread Binder对象，ApplicationThread也是一个Binder对象，AMS通过它来向应用程序发送信息，实现双向沟通；</p>
 
-<p>生成java类</p>
+<h3 id="applicationthread-对象">ApplicationThread 对象</h3>
+
+<p>是ActivityThread的成员变量，它是IApplicationThread，当ActivityThread调用attch方法时，就会将其发送给AMS，AMS将它读取出来，根据PID来确认所在进程，然后将其绑定到ActivityRecord；</p>
+
+<h3 id="activitythread">ActivityThread</h3>
+
+<p>它管理应用进程的主线程的执行(相当于普通Java程序的main入口函数)，进行消息循环机制，并根据AMS的要求（通过IApplicationThread接口，AMS为Client、ActivityThread.ApplicationThread为Server）负责调度和执行activities、broadcasts和其它操作。</p>
+
+<h3 id="activityrecord">ActivityRecord</h3>
+
+<p>在AMS中，存储着进程的Activity栈，而栈中并不存储着Activity对象，而是存储着记录关于Activity的所有信息（Intent（有processName），调用打开Activity的ProcessRecord，IApplicationThread），通过它可以通知了解到当前栈中Activity的所属进程，决定是否新建进程。也可以通过它绑定的的IApplicationThread对象，对客户端进程进行操控，比如发送 生命周期切换 请求。</p>
+
+<h1 id="launcher">Launcher</h1>
 
 <blockquote>
-  <p>首先用cmd，进入一个文件夹里，这个文件夹放好.proto文件和一个src的子文件夹，然后执行命令
-protob.exe ./xx.proto –java_out=./src   就可以生成一个java类，通过这个类我们就可以实现对象的序列化和反序列化；</p>
+  <p>所有应用程序的入口，Launcher，我们的手机桌面就是Launcher应用的LauncherActivity，上面的每一个应用图标就是LauncherActivity上的一个个可点击的 View,它们绑定了应用程序在Manifest中注册的MainActivity信息</p>
 </blockquote>
+
+<p>当我们点击应用图标的时候</p>
+
+<p><img src="http://i.imgur.com/kR0o6n8.png" alt="" /></p>
+
+<p>然后startActivity，最后会调用Activity里面的startActivityForResult(Intent intent,int requestCode)</p>
+
+<p><img src="http://i.imgur.com/OihNJmy.png" alt="" /></p>
+
+<p>其中 mToken 就是Activity的在多进程环境中的标志，是一个Binder对象；Binder对象不单单可以调用远程服务的接口，还可以在多进程中标识一个对象</p>
+
+<p>mMainThread.getApplicationThread()  这里就是将当前进程（Launcher）的IApplicationThread对象传递给AMS；</p>
+
+<p><img src="http://i.imgur.com/rwNPYBt.png" alt="" /></p>
+
+<p>可以看到在最后调用ActivityManagerNative.getDefault()方法来获取 ActivityManagerNative 这个Binder对象的IActivityManager接口，对AMS进行跨进程调用startActivity方法，参数中，传递了 IApplicationThread对象，Intent，Token，请求码这些参数。</p>
+
+<h2 id="ams端">AMS端</h2>
+
+<p>当点击了应用图标，实际就是通过远程接口调用AMS的startActivity方法，这里只是简单地介绍startActivity做了什么；</p>
+
+<ol>
+  <li>首先解析传递过来的意图，获取Activity的相关信息；minetype，uri，process，activityname，包名等等</li>
+  <li>我们通过传递过来的IApplicationThread对象caller 查找相关的ProcessRecord。ProcessRecord 是一个存储进程相关信息的类，它里面有pid，uid，IApplicationThread这些非常重要的对象；</li>
+  <li>创建ActivityRecord对象，用于记录即将启动的Activity的所有信息，同时也把调用此Activity的进程信息添加到ActivityRecord中，即把ProcessRecord也添加到activityRecord进去；</li>
+  <li>检测重用，是否存在可以存放该Activity的栈（通过Affinity标识栈，如果不定义Affinity，默认是包名），没有的话就新建一个栈，将这个新建ActivityRecord压入栈顶（虽然处于栈顶，但是还没有通知客户端，客户端的上一个Activity仍处于Resume状态）。</li>
+  <li>将新添加进来的ActivityRecord保存在 <strong>next</strong> 变量中，然后将上一个ActivityRecord（很明显，是LauncherActivity）保存在 <strong>pre</strong> 变量中，将客户端处于Resume状态的Activity 置于 Pause状态。调用 pre.app.thread.schedulePauseActivity(pre.appToken…) 因为这里的app对象就是ProcessRecord对象，thread则是IApplicationThread对象（就是Launcher应用的接口，startActivity的时候传过来的），这里很简单，就是通过Binder机制，调用客户端的schedulePauseActivity(pre.appToken..)方法。</li>
+</ol>
+
+<p><img src="http://i.imgur.com/bgRuJbi.png" alt="" /></p>
+
+<h2 id="laucher端">Laucher端</h2>
+
+<p><img src="http://i.imgur.com/u2HiSSv.png" alt="" /></p>
+
+<p>通过消息队列机制，通过token找到当前Activity，然后调用它的onPause方法；</p>
+
+<p><img src="http://i.imgur.com/dxv7j1P.png" alt="" /></p>
+
+<p>并且再次调用ActivityManagerNative.getDefault()获取 IActivityManager，来调用AMS的服务，告诉AMS，我已经调用activity pause 完毕，你继续干下面的活吧</p>
+
+<h2 id="再次返回ams端">再次返回AMS端</h2>
+
+<p>上一个Activity已经处于onPause状态了，AMS也就可以开启新的Activity了。</p>
+
+<p><img src="http://i.imgur.com/jaEZ9j4.png" alt="" /></p>
+
+<p>首先调用上面的startSpecificActivityLocked(…)方法， 判断是否开启该进程（通过查找是否存在栈顶中的ActivityRecord的process相同的进程’cheng’chen’che’ch’c），如果没有则调用ActivityManagerService进行开启。</p>
+
+<p><img src="http://i.imgur.com/ksgIveT.png" alt="" /></p>
+
+<p><img src="http://i.imgur.com/VKYwx4r.png" alt="" /></p>
+
+<h3 id="activitymanagerservicestartprocesslocked">ActivityManagerService.startProcessLocked</h3>
+
+<p>Process.start(String entryPoint,String processName,int uid,int pid,…);</p>
+
+<p>经过几个方法到跳转，最终调用到了Process.start的方法，在调用Process.start方法之前，将一个字符串entryPoint作为参数传入到start方法中，通过该方法，我们创建一个新的进程.
+其中entryPoint是非常重要的，它是ActivityThread的全类名，构造新的进程后，会通过反射，调用ActivityThread的main方法，这就是为什么应用程序的入口时ActivityThread；</p>
+
+<p>在ActivityThread的main方法中，开启了消息循环机制，并且调用attach方法，将当前进程的ApplicationThread对象传到AMS中，让AMS端的ProcessRecord，存起新建进程的ApplicationThread远程控制binder对象，用于沟通；然后存放在ActivityRecord中，即next变量中；</p>
+
+<p>ActivityRecord绑定了applicationThread后，就可以调用客户端的进程的scheduleLaunchActivity(…) 生成新的ActivityClientRecord（这个跟AMS的ActivityRecord的原理一样，用于记录Activity的相关信息）；然后发送 launch_activity 消息</p>
+
+<p>消息队列接到消息，执行performLaunchActivity方法，通知其实例化activity对象</p>
+
+<p><img src="http://i.imgur.com/ltRvgtg.png" alt="" /></p>
+
+<p>通过反射生成activity对象，然后根据menifest中的Application标签内容创建 Application对象（Application对象是在第一个组件实例化时才被创建）</p>
+
+<p>最后调用activity的oncreate方法；</p>
+
+<p><img src="http://i.imgur.com/Nvx4LVr.png" alt="" /></p>
+
+<p>至此，整个流程调用完毕，后面的其他生命周期发生变化，也是如此，AMS通过ApplicationThread通知；</p>
 
 
                 <hr>
@@ -254,14 +302,16 @@ protob.exe ./xx.proto –java_out=./src   就可以生成一个java类，通过�
                 </style>
                 <div class="ds-share"
                     style="text-align: right"
-                    data-thread-key="/2016/09/26/Google ProtoBuf"
-                    data-title="Google ProtoBuf"
-                    data-url="https://drearming.github.io/drearming.github.com/2016/09/26/Google-ProtoBuf/"
+                    data-thread-key="/2017/03/14/App-start-process"
+                    data-title="APP启动流程"
+                    data-url="https://drearming.github.io/drearming.github.com/2017/03/14/App-start-process/"
                     data-images="https://drearming.github.io/drearming.github.com/img/post-bg-2015.jpg"
-                    data-content="Google Protobuf(GPB)
+                    data-content="App启动流程
+
+参考博客：App启动流程
 
 
-  GPB是一种序列化对象的一种协议，一般用于客户端和服务器端的数据交流，具有跨平台、跨语言特性，googl... | 陈俊杰 | MVCoder " >
+  当我知道了如何去开发一个app时候，就对app的整个启动流程非常感兴趣，想看一下，它是怎么实现的。如何... | 陈俊杰 | MVCoder " >
                     <div class="ds-share-inline">
                       <ul  class="ds-share-icons-16">
                         <li data-toggle="ds-share-icons-more"><a class="ds-more" href="#">分享到：</a></li>
@@ -280,10 +330,10 @@ protob.exe ./xx.proto –java_out=./src   就可以生成一个java类，通过�
 
                 <ul class="pager">
                     
-                    
-                    <li class="next">
-                        <a href="/drearming.github.com/2016/10/10/Activity-stack/" data-toggle="tooltip" data-placement="top" title="Activity栈和回退机制">Next Post &rarr;</a>
+                    <li class="previous">
+                        <a href="/drearming.github.com/2017/02/10/Android-network-retrofit/" data-toggle="tooltip" data-placement="top" title="Retrofit原理">&larr; Previous Post</a>
                     </li>
+                    
                     
                 </ul>
 
@@ -292,9 +342,9 @@ protob.exe ./xx.proto –java_out=./src   就可以生成一个java类，通过�
                 <!-- 多说评论框 start -->
                 <div class="comment">
                     <div class="ds-thread"
-                        data-thread-key="/2016/09/26/Google ProtoBuf"
-                        data-title="Google ProtoBuf"
-                        data-url="https://drearming.github.io/drearming.github.com/2016/09/26/Google-ProtoBuf/" >
+                        data-thread-key="/2017/03/14/App-start-process"
+                        data-title="APP启动流程"
+                        data-url="https://drearming.github.io/drearming.github.com/2017/03/14/App-start-process/" >
                     </div>
                 </div>
                 <!-- 多说评论框 end -->

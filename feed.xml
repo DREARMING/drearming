@@ -5,9 +5,148 @@
     <description>So live a life you will remember</description>
     <link>https://drearming.github.io/drearming.github.com/</link>
     <atom:link href="https://drearming.github.io/drearming.github.com/feed.xml" rel="self" type="application/rss+xml" />
-    <pubDate>Thu, 16 Mar 2017 21:54:21 +0800</pubDate>
-    <lastBuildDate>Thu, 16 Mar 2017 21:54:21 +0800</lastBuildDate>
+    <pubDate>Thu, 16 Mar 2017 22:03:57 +0800</pubDate>
+    <lastBuildDate>Thu, 16 Mar 2017 22:03:57 +0800</lastBuildDate>
     <generator>Jekyll v3.4.0</generator>
+    
+      <item>
+        <title>APP启动流程</title>
+        <description>&lt;h1 id=&quot;app启动流程&quot;&gt;App启动流程&lt;/h1&gt;
+
+&lt;p&gt;参考博客：&lt;a href=&quot;http://www.jianshu.com/p/97cd4f303774&quot;&gt;App启动流程&lt;/a&gt;&lt;/p&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;当我知道了如何去开发一个app时候，就对app的整个启动流程非常感兴趣，想看一下，它是怎么实现的。如何从点击一个icon，到调用MainActivity的onCreate方法整个过程，这个过程是如何实现的，像迷一样吸引着我。&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;背景知识：&lt;/p&gt;
+
+&lt;p&gt;我们试想一下，我们常常进行应用之间的切换，打开新的应用，每个应用都有不同的Activity栈，这如何在系统中设计？&lt;/p&gt;
+
+&lt;p&gt;首先应用之间能够进行切换、调度，这必须需要一个中间对象来存储各个进程的状态，方便我们管理，切换，查看。&lt;/p&gt;
+
+&lt;p&gt;而每个进程能够让用户看到的就是Activity栈，我们就是需要一个中间对象来管理我们每个应用的Activity栈，而这个中间对象就是我们的ActivityManagerService。&lt;/p&gt;
+
+&lt;p&gt;因为本人是非计算机专业，没有学过任何计算机基本知识，对操作系统不太了解，下面的也只是个人见解。。当了解完AMS后，突然懂得了什么叫进程。根据我的理解，进程代表着一个应用，然而应用并不具备显示出来的所有功能，包括Activity的画面的绘制，窗口的显示，这些功能并不是应用的，在Android里面，这就像一种无界的设计，应用进程就是存储一大堆对象，与外界进行交流数据，改变对象的状态，这些绘制View，显示在窗口的，并不是应用集成的功能，它不需要写，而是交给WMS；Activity栈的管理，也不是应用自己管理的，而是交给AMS，这大大刷新我的认知，但是惊叹这种设计，这样无疑使得开发变得更加简单，应用体积更加小，也便于系统的管理&lt;/p&gt;
+
+&lt;p&gt;这也让我开始明白学习Android遇到的第一个介绍，Android应用程序由四大基本组件组成，从Android系统层面看，真的就是由这么几个组件构成，应用程序内部的数据对象（网络，数据库，缓存），都是为其做服务用的。现在才感觉到这句话的简单的复杂性，浓缩了Android的框架设计。&lt;/p&gt;
+
+&lt;hr /&gt;
+
+&lt;p&gt;Binder 跨进程通信机制&lt;/p&gt;
+
+&lt;p&gt;&lt;a href=&quot;http://www.jianshu.com/p/04a034cbbc27&quot;&gt;简单明了，彻底地理解Binder&lt;/a&gt; &lt;br /&gt;
+&lt;a href=&quot;http://blog.csdn.net/singwhatiwanna/article/details/17041691&quot;&gt;任玉刚 IPC&lt;/a&gt;&lt;/p&gt;
+
+&lt;h3 id=&quot;activitymanagerservice以下简称ams&quot;&gt;ActivityManagerService（以下简称AMS）&lt;/h3&gt;
+
+&lt;p&gt;ActivityManagerService是Android中最核心的服务，主要负责系统中四大组件的启动、切换、调度及应用进程的创建、管理和调度等工作，其职责与操作系统中的进程管理和调度模块相类似，因此它在Android中非常重要。&lt;/p&gt;
+
+&lt;p&gt;它是系统启动后就运行的进程，所有应用程序通过调用IActivityManager这个Binder类向它发送消息，而AMS通过应用程序传递过来的 IApplicationThread Binder对象，ApplicationThread也是一个Binder对象，AMS通过它来向应用程序发送信息，实现双向沟通；&lt;/p&gt;
+
+&lt;h3 id=&quot;applicationthread-对象&quot;&gt;ApplicationThread 对象&lt;/h3&gt;
+
+&lt;p&gt;是ActivityThread的成员变量，它是IApplicationThread，当ActivityThread调用attch方法时，就会将其发送给AMS，AMS将它读取出来，根据PID来确认所在进程，然后将其绑定到ActivityRecord；&lt;/p&gt;
+
+&lt;h3 id=&quot;activitythread&quot;&gt;ActivityThread&lt;/h3&gt;
+
+&lt;p&gt;它管理应用进程的主线程的执行(相当于普通Java程序的main入口函数)，进行消息循环机制，并根据AMS的要求（通过IApplicationThread接口，AMS为Client、ActivityThread.ApplicationThread为Server）负责调度和执行activities、broadcasts和其它操作。&lt;/p&gt;
+
+&lt;h3 id=&quot;activityrecord&quot;&gt;ActivityRecord&lt;/h3&gt;
+
+&lt;p&gt;在AMS中，存储着进程的Activity栈，而栈中并不存储着Activity对象，而是存储着记录关于Activity的所有信息（Intent（有processName），调用打开Activity的ProcessRecord，IApplicationThread），通过它可以通知了解到当前栈中Activity的所属进程，决定是否新建进程。也可以通过它绑定的的IApplicationThread对象，对客户端进程进行操控，比如发送 生命周期切换 请求。&lt;/p&gt;
+
+&lt;h1 id=&quot;launcher&quot;&gt;Launcher&lt;/h1&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;所有应用程序的入口，Launcher，我们的手机桌面就是Launcher应用的LauncherActivity，上面的每一个应用图标就是LauncherActivity上的一个个可点击的 View,它们绑定了应用程序在Manifest中注册的MainActivity信息&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;当我们点击应用图标的时候&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;http://i.imgur.com/kR0o6n8.png&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;然后startActivity，最后会调用Activity里面的startActivityForResult(Intent intent,int requestCode)&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;http://i.imgur.com/OihNJmy.png&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;其中 mToken 就是Activity的在多进程环境中的标志，是一个Binder对象；Binder对象不单单可以调用远程服务的接口，还可以在多进程中标识一个对象&lt;/p&gt;
+
+&lt;p&gt;mMainThread.getApplicationThread()  这里就是将当前进程（Launcher）的IApplicationThread对象传递给AMS；&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;http://i.imgur.com/rwNPYBt.png&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;可以看到在最后调用ActivityManagerNative.getDefault()方法来获取 ActivityManagerNative 这个Binder对象的IActivityManager接口，对AMS进行跨进程调用startActivity方法，参数中，传递了 IApplicationThread对象，Intent，Token，请求码这些参数。&lt;/p&gt;
+
+&lt;h2 id=&quot;ams端&quot;&gt;AMS端&lt;/h2&gt;
+
+&lt;p&gt;当点击了应用图标，实际就是通过远程接口调用AMS的startActivity方法，这里只是简单地介绍startActivity做了什么；&lt;/p&gt;
+
+&lt;ol&gt;
+  &lt;li&gt;首先解析传递过来的意图，获取Activity的相关信息；minetype，uri，process，activityname，包名等等&lt;/li&gt;
+  &lt;li&gt;我们通过传递过来的IApplicationThread对象caller 查找相关的ProcessRecord。ProcessRecord 是一个存储进程相关信息的类，它里面有pid，uid，IApplicationThread这些非常重要的对象；&lt;/li&gt;
+  &lt;li&gt;创建ActivityRecord对象，用于记录即将启动的Activity的所有信息，同时也把调用此Activity的进程信息添加到ActivityRecord中，即把ProcessRecord也添加到activityRecord进去；&lt;/li&gt;
+  &lt;li&gt;检测重用，是否存在可以存放该Activity的栈（通过Affinity标识栈，如果不定义Affinity，默认是包名），没有的话就新建一个栈，将这个新建ActivityRecord压入栈顶（虽然处于栈顶，但是还没有通知客户端，客户端的上一个Activity仍处于Resume状态）。&lt;/li&gt;
+  &lt;li&gt;将新添加进来的ActivityRecord保存在 &lt;strong&gt;next&lt;/strong&gt; 变量中，然后将上一个ActivityRecord（很明显，是LauncherActivity）保存在 &lt;strong&gt;pre&lt;/strong&gt; 变量中，将客户端处于Resume状态的Activity 置于 Pause状态。调用 pre.app.thread.schedulePauseActivity(pre.appToken…) 因为这里的app对象就是ProcessRecord对象，thread则是IApplicationThread对象（就是Launcher应用的接口，startActivity的时候传过来的），这里很简单，就是通过Binder机制，调用客户端的schedulePauseActivity(pre.appToken..)方法。&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;p&gt;&lt;img src=&quot;http://i.imgur.com/bgRuJbi.png&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;h2 id=&quot;laucher端&quot;&gt;Laucher端&lt;/h2&gt;
+
+&lt;p&gt;&lt;img src=&quot;http://i.imgur.com/u2HiSSv.png&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;通过消息队列机制，通过token找到当前Activity，然后调用它的onPause方法；&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;http://i.imgur.com/dxv7j1P.png&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;并且再次调用ActivityManagerNative.getDefault()获取 IActivityManager，来调用AMS的服务，告诉AMS，我已经调用activity pause 完毕，你继续干下面的活吧&lt;/p&gt;
+
+&lt;h2 id=&quot;再次返回ams端&quot;&gt;再次返回AMS端&lt;/h2&gt;
+
+&lt;p&gt;上一个Activity已经处于onPause状态了，AMS也就可以开启新的Activity了。&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;http://i.imgur.com/jaEZ9j4.png&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;首先调用上面的startSpecificActivityLocked(…)方法， 判断是否开启该进程（通过查找是否存在栈顶中的ActivityRecord的process相同的进程’cheng’chen’che’ch’c），如果没有则调用ActivityManagerService进行开启。&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;http://i.imgur.com/ksgIveT.png&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;http://i.imgur.com/VKYwx4r.png&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;h3 id=&quot;activitymanagerservicestartprocesslocked&quot;&gt;ActivityManagerService.startProcessLocked&lt;/h3&gt;
+
+&lt;p&gt;Process.start(String entryPoint,String processName,int uid,int pid,…);&lt;/p&gt;
+
+&lt;p&gt;经过几个方法到跳转，最终调用到了Process.start的方法，在调用Process.start方法之前，将一个字符串entryPoint作为参数传入到start方法中，通过该方法，我们创建一个新的进程.
+其中entryPoint是非常重要的，它是ActivityThread的全类名，构造新的进程后，会通过反射，调用ActivityThread的main方法，这就是为什么应用程序的入口时ActivityThread；&lt;/p&gt;
+
+&lt;p&gt;在ActivityThread的main方法中，开启了消息循环机制，并且调用attach方法，将当前进程的ApplicationThread对象传到AMS中，让AMS端的ProcessRecord，存起新建进程的ApplicationThread远程控制binder对象，用于沟通；然后存放在ActivityRecord中，即next变量中；&lt;/p&gt;
+
+&lt;p&gt;ActivityRecord绑定了applicationThread后，就可以调用客户端的进程的scheduleLaunchActivity(…) 生成新的ActivityClientRecord（这个跟AMS的ActivityRecord的原理一样，用于记录Activity的相关信息）；然后发送 launch_activity 消息&lt;/p&gt;
+
+&lt;p&gt;消息队列接到消息，执行performLaunchActivity方法，通知其实例化activity对象&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;http://i.imgur.com/ltRvgtg.png&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;通过反射生成activity对象，然后根据menifest中的Application标签内容创建 Application对象（Application对象是在第一个组件实例化时才被创建）&lt;/p&gt;
+
+&lt;p&gt;最后调用activity的oncreate方法；&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;http://i.imgur.com/Nvx4LVr.png&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;至此，整个流程调用完毕，后面的其他生命周期发生变化，也是如此，AMS通过ApplicationThread通知；&lt;/p&gt;
+</description>
+        <pubDate>Tue, 14 Mar 2017 21:08:00 +0800</pubDate>
+        <link>https://drearming.github.io/drearming.github.com/2017/03/14/App-start-process/</link>
+        <guid isPermaLink="true">https://drearming.github.io/drearming.github.com/2017/03/14/App-start-process/</guid>
+        
+        <category>Framework</category>
+        
+        <category>Android</category>
+        
+        
+      </item>
     
       <item>
         <title>Retrofit原理</title>
@@ -2958,97 +3097,6 @@ Creating a preview class&lt;/p&gt;
         <category>四大组件</category>
         
         <category>MealOrder</category>
-        
-        <category>Android</category>
-        
-        
-      </item>
-    
-      <item>
-        <title>Google ProtoBuf</title>
-        <description>&lt;h2 id=&quot;google-protobufgpb&quot;&gt;Google Protobuf(GPB)&lt;/h2&gt;
-
-&lt;blockquote&gt;
-  &lt;p&gt;GPB是一种序列化对象的一种协议，一般用于客户端和服务器端的数据交流，具有跨平台、跨语言特性，google开源的；&lt;/p&gt;
-&lt;/blockquote&gt;
-
-&lt;h2 id=&quot;与其他数据交流协议的区别&quot;&gt;与其他数据交流协议的区别&lt;/h2&gt;
-
-&lt;p&gt;gson 通过json格式字符串 完成 C/S 模式的数据交流；是我们常常用的数据交流格式，也支持跨平台。&lt;/p&gt;
-
-&lt;p&gt;XML  是跨平台的，但是XML的解析和数据量传输非常庞大，嵌套着一些额外的数据；&lt;/p&gt;
-
-&lt;p&gt;而相对于GPB来说，GPB具有跨平台的特性，可以支持JAVA C++ phython 各种语言；另外，经过测试，GPB在传输大量的数据时，所需要占用的空间比GSON要小！&lt;/p&gt;
-
-&lt;p&gt;这就是GPB优秀的地方；&lt;/p&gt;
-
-&lt;h2 id=&quot;gbp的用法&quot;&gt;GBP的用法&lt;/h2&gt;
-
-&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-java&quot; data-lang=&quot;java&quot;&gt;	&lt;span class=&quot;c1&quot;&gt;//序列化&lt;/span&gt;
-    &lt;span class=&quot;n&quot;&gt;Person&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;na&quot;&gt;Persona&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;na&quot;&gt;Builder&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;b&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;Person&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;na&quot;&gt;Persona&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;na&quot;&gt;newBuilder&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;();&lt;/span&gt;
-            &lt;span class=&quot;n&quot;&gt;b&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;na&quot;&gt;setId&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;i&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;);&lt;/span&gt;
-            &lt;span class=&quot;n&quot;&gt;b&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;na&quot;&gt;setName&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;ajun&quot;&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;+&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;1&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;);&lt;/span&gt;
-            &lt;span class=&quot;n&quot;&gt;b&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;na&quot;&gt;setSex&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;男&quot;&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;);&lt;/span&gt;
-            &lt;span class=&quot;n&quot;&gt;b&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;na&quot;&gt;setTel&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;6086666&quot;&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;);&lt;/span&gt;
-            &lt;span class=&quot;n&quot;&gt;Person&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;na&quot;&gt;Persona&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;p&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;b&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;na&quot;&gt;build&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;();&lt;/span&gt;
-            &lt;span class=&quot;kt&quot;&gt;byte&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;[]&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;value&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;p&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;na&quot;&gt;toByteArray&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;()&lt;/span&gt;
-	
-	&lt;span class=&quot;c1&quot;&gt;//反序列化&lt;/span&gt;
-	&lt;span class=&quot;n&quot;&gt;Person&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;na&quot;&gt;Persona&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;last&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;Person&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;na&quot;&gt;Persona&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;na&quot;&gt;parseFrom&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;person&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;);&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
-
-&lt;p&gt;用法非常简单，但是Person类不是我们自己定义的类，而是由Protobuf编辑器，自动生成的类，&lt;/p&gt;
-
-&lt;h2 id=&quot;如何使用protobuf&quot;&gt;如何使用Protobuf？&lt;/h2&gt;
-&lt;blockquote&gt;
-  &lt;p&gt;首先下载 protobuf—java的jar包和一个protobuf.exe 的编辑器；&lt;/p&gt;
-&lt;/blockquote&gt;
-
-&lt;blockquote&gt;
-  &lt;p&gt;根据自己的要求，写一个 .proto 文件，用来描述生成的java类的属性；&lt;/p&gt;
-&lt;/blockquote&gt;
-
-&lt;p&gt;创建Person.proto文件&lt;/p&gt;
-
-&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-java&quot; data-lang=&quot;java&quot;&gt;	&lt;span class=&quot;c1&quot;&gt;//语法可以参照博客：http://blog.csdn.net/ajun_studio/article/details/7693056 &lt;/span&gt;
-	&lt;span class=&quot;c1&quot;&gt;//官网&lt;/span&gt;
-    &lt;span class=&quot;n&quot;&gt;message&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;Person&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;{&lt;/span&gt;
-     &lt;span class=&quot;n&quot;&gt;optional&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;int64&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;id&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;1&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;;&lt;/span&gt;
-     &lt;span class=&quot;n&quot;&gt;optional&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;string&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;name&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;2&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;;&lt;/span&gt;
-     &lt;span class=&quot;n&quot;&gt;optional&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;string&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;sex&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;3&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;;&lt;/span&gt;
-     &lt;span class=&quot;n&quot;&gt;optional&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;string&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;tel&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;4&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;;&lt;/span&gt;
-    &lt;span class=&quot;o&quot;&gt;}&lt;/span&gt;
-    
-    
-    &lt;span class=&quot;n&quot;&gt;Person&lt;/span&gt; &lt;span class=&quot;err&quot;&gt;为定义一个消息类型为&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;Person&lt;/span&gt;
-    
-    &lt;span class=&quot;n&quot;&gt;Person&lt;/span&gt;&lt;span class=&quot;err&quot;&gt;共有三个字段&lt;/span&gt;
-    &lt;span class=&quot;err&quot;&gt;都为&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;optional&lt;/span&gt;&lt;span class=&quot;err&quot;&gt;（可选的）&lt;/span&gt;
-    &lt;span class=&quot;n&quot;&gt;int64&lt;/span&gt;&lt;span class=&quot;err&quot;&gt;对应&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;java&lt;/span&gt;&lt;span class=&quot;err&quot;&gt;的&lt;/span&gt;&lt;span class=&quot;kt&quot;&gt;long&lt;/span&gt;
-    &lt;span class=&quot;n&quot;&gt;string&lt;/span&gt;&lt;span class=&quot;err&quot;&gt;对应&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;java&lt;/span&gt;&lt;span class=&quot;err&quot;&gt;的&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;String&lt;/span&gt;
-    &lt;span class=&quot;err&quot;&gt;在消息定义中，每个字段都有唯一的一个标识符，可以理解为索引，用于识别各个字段&lt;/span&gt;
-    &lt;span class=&quot;n&quot;&gt;id&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;1&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;name&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;2&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;sex&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;3&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;tel&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;4&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;1&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;2&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;3&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;4&lt;/span&gt;&lt;span class=&quot;err&quot;&gt;并不是默认值&lt;/span&gt;
-    
-    &lt;span class=&quot;err&quot;&gt;默认值可以这样设置：&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;optional&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;int32&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;result_per_page&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;3&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;default&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;10&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;];&lt;/span&gt;
-    
-    &lt;span class=&quot;n&quot;&gt;required&lt;/span&gt;&lt;span class=&quot;err&quot;&gt;：一个格式良好的消息一定要含有&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;1&lt;/span&gt;&lt;span class=&quot;err&quot;&gt;个这种字段。表示该值是必须要设置的；&lt;/span&gt;
-    &lt;span class=&quot;n&quot;&gt;optional&lt;/span&gt;&lt;span class=&quot;err&quot;&gt;：消息格式中该字段可以有&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;0&lt;/span&gt;&lt;span class=&quot;err&quot;&gt;个或&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;1&lt;/span&gt;&lt;span class=&quot;err&quot;&gt;个值（不超过&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;1&lt;/span&gt;&lt;span class=&quot;err&quot;&gt;个）&lt;/span&gt;
-    &lt;span class=&quot;n&quot;&gt;repeated&lt;/span&gt;&lt;span class=&quot;err&quot;&gt;：在一个格式良好的消息中，这种字段可以重复任意多次（包括&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;0&lt;/span&gt;&lt;span class=&quot;err&quot;&gt;次）。重复的值的顺序会被保留。表示该值可以重复，相当于&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;java&lt;/span&gt;&lt;span class=&quot;err&quot;&gt;中的&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;List&lt;/span&gt;
-    
-    &lt;span class=&quot;err&quot;&gt;由于一些历史原因，基本数值类型的&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;repeated&lt;/span&gt;&lt;span class=&quot;err&quot;&gt;的字段并没有被尽可能地高效编码。在新的代码中，用户应该使用特殊选项&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;packed&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;kc&quot;&gt;true&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;]&lt;/span&gt;&lt;span class=&quot;err&quot;&gt;来保证更高效的编码&lt;/span&gt;
-    &lt;span class=&quot;n&quot;&gt;repeated&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;int32&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;samples&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;4&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;packed&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;kc&quot;&gt;true&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;];&lt;/span&gt;&lt;span class=&quot;err&quot;&gt;`&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
-
-&lt;p&gt;生成java类&lt;/p&gt;
-
-&lt;blockquote&gt;
-  &lt;p&gt;首先用cmd，进入一个文件夹里，这个文件夹放好.proto文件和一个src的子文件夹，然后执行命令
-protob.exe ./xx.proto –java_out=./src   就可以生成一个java类，通过这个类我们就可以实现对象的序列化和反序列化；&lt;/p&gt;
-&lt;/blockquote&gt;
-</description>
-        <pubDate>Mon, 26 Sep 2016 05:00:00 +0800</pubDate>
-        <link>https://drearming.github.io/drearming.github.com/2016/09/26/Google-ProtoBuf/</link>
-        <guid isPermaLink="true">https://drearming.github.io/drearming.github.com/2016/09/26/Google-ProtoBuf/</guid>
-        
-        <category>加密</category>
         
         <category>Android</category>
         
