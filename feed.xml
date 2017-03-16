@@ -3,10 +3,10 @@
   <channel>
     <title>MVCoder Blog</title>
     <description>So live a life you will remember</description>
-    <link>http://localhost:4000/drearming.github.com/</link>
-    <atom:link href="http://localhost:4000/drearming.github.com/feed.xml" rel="self" type="application/rss+xml" />
-    <pubDate>Thu, 02 Mar 2017 13:19:34 +0800</pubDate>
-    <lastBuildDate>Thu, 02 Mar 2017 13:19:34 +0800</lastBuildDate>
+    <link>https://drearming.github.io/drearming.github.com/</link>
+    <atom:link href="https://drearming.github.io/drearming.github.com/feed.xml" rel="self" type="application/rss+xml" />
+    <pubDate>Thu, 16 Mar 2017 21:54:21 +0800</pubDate>
+    <lastBuildDate>Thu, 16 Mar 2017 21:54:21 +0800</lastBuildDate>
     <generator>Jekyll v3.4.0</generator>
     
       <item>
@@ -324,8 +324,8 @@
     &lt;span class=&quot;o&quot;&gt;}&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
 </description>
         <pubDate>Fri, 10 Feb 2017 17:00:00 +0800</pubDate>
-        <link>http://localhost:4000/drearming.github.com/2017/02/10/Android-network-retrofit/</link>
-        <guid isPermaLink="true">http://localhost:4000/drearming.github.com/2017/02/10/Android-network-retrofit/</guid>
+        <link>https://drearming.github.io/drearming.github.com/2017/02/10/Android-network-retrofit/</link>
+        <guid isPermaLink="true">https://drearming.github.io/drearming.github.com/2017/02/10/Android-network-retrofit/</guid>
         
         <category>网络</category>
         
@@ -1245,8 +1245,8 @@ terminal：当线程池中没有可执行的任务后，会进入这个状态&lt
 &lt;p&gt;项目设计ScheduledThreadPoolExecutor、BlockingQueue、Semaphore、CountDownLatch、Executor&lt;/p&gt;
 </description>
         <pubDate>Tue, 10 Jan 2017 23:00:00 +0800</pubDate>
-        <link>http://localhost:4000/drearming.github.com/2017/01/10/Java-multiThread/</link>
-        <guid isPermaLink="true">http://localhost:4000/drearming.github.com/2017/01/10/Java-multiThread/</guid>
+        <link>https://drearming.github.io/drearming.github.com/2017/01/10/Java-multiThread/</link>
+        <guid isPermaLink="true">https://drearming.github.io/drearming.github.com/2017/01/10/Java-multiThread/</guid>
         
         <category>Java</category>
         
@@ -1559,8 +1559,8 @@ attribute_info attributes[attributes_count];  //属性表
 
 </description>
         <pubDate>Tue, 03 Jan 2017 16:00:00 +0800</pubDate>
-        <link>http://localhost:4000/drearming.github.com/2017/01/03/Java_virtual_machine/</link>
-        <guid isPermaLink="true">http://localhost:4000/drearming.github.com/2017/01/03/Java_virtual_machine/</guid>
+        <link>https://drearming.github.io/drearming.github.com/2017/01/03/Java_virtual_machine/</link>
+        <guid isPermaLink="true">https://drearming.github.io/drearming.github.com/2017/01/03/Java_virtual_machine/</guid>
         
         <category>Java</category>
         
@@ -1910,8 +1910,8 @@ attribute_info attributes[attributes_count];  //属性表
 &lt;p&gt;至此，整个二维码扫描界面的原理解析完成&lt;/p&gt;
 </description>
         <pubDate>Fri, 16 Dec 2016 03:00:00 +0800</pubDate>
-        <link>http://localhost:4000/drearming.github.com/2016/12/16/ScanSQCode/</link>
-        <guid isPermaLink="true">http://localhost:4000/drearming.github.com/2016/12/16/ScanSQCode/</guid>
+        <link>https://drearming.github.io/drearming.github.com/2016/12/16/ScanSQCode/</link>
+        <guid isPermaLink="true">https://drearming.github.io/drearming.github.com/2016/12/16/ScanSQCode/</guid>
         
         <category>Android</category>
         
@@ -2089,8 +2089,8 @@ Creating a preview class&lt;/p&gt;
 	&lt;span class=&quot;o&quot;&gt;};&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
 </description>
         <pubDate>Sat, 10 Dec 2016 04:00:00 +0800</pubDate>
-        <link>http://localhost:4000/drearming.github.com/2016/12/10/Camera/</link>
-        <guid isPermaLink="true">http://localhost:4000/drearming.github.com/2016/12/10/Camera/</guid>
+        <link>https://drearming.github.io/drearming.github.com/2016/12/10/Camera/</link>
+        <guid isPermaLink="true">https://drearming.github.io/drearming.github.com/2016/12/10/Camera/</guid>
         
         <category>MealOrder</category>
         
@@ -2387,8 +2387,8 @@ Creating a preview class&lt;/p&gt;
 
 </description>
         <pubDate>Mon, 21 Nov 2016 05:30:00 +0800</pubDate>
-        <link>http://localhost:4000/drearming.github.com/2016/11/21/NFC/</link>
-        <guid isPermaLink="true">http://localhost:4000/drearming.github.com/2016/11/21/NFC/</guid>
+        <link>https://drearming.github.io/drearming.github.com/2016/11/21/NFC/</link>
+        <guid isPermaLink="true">https://drearming.github.io/drearming.github.com/2016/11/21/NFC/</guid>
         
         <category>Android</category>
         
@@ -2464,8 +2464,8 @@ Creating a preview class&lt;/p&gt;
 
 </description>
         <pubDate>Wed, 02 Nov 2016 20:00:00 +0800</pubDate>
-        <link>http://localhost:4000/drearming.github.com/2016/11/02/java-hashmap/</link>
-        <guid isPermaLink="true">http://localhost:4000/drearming.github.com/2016/11/02/java-hashmap/</guid>
+        <link>https://drearming.github.io/drearming.github.com/2016/11/02/java-hashmap/</link>
+        <guid isPermaLink="true">https://drearming.github.io/drearming.github.com/2016/11/02/java-hashmap/</guid>
         
         <category>Java</category>
         
@@ -2709,8 +2709,8 @@ Creating a preview class&lt;/p&gt;
 
 </description>
         <pubDate>Sat, 15 Oct 2016 00:00:00 +0800</pubDate>
-        <link>http://localhost:4000/drearming.github.com/2016/10/15/android/</link>
-        <guid isPermaLink="true">http://localhost:4000/drearming.github.com/2016/10/15/android/</guid>
+        <link>https://drearming.github.io/drearming.github.com/2016/10/15/android/</link>
+        <guid isPermaLink="true">https://drearming.github.io/drearming.github.com/2016/10/15/android/</guid>
         
         <category>Android</category>
         
@@ -2952,8 +2952,8 @@ Creating a preview class&lt;/p&gt;
 
 </description>
         <pubDate>Mon, 10 Oct 2016 21:30:00 +0800</pubDate>
-        <link>http://localhost:4000/drearming.github.com/2016/10/10/Activity-stack/</link>
-        <guid isPermaLink="true">http://localhost:4000/drearming.github.com/2016/10/10/Activity-stack/</guid>
+        <link>https://drearming.github.io/drearming.github.com/2016/10/10/Activity-stack/</link>
+        <guid isPermaLink="true">https://drearming.github.io/drearming.github.com/2016/10/10/Activity-stack/</guid>
         
         <category>四大组件</category>
         
@@ -3045,8 +3045,8 @@ protob.exe ./xx.proto –java_out=./src   就可以生成一个java类，通过�
 &lt;/blockquote&gt;
 </description>
         <pubDate>Mon, 26 Sep 2016 05:00:00 +0800</pubDate>
-        <link>http://localhost:4000/drearming.github.com/2016/09/26/Google-ProtoBuf/</link>
-        <guid isPermaLink="true">http://localhost:4000/drearming.github.com/2016/09/26/Google-ProtoBuf/</guid>
+        <link>https://drearming.github.io/drearming.github.com/2016/09/26/Google-ProtoBuf/</link>
+        <guid isPermaLink="true">https://drearming.github.io/drearming.github.com/2016/09/26/Google-ProtoBuf/</guid>
         
         <category>加密</category>
         
