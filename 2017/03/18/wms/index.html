@@ -1,0 +1,959 @@
+<!DOCTYPE html>
+
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="google-site-verification" content="xBT4GhYoi5qRD5tr338pgPM5OWHHIDR6mNg1a3euekI" />
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="So live a life you will remember">
+    <meta name="keyword"  content="Android Java Web">
+    <link rel="shortcut icon" href="/drearming.github.com/img/favicon.jpg">
+
+    <title>WindowManager - 陈俊杰 | MVCoder</title>
+
+    <link rel="canonical" href="https://drearming.github.io/drearming.github.com/2017/03/18/wms/">
+
+    <!-- Bootstrap Core CSS -->
+    <link rel="stylesheet" href="/drearming.github.com/css/bootstrap.min.css">
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="/drearming.github.com/css/hux-blog.min.css">
+
+    <!-- Pygments Github CSS -->
+    <link rel="stylesheet" href="/drearming.github.com/css/syntax.css">
+
+    <!-- Custom Fonts -->
+    <!-- <link href="http://maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css" rel="stylesheet" type="text/css"> -->
+    <!-- Hux change font-awesome CDN to qiniu -->
+    <link href="https://cdn.staticfile.org/font-awesome/4.2.0/css/font-awesome.min.css" rel="stylesheet" type="text/css">
+
+    <!-- Hux Delete, sad but pending in China
+    <link href='http://fonts.googleapis.com/css?family=Lora:400,700,400italic,700italic' rel='stylesheet' type='text/css'>
+    <link href='http://fonts.googleapis.com/css?family=Open+Sans:300italic,400italic,600italic,700italic,800italic,400,300,600,700,800' rel='stylesheet' type='text/
+    css'>
+    -->
+
+
+    <!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
+    <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
+    <!--[if lt IE 9]>
+        <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+        <script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
+    <![endif]-->
+
+    <!-- ga & ba script hoook -->
+    <script></script>
+</head>
+
+
+<!-- hack iOS CSS :active style -->
+<body ontouchstart="">
+
+    <!-- Navigation -->
+<nav class="navbar navbar-default navbar-custom navbar-fixed-top">
+    <div class="container-fluid">
+        <!-- Brand and toggle get grouped for better mobile display -->
+        <div class="navbar-header page-scroll">
+            <button type="button" class="navbar-toggle">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+            <a class="navbar-brand" href="/drearming.github.com/">MVCoder Blog</a>
+        </div>
+
+        <!-- Collect the nav links, forms, and other content for toggling -->
+        <!-- Known Issue, found by Hux:
+            <nav>'s height woule be hold on by its content.
+            so, when navbar scale out, the <nav> will cover tags.
+            also mask any touch event of tags, unfortunately.
+        -->
+        <div id="huxblog_navbar">
+            <div class="navbar-collapse">
+                <ul class="nav navbar-nav navbar-right">
+                    <li>
+                        <a href="/drearming.github.com/">Home</a>
+                    </li>
+                    
+                    <li>
+                        <a href="/drearming.github.com/about/">About</a>
+                    </li>
+                    
+                    <li>
+                        <a href="/drearming.github.com/tags/">Tags</a>
+                    </li>
+                    
+                </ul>
+            </div>
+        </div>
+        <!-- /.navbar-collapse -->
+    </div>
+    <!-- /.container -->
+</nav>
+<script>
+    // Drop Bootstarp low-performance Navbar
+    // Use customize navbar with high-quality material design animation
+    // in high-perf jank-free CSS3 implementation
+    var $body   = document.body;
+    var $toggle = document.querySelector('.navbar-toggle');
+    var $navbar = document.querySelector('#huxblog_navbar');
+    var $collapse = document.querySelector('.navbar-collapse');
+
+    $toggle.addEventListener('click', handleMagic)
+    function handleMagic(e){
+        if ($navbar.className.indexOf('in') > 0) {
+        // CLOSE
+            $navbar.className = " ";
+            // wait until animation end.
+            setTimeout(function(){
+                // prevent frequently toggle
+                if($navbar.className.indexOf('in') < 0) {
+                    $collapse.style.height = "0px"
+                }
+            },400)
+        }else{
+        // OPEN
+            $collapse.style.height = "auto"
+            $navbar.className += " in";
+        }
+    }
+</script>
+
+
+    <!-- Image to hack wechat -->
+<!-- <img src="/img/icon_wechat.png" width="0" height="0"> -->
+<!-- <img src="/drearming.github.com/img/post-bg-2015.jpg" width="0" height="0"> -->
+
+<!-- Post Header -->
+<style type="text/css">
+    header.intro-header{
+        background-image: url('/drearming.github.com/img/post-bg-2015.jpg')
+    }
+</style>
+<header class="intro-header" >
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+                <div class="post-heading">
+                    <div class="tags">
+                        
+                        <a class="tag" href="/drearming.github.com/tags/#Framework" title="Framework">Framework</a>
+                        
+                        <a class="tag" href="/drearming.github.com/tags/#Android" title="Android">Android</a>
+                        
+                    </div>
+                    <h1>WindowManager</h1>
+                    
+                    
+                    <h2 class="subheading">我们是如何将一个View显示在window上呢</h2>
+                    
+                    <span class="meta">Posted by MVCoder on March 18, 2017</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</header>
+
+<!-- Post Content -->
+<article>
+    <div class="container">
+        <div class="row">
+
+    <!-- Post Container -->
+            <div class="
+                col-lg-8 col-lg-offset-2
+                col-md-10 col-md-offset-1
+                post-container">
+
+				<h1 id="理解-window-和-windowmanager">理解 Window 和 WindowManager</h1>
+
+<p>参考：任玉刚 《Android开发艺术探索》 第八章理解Window 和 WindowManager</p>
+
+<p>我们写好的布局文件，通过LayoutInflater,生成一个View对象，添加到ViewRootImpl的DecorView的ContentLayout中，DecorView是视图的顶层类，那么它是如何呈现在用户面前的呢？</p>
+
+<p>首先我们需要有这么一个概念，View的显示并不是当前应用程序操作的，而是系统服务WMS来具体呈现View的，然后我们针对当前窗口的所有操作View的事件，WMS都会跨进程把事件传送回来，供我们使用；WMS是操作所有窗口的系统服务，Window的具体实现也是在WMS中。而在我们客户端的Window对象，其具体实现是PhoneWindow，我们可以简单地理解为是一个具有传递View到WMS和与WMS进行交互的功能类，它具有一个DecorView（就是窗口要显示的View），还有一些回调接口，用于View事件的回调；</p>
+
+<p>我们常常用到的Activity，Dialog还是Toast，它们的视图View实际上都是附加到 Window上，然后WindowManager将View 添加到WMS中；我们来看看WindowManager是如何将View添加到Wms的</p>
+
+<h2 id="windowmanager">WindowManager</h2>
+
+<p>Window 有两个参数是比较重要的，分别是 WindowManager.LayoutParams 的 flag 和 type</p>
+
+<p>flag 参数表示Window的属性，控制Window的显示特性，它有很多属性，可以参考官方文档，下面列几个常用而且重要的</p>
+
+<p><strong>FLAG_NOT_FOCUSABLE</strong></p>
+
+<p>表示Window不需要获取焦点，也不需要接受各种输入事件，此标记会同时启用FLAG_NOT_TOUCH_MODAL,最终事件会直接传递给下层的具有焦点的Window;</p>
+
+<p><strong>FLAG_NOT_TOUCH_MODAL</strong></p>
+
+<p>在此模式下,系统会将当前Window区域以外的单击事件传递给底层的Window，当前Window区域以内的单击事件则自己处理。这个标记很重要，一般来说都需要开启此标记，否则其他Window将无法收到单击事件。</p>
+
+<p><strong>FLAG_SHOW_WHEN_LOCKED</strong></p>
+
+<p>开启此模式可以让Window显示在锁屏的界面上</p>
+
+<p>Type参数表示Window的类型，Window有三种类型，分别是应用的Window、子Window和系统Window。应用的Window对应着一个Activity。子Window不能单独存在，他需要依赖在特定的父Window之中，比如常见的Dialog就是一个子Window。
+系统Window需要声明权限才能创建，比如系统的状态栏和Toast，如果不声明权限则会报错。Toast不需要声明权限</p>
+
+<p>Window是分层的，应用型在底层（0-999），子Window在中层（1000-1999），系统window在最上层（2000-2999）</p>
+
+<p>创建一个 TextView 在Windos上；
+<img src="http://i.imgur.com/Yy2dyzn.png" alt="" /></p>
+
+<p>效果图：</p>
+
+<p><img src="http://i.imgur.com/0Pnjc2M.gif" alt="" /></p>
+
+<p><strong>WindowManager的方法</strong></p>
+
+<p>WindowManager extends ViewManager，我们来看一下ViewManager的接口方法
+<img src="http://i.imgur.com/GDNCtdL.png" alt="" /></p>
+
+<p>上面的三个方法就是我们通过与 WMS 跨进程通信时候，用来操控Window的方法，可以看出来，我们其实都是操作View对象的，而客户端的Window相对来说是一个抽象的概念，它具有DecorView和一些回调接口，具体实现是在Window</p>
+
+<p>addView方法是将一个View对象通过Binder机制，添加到WMS去；这里不具体讨论WMS的过程。</p>
+
+<p>其实更加具体的话，WindowManager只是一个接口，它的具体实现类是WindowManagerImpl</p>
+
+<p><img src="http://i.imgur.com/m060YXM.png" alt="" /></p>
+
+<p>WindowManagerImpl很明显只是一个代理类，具体执行上面几个方法的是WindowMangagerGlobal</p>
+
+<figure class="highlight"><pre><code class="language-java" data-lang="java">	<span class="kd">public</span> <span class="kt">void</span> <span class="nf">addView</span><span class="o">(</span><span class="n">View</span> <span class="n">view</span><span class="o">,</span> <span class="n">ViewGroup</span><span class="o">.</span><span class="na">LayoutParams</span> <span class="n">params</span><span class="o">,</span>
+            <span class="n">Display</span> <span class="n">display</span><span class="o">,</span> <span class="n">Window</span> <span class="n">parentWindow</span><span class="o">)</span> <span class="o">{</span>
+        <span class="k">if</span> <span class="o">(</span><span class="n">view</span> <span class="o">==</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span>
+            <span class="k">throw</span> <span class="k">new</span> <span class="nf">IllegalArgumentException</span><span class="o">(</span><span class="s">"view must not be null"</span><span class="o">);</span>
+        <span class="o">}</span>
+        <span class="k">if</span> <span class="o">(</span><span class="n">display</span> <span class="o">==</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span>
+            <span class="k">throw</span> <span class="k">new</span> <span class="nf">IllegalArgumentException</span><span class="o">(</span><span class="s">"display must not be null"</span><span class="o">);</span>
+        <span class="o">}</span>
+        <span class="k">if</span> <span class="o">(!(</span><span class="n">params</span> <span class="k">instanceof</span> <span class="n">WindowManager</span><span class="o">.</span><span class="na">LayoutParams</span><span class="o">))</span> <span class="o">{</span>
+            <span class="k">throw</span> <span class="k">new</span> <span class="nf">IllegalArgumentException</span><span class="o">(</span><span class="s">"Params must be WindowManager.LayoutParams"</span><span class="o">);</span>
+        <span class="o">}</span>
+
+        <span class="kd">final</span> <span class="n">WindowManager</span><span class="o">.</span><span class="na">LayoutParams</span> <span class="n">wparams</span> <span class="o">=</span> <span class="o">(</span><span class="n">WindowManager</span><span class="o">.</span><span class="na">LayoutParams</span><span class="o">)</span><span class="n">params</span><span class="o">;</span>
+        <span class="k">if</span> <span class="o">(</span><span class="n">parentWindow</span> <span class="o">!=</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span>
+            <span class="n">parentWindow</span><span class="o">.</span><span class="na">adjustLayoutParamsForSubWindow</span><span class="o">(</span><span class="n">wparams</span><span class="o">);</span>
+        <span class="o">}</span>
+
+        <span class="n">ViewRootImpl</span> <span class="n">root</span><span class="o">;</span>
+        <span class="n">View</span> <span class="n">panelParentView</span> <span class="o">=</span> <span class="kc">null</span><span class="o">;</span>
+
+        <span class="kd">synchronized</span> <span class="o">(</span><span class="n">mLock</span><span class="o">)</span> <span class="o">{</span>
+            <span class="c1">// Start watching for system property changes.</span>
+            <span class="k">if</span> <span class="o">(</span><span class="n">mSystemPropertyUpdater</span> <span class="o">==</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span>
+                <span class="n">mSystemPropertyUpdater</span> <span class="o">=</span> <span class="k">new</span> <span class="n">Runnable</span><span class="o">()</span> <span class="o">{</span>
+                    <span class="nd">@Override</span> <span class="kd">public</span> <span class="kt">void</span> <span class="nf">run</span><span class="o">()</span> <span class="o">{</span>
+                        <span class="kd">synchronized</span> <span class="o">(</span><span class="n">mLock</span><span class="o">)</span> <span class="o">{</span>
+                            <span class="k">for</span> <span class="o">(</span><span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="n">mRoots</span><span class="o">.</span><span class="na">size</span><span class="o">()</span> <span class="o">-</span> <span class="mi">1</span><span class="o">;</span> <span class="n">i</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="o">;</span> <span class="o">--</span><span class="n">i</span><span class="o">)</span> <span class="o">{</span>
+                                <span class="n">mRoots</span><span class="o">.</span><span class="na">get</span><span class="o">(</span><span class="n">i</span><span class="o">).</span><span class="na">loadSystemProperties</span><span class="o">();</span>
+                            <span class="o">}</span>
+                        <span class="o">}</span>
+                    <span class="o">}</span>
+                <span class="o">};</span>
+                <span class="n">SystemProperties</span><span class="o">.</span><span class="na">addChangeCallback</span><span class="o">(</span><span class="n">mSystemPropertyUpdater</span><span class="o">);</span>
+            <span class="o">}</span>
+
+            <span class="kt">int</span> <span class="n">index</span> <span class="o">=</span> <span class="n">findViewLocked</span><span class="o">(</span><span class="n">view</span><span class="o">,</span> <span class="kc">false</span><span class="o">);</span>
+            <span class="k">if</span> <span class="o">(</span><span class="n">index</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="o">)</span> <span class="o">{</span>
+                <span class="k">if</span> <span class="o">(</span><span class="n">mDyingViews</span><span class="o">.</span><span class="na">contains</span><span class="o">(</span><span class="n">view</span><span class="o">))</span> <span class="o">{</span>
+                    <span class="c1">// Don't wait for MSG_DIE to make it's way through root's queue.</span>
+                    <span class="n">mRoots</span><span class="o">.</span><span class="na">get</span><span class="o">(</span><span class="n">index</span><span class="o">).</span><span class="na">doDie</span><span class="o">();</span>
+                <span class="o">}</span> <span class="k">else</span> <span class="o">{</span>
+                    <span class="k">throw</span> <span class="k">new</span> <span class="nf">IllegalStateException</span><span class="o">(</span><span class="s">"View "</span> <span class="o">+</span> <span class="n">view</span>
+                            <span class="o">+</span> <span class="s">" has already been added to the window manager."</span><span class="o">);</span>
+                <span class="o">}</span>
+                <span class="c1">// The previous removeView() had not completed executing. Now it has.</span>
+            <span class="o">}</span>
+
+            <span class="c1">// If this is a panel window, then find the window it is being</span>
+            <span class="c1">// attached to for future reference.</span>
+            <span class="k">if</span> <span class="o">(</span><span class="n">wparams</span><span class="o">.</span><span class="na">type</span> <span class="o">&gt;=</span> <span class="n">WindowManager</span><span class="o">.</span><span class="na">LayoutParams</span><span class="o">.</span><span class="na">FIRST_SUB_WINDOW</span> <span class="o">&amp;&amp;</span>
+                    <span class="n">wparams</span><span class="o">.</span><span class="na">type</span> <span class="o">&lt;=</span> <span class="n">WindowManager</span><span class="o">.</span><span class="na">LayoutParams</span><span class="o">.</span><span class="na">LAST_SUB_WINDOW</span><span class="o">)</span> <span class="o">{</span>
+                <span class="kd">final</span> <span class="kt">int</span> <span class="n">count</span> <span class="o">=</span> <span class="n">mViews</span><span class="o">.</span><span class="na">size</span><span class="o">();</span>
+                <span class="k">for</span> <span class="o">(</span><span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="o">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">count</span><span class="o">;</span> <span class="n">i</span><span class="o">++)</span> <span class="o">{</span>
+                    <span class="k">if</span> <span class="o">(</span><span class="n">mRoots</span><span class="o">.</span><span class="na">get</span><span class="o">(</span><span class="n">i</span><span class="o">).</span><span class="na">mWindow</span><span class="o">.</span><span class="na">asBinder</span><span class="o">()</span> <span class="o">==</span> <span class="n">wparams</span><span class="o">.</span><span class="na">token</span><span class="o">)</span> <span class="o">{</span>
+                        <span class="n">panelParentView</span> <span class="o">=</span> <span class="n">mViews</span><span class="o">.</span><span class="na">get</span><span class="o">(</span><span class="n">i</span><span class="o">);</span>
+                    <span class="o">}</span>
+                <span class="o">}</span>
+            <span class="o">}</span>
+
+            <span class="n">root</span> <span class="o">=</span> <span class="k">new</span> <span class="n">ViewRootImpl</span><span class="o">(</span><span class="n">view</span><span class="o">.</span><span class="na">getContext</span><span class="o">(),</span> <span class="n">display</span><span class="o">);</span>
+
+            <span class="n">view</span><span class="o">.</span><span class="na">setLayoutParams</span><span class="o">(</span><span class="n">wparams</span><span class="o">);</span>
+
+            <span class="n">mViews</span><span class="o">.</span><span class="na">add</span><span class="o">(</span><span class="n">view</span><span class="o">);</span>
+            <span class="n">mRoots</span><span class="o">.</span><span class="na">add</span><span class="o">(</span><span class="n">root</span><span class="o">);</span>
+            <span class="n">mParams</span><span class="o">.</span><span class="na">add</span><span class="o">(</span><span class="n">wparams</span><span class="o">);</span>
+        <span class="o">}</span>
+
+        <span class="c1">// do this last because it fires off messages to start doing things</span>
+        <span class="k">try</span> <span class="o">{</span>
+            <span class="n">root</span><span class="o">.</span><span class="na">setView</span><span class="o">(</span><span class="n">view</span><span class="o">,</span> <span class="n">wparams</span><span class="o">,</span> <span class="n">panelParentView</span><span class="o">);</span>
+        <span class="o">}</span> <span class="k">catch</span> <span class="o">(</span><span class="n">RuntimeException</span> <span class="n">e</span><span class="o">)</span> <span class="o">{</span>
+            <span class="c1">// BadTokenException or InvalidDisplayException, clean up.</span>
+            <span class="kd">synchronized</span> <span class="o">(</span><span class="n">mLock</span><span class="o">)</span> <span class="o">{</span>
+                <span class="kd">final</span> <span class="kt">int</span> <span class="n">index</span> <span class="o">=</span> <span class="n">findViewLocked</span><span class="o">(</span><span class="n">view</span><span class="o">,</span> <span class="kc">false</span><span class="o">);</span>
+                <span class="k">if</span> <span class="o">(</span><span class="n">index</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="o">)</span> <span class="o">{</span>
+                    <span class="n">removeViewLocked</span><span class="o">(</span><span class="n">index</span><span class="o">,</span> <span class="kc">true</span><span class="o">);</span>
+                <span class="o">}</span>
+            <span class="o">}</span>
+            <span class="k">throw</span> <span class="n">e</span><span class="o">;</span>
+        <span class="o">}</span>
+    <span class="o">}</span></code></pre></figure>
+
+<p>WindowManagerGlobal 有四个比较重要的成员变量，缓存着Window的重要数据，可以通过索引获取具体的Value</p>
+
+<figure class="highlight"><pre><code class="language-java" data-lang="java">	<span class="c1">//这个用来存储每个Window的DecorView的</span>
+	<span class="kd">private</span> <span class="kd">final</span> <span class="n">ArrayList</span><span class="o">&lt;</span><span class="n">View</span><span class="o">&gt;</span> <span class="n">mViews</span> <span class="o">=</span> <span class="k">new</span> <span class="n">ArrayList</span><span class="o">&lt;</span><span class="n">View</span><span class="o">&gt;();</span>
+	<span class="c1">//这个用来存储每个Window的 ViewRootImpl 对象</span>
+    <span class="kd">private</span> <span class="kd">final</span> <span class="n">ArrayList</span><span class="o">&lt;</span><span class="n">ViewRootImpl</span><span class="o">&gt;</span> <span class="n">mRoots</span> <span class="o">=</span> <span class="k">new</span> <span class="n">ArrayList</span><span class="o">&lt;</span><span class="n">ViewRootImpl</span><span class="o">&gt;();</span>
+    <span class="c1">//这个主要来存储Window的布局参数</span>
+	<span class="kd">private</span> <span class="kd">final</span> <span class="n">ArrayList</span><span class="o">&lt;</span><span class="n">WindowManager</span><span class="o">.</span><span class="na">LayoutParams</span><span class="o">&gt;</span> <span class="n">mParams</span> <span class="o">=</span>
+            <span class="k">new</span> <span class="n">ArrayList</span><span class="o">&lt;</span><span class="n">WindowManager</span><span class="o">.</span><span class="na">LayoutParams</span><span class="o">&gt;();</span>
+	<span class="c1">//这个用来存储已经移除的View，但是还没有完全移除，即调用了removeView方法，但是还没有完成删除操作</span>
+    <span class="kd">private</span> <span class="kd">final</span> <span class="n">ArraySet</span><span class="o">&lt;</span><span class="n">View</span><span class="o">&gt;</span> <span class="n">mDyingViews</span> <span class="o">=</span> <span class="k">new</span> <span class="n">ArraySet</span><span class="o">&lt;</span><span class="n">View</span><span class="o">&gt;();</span></code></pre></figure>
+
+<p>我们可以看到，当我们addView的时候，将会创建 ViewRootImpl 对象，把涉及到Window的重要数据缓存到上面四个成员变量中，但是这个时候还没有进行显示呢。</p>
+
+<p>到了这里，我就想探讨一下从调用setContentView开始，到底经历过一些什么，才完成View显示到Window这一个过程</p>
+
+<p>首先，我们创建一个Activity时，AMS会发送Launcher_Activity的请求消息到客户端，客户端就会执行 performLaunchActivity 方法,在Activity方法中，通过类加载，将Activity实例化，并且通过attach方法，绑定到上下其需要的上下文</p>
+
+<p><img src="http://i.imgur.com/MjGetLt.png" alt="" /></p>
+
+<p>其中传进一个window对象，在attach方法里面，会帮助我们实例化window对象，并且设置window的回调接口对象为当前activity，activity实现了Window的Callback接口。这样子，当WMS传回事件时，Window就可以将其传回到activity去；</p>
+
+<p><img src="http://i.imgur.com/aVgJGFK.png" alt="" /></p>
+
+<p>当我们调用setContentView方法时，其实调用的是PhoneWindow的setContentView方法：</p>
+
+<p><img src="http://i.imgur.com/LX7p4bN.png" alt="" /></p>
+
+<ol>
+  <li>如果decorView == null 的话，就调用 installDecor()方法的内部的 generateDecor() 方法来构建Decorview,为了初始化DecorView，PhoneWindow还需要通过generateLayout方法来加载具体的布局文件到DecorView中，具体的布局文件和系统的版本以及主题有关</li>
+</ol>
+
+<p><img src="http://i.imgur.com/V1HR5LJ.png" alt="" /></p>
+
+<ol>
+  <li>
+    <p>将 LayoutInflater inflate出来的 View（即我们应用的布局）添加到DecorView的mContentParent中，这就是为什么方法名叫setContentView，而不是View了，我们真正的顶级View是DecorView；</p>
+  </li>
+  <li>
+    <p>回调activity的onContentChange 方法，通知activity的视图已经发生改变</p>
+  </li>
+  <li>
+    <p>到此为止，PhoneWindow的decorView已经实例化完成了，但是并不能够被WindowManager识别，因为还没有调用WindowManager add这个decorView，那么什么时候会WindowManager会将其呈现出来呢？ 很容易联想到activity的onResume方法，最后会调用activity的makeVisible()方法</p>
+  </li>
+</ol>
+
+<p><img src="http://i.imgur.com/TSZbHKx.png" alt="" /></p>
+
+<p>这里，这个过程就清晰了：</p>
+
+<ol>
+  <li>我们activity初始化的时候，就已经添加了一个PhoneWindow对象</li>
+  <li>通过setContentView方法，实际是调用PhoneWindow的setContentView方法，这里如果是第一次初始化的话，会创建DecorView，加载decorView的布局，然后将我们的布局添加到decorView的mContentParent中，这个时候PhoneWindow的decorView 就创建完毕。</li>
+  <li>我们调用onResume方法，真正把DecorView 通过Binder机制 发送给WMS，WMS将其呈现在我们手机屏幕上</li>
+</ol>
+
+<p>不太懂activity的创建原理，可以看我的另外一篇博客：<a href="https://drearming.github.io/drearming.github.com/2017/03/14/App-start-process/">app的启动流程</a></p>
+
+<h2 id="window-的删除过程">Window 的删除过程</h2>
+
+<p>我们上面已经知道WindowManager调用 三大操作:
+addView(View,Parameters)
+removeView(View)
+updateLayoutView(View,Parameters)
+最后都是调用WindowManagerGlobal的同名方法</p>
+
+<p>WindowManagerGlobal 的 removeView方法：</p>
+
+<p><img src="http://i.imgur.com/f8uFriQ.png" alt="" /></p>
+
+<p>先在WindowManager中找出当前View的下标，然后调用removeViewLock方法</p>
+
+<p><img src="http://i.imgur.com/AMkgKxp.png" alt="" /></p>
+
+<p>在RemoveViewLocak方法里面，会调用ViewRootImpl类的doDie方法来调用移除这个View</p>
+
+<p><img src="http://i.imgur.com/ukRapR4.png" alt="" /></p>
+
+<p>看最后一行，就是调用WindowManagerGlobal的doRemoveView方法，跨进程让WMS移除此View；</p>
+
+<h2 id="window的更新过程">window的更新过程</h2>
+
+<p>上面在屏幕中添加了一个TextView，在移动的过程中，我们不断更新它的位置，通过updateViewLayout(view,params)方法</p>
+
+<p>我们来看一下</p>
+
+<p><img src="http://i.imgur.com/W91i2Tj.png" alt="" /></p>
+
+<p>很简单的一个过程，先判断一下参数的合法性，然后更新一下缓存的LayoutParameters，然后调用ViewRootImpl的setLayoutParams（LayoutParams,boolean)方法，这个方法会调用scheduleTraversals() 方法， 这个方法应该很熟悉了，对View重新布局，包括测量、布局、重绘这三个过程。除了View本身的重绘之外， ViewRootImpl 在 performTraversal 方法中会调用relayoutWindow方法，这个方法会通过 mWindowSession，把视图更新到WMS去；<strong>mWindowSession的类型是IWindowSession，是一个Binder对象，它是WindowManagerGlobal真正用来实现跨进交流的Binder对象</strong></p>
+
+<h2 id="dialog-的window创建">Dialog 的Window创建</h2>
+
+<p><img src="http://i.imgur.com/rI3CDOg.png" alt="" /></p>
+
+<p>原理基本一样，在Dialog的构造方法里面创建window对象和将dialog作为回调接口</p>
+
+<p>通过show方法，将dialog的decorview添加到window中，然后跨进程显示到WMS去</p>
+
+<figure class="highlight"><pre><code class="language-java" data-lang="java">	    <span class="cm">/**
+     * Start the dialog and display it on screen.  The window is placed in the
+     * application layer and opaque.  Note that you should not override this
+     * method to do initialization when the dialog is shown, instead implement
+     * that in {@link #onStart}.
+     */</span>
+    <span class="kd">public</span> <span class="kt">void</span> <span class="nf">show</span><span class="o">()</span> <span class="o">{</span>
+        <span class="k">if</span> <span class="o">(</span><span class="n">mShowing</span><span class="o">)</span> <span class="o">{</span>
+            <span class="k">if</span> <span class="o">(</span><span class="n">mDecor</span> <span class="o">!=</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span>
+                <span class="k">if</span> <span class="o">(</span><span class="n">mWindow</span><span class="o">.</span><span class="na">hasFeature</span><span class="o">(</span><span class="n">Window</span><span class="o">.</span><span class="na">FEATURE_ACTION_BAR</span><span class="o">))</span> <span class="o">{</span>
+                    <span class="n">mWindow</span><span class="o">.</span><span class="na">invalidatePanelMenu</span><span class="o">(</span><span class="n">Window</span><span class="o">.</span><span class="na">FEATURE_ACTION_BAR</span><span class="o">);</span>
+                <span class="o">}</span>
+                <span class="n">mDecor</span><span class="o">.</span><span class="na">setVisibility</span><span class="o">(</span><span class="n">View</span><span class="o">.</span><span class="na">VISIBLE</span><span class="o">);</span>
+            <span class="o">}</span>
+            <span class="k">return</span><span class="o">;</span>
+        <span class="o">}</span>
+
+        <span class="n">mCanceled</span> <span class="o">=</span> <span class="kc">false</span><span class="o">;</span>
+        
+        <span class="k">if</span> <span class="o">(!</span><span class="n">mCreated</span><span class="o">)</span> <span class="o">{</span>
+            <span class="n">dispatchOnCreate</span><span class="o">(</span><span class="kc">null</span><span class="o">);</span>
+        <span class="o">}</span>
+
+        <span class="n">onStart</span><span class="o">();</span>
+        <span class="n">mDecor</span> <span class="o">=</span> <span class="n">mWindow</span><span class="o">.</span><span class="na">getDecorView</span><span class="o">();</span>
+
+        <span class="k">if</span> <span class="o">(</span><span class="n">mActionBar</span> <span class="o">==</span> <span class="kc">null</span> <span class="o">&amp;&amp;</span> <span class="n">mWindow</span><span class="o">.</span><span class="na">hasFeature</span><span class="o">(</span><span class="n">Window</span><span class="o">.</span><span class="na">FEATURE_ACTION_BAR</span><span class="o">))</span> <span class="o">{</span>
+            <span class="kd">final</span> <span class="n">ApplicationInfo</span> <span class="n">info</span> <span class="o">=</span> <span class="n">mContext</span><span class="o">.</span><span class="na">getApplicationInfo</span><span class="o">();</span>
+            <span class="n">mWindow</span><span class="o">.</span><span class="na">setDefaultIcon</span><span class="o">(</span><span class="n">info</span><span class="o">.</span><span class="na">icon</span><span class="o">);</span>
+            <span class="n">mWindow</span><span class="o">.</span><span class="na">setDefaultLogo</span><span class="o">(</span><span class="n">info</span><span class="o">.</span><span class="na">logo</span><span class="o">);</span>
+            <span class="n">mActionBar</span> <span class="o">=</span> <span class="k">new</span> <span class="n">WindowDecorActionBar</span><span class="o">(</span><span class="k">this</span><span class="o">);</span>
+        <span class="o">}</span>
+
+        <span class="n">WindowManager</span><span class="o">.</span><span class="na">LayoutParams</span> <span class="n">l</span> <span class="o">=</span> <span class="n">mWindow</span><span class="o">.</span><span class="na">getAttributes</span><span class="o">();</span>
+        <span class="k">if</span> <span class="o">((</span><span class="n">l</span><span class="o">.</span><span class="na">softInputMode</span>
+                <span class="o">&amp;</span> <span class="n">WindowManager</span><span class="o">.</span><span class="na">LayoutParams</span><span class="o">.</span><span class="na">SOFT_INPUT_IS_FORWARD_NAVIGATION</span><span class="o">)</span> <span class="o">==</span> <span class="mi">0</span><span class="o">)</span> <span class="o">{</span>
+            <span class="n">WindowManager</span><span class="o">.</span><span class="na">LayoutParams</span> <span class="n">nl</span> <span class="o">=</span> <span class="k">new</span> <span class="n">WindowManager</span><span class="o">.</span><span class="na">LayoutParams</span><span class="o">();</span>
+            <span class="n">nl</span><span class="o">.</span><span class="na">copyFrom</span><span class="o">(</span><span class="n">l</span><span class="o">);</span>
+            <span class="n">nl</span><span class="o">.</span><span class="na">softInputMode</span> <span class="o">|=</span>
+                    <span class="n">WindowManager</span><span class="o">.</span><span class="na">LayoutParams</span><span class="o">.</span><span class="na">SOFT_INPUT_IS_FORWARD_NAVIGATION</span><span class="o">;</span>
+            <span class="n">l</span> <span class="o">=</span> <span class="n">nl</span><span class="o">;</span>
+        <span class="o">}</span>
+
+        <span class="n">mWindowManager</span><span class="o">.</span><span class="na">addView</span><span class="o">(</span><span class="n">mDecor</span><span class="o">,</span> <span class="n">l</span><span class="o">);</span>
+        <span class="n">mShowing</span> <span class="o">=</span> <span class="kc">true</span><span class="o">;</span>
+
+        <span class="n">sendShowMessage</span><span class="o">();</span>
+    <span class="o">}</span></code></pre></figure>
+
+<p>需要注意的是： dialog的context必须是activity的context，如果是application的context就会报错，dialog是属于子窗口，必须要附着在父窗口上。</p>
+
+<p>删除的过程也差不多，不再多说，有兴趣的同学看看源代码；</p>
+
+<h2 id="toast">Toast</h2>
+
+<p>Toast是属于系统级窗口，因为它具备定时取消的功能，所以它略微有点复杂，定时取消的功能是通过Handler的定时机制操作的； Toast涉及两种IPC交流，当我们 调用方法</p>
+
+<div class="highlighter-rouge">Toast.makeText(context,"",duration).show();
+</div>
+
+<p>makeText方法中，加载Android内部一个layout，叫transient_notification的布局，然后将要显示的内容作为布局中TextView的text；总的来说就是构建了一个View对象</p>
+
+<p><img src="http://i.imgur.com/xkzCaIK.png" alt="" /></p>
+
+<p>看一下show()方法
+<img src="http://i.imgur.com/j67foGZ.png" alt="" /></p>
+
+<p>我们看到 通过INotificationManager将 Toast的 TN 入队；INotificationManager 又是一个Binder对象，它对应的服务是 NWS（NotificationManagerService）,NWS负责统一管理Notification，toast是其中一种，它拥有一个队列根据duration来排队，当出队的时候会调用TN接口的show方法</p>
+
+<figure class="highlight"><pre><code class="language-java" data-lang="java">	 <span class="kd">public</span> <span class="kt">void</span> <span class="nf">enqueueToast</span><span class="o">(</span><span class="n">String</span> <span class="n">pkg</span><span class="o">,</span> <span class="n">ITransientNotification</span> <span class="n">callback</span><span class="o">,</span> <span class="kt">int</span> <span class="n">duration</span><span class="o">)</span>
+        <span class="o">{</span>
+            <span class="k">if</span> <span class="o">(</span><span class="n">DBG</span><span class="o">)</span> <span class="o">{</span>
+                <span class="n">Slog</span><span class="o">.</span><span class="na">i</span><span class="o">(</span><span class="n">TAG</span><span class="o">,</span> <span class="s">"enqueueToast pkg="</span> <span class="o">+</span> <span class="n">pkg</span> <span class="o">+</span> <span class="s">" callback="</span> <span class="o">+</span> <span class="n">callback</span>
+                        <span class="o">+</span> <span class="s">" duration="</span> <span class="o">+</span> <span class="n">duration</span><span class="o">);</span>
+            <span class="o">}</span>
+
+            <span class="k">if</span> <span class="o">(</span><span class="n">pkg</span> <span class="o">==</span> <span class="kc">null</span> <span class="o">||</span> <span class="n">callback</span> <span class="o">==</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span>
+                <span class="n">Slog</span><span class="o">.</span><span class="na">e</span><span class="o">(</span><span class="n">TAG</span><span class="o">,</span> <span class="s">"Not doing toast. pkg="</span> <span class="o">+</span> <span class="n">pkg</span> <span class="o">+</span> <span class="s">" callback="</span> <span class="o">+</span> <span class="n">callback</span><span class="o">);</span>
+                <span class="k">return</span> <span class="o">;</span>
+            <span class="o">}</span>
+
+            <span class="kd">final</span> <span class="kt">boolean</span> <span class="n">isSystemToast</span> <span class="o">=</span> <span class="n">isCallerSystem</span><span class="o">()</span> <span class="o">||</span> <span class="o">(</span><span class="s">"android"</span><span class="o">.</span><span class="na">equals</span><span class="o">(</span><span class="n">pkg</span><span class="o">));</span>
+            <span class="kd">final</span> <span class="kt">boolean</span> <span class="n">isPackageSuspended</span> <span class="o">=</span>
+                    <span class="n">isPackageSuspendedForUser</span><span class="o">(</span><span class="n">pkg</span><span class="o">,</span> <span class="n">Binder</span><span class="o">.</span><span class="na">getCallingUid</span><span class="o">());</span>
+
+            <span class="k">if</span> <span class="o">(</span><span class="n">ENABLE_BLOCKED_TOASTS</span> <span class="o">&amp;&amp;</span> <span class="o">(!</span><span class="n">noteNotificationOp</span><span class="o">(</span><span class="n">pkg</span><span class="o">,</span> <span class="n">Binder</span><span class="o">.</span><span class="na">getCallingUid</span><span class="o">())</span>
+                    <span class="o">||</span> <span class="n">isPackageSuspended</span><span class="o">))</span> <span class="o">{</span>
+                <span class="k">if</span> <span class="o">(!</span><span class="n">isSystemToast</span><span class="o">)</span> <span class="o">{</span>
+                    <span class="n">Slog</span><span class="o">.</span><span class="na">e</span><span class="o">(</span><span class="n">TAG</span><span class="o">,</span> <span class="s">"Suppressing toast from package "</span> <span class="o">+</span> <span class="n">pkg</span>
+                            <span class="o">+</span> <span class="o">(</span><span class="n">isPackageSuspended</span>
+                                    <span class="o">?</span> <span class="s">" due to package suspended by administrator."</span>
+                                    <span class="o">:</span> <span class="s">" by user request."</span><span class="o">));</span>
+                    <span class="k">return</span><span class="o">;</span>
+                <span class="o">}</span>
+            <span class="o">}</span>
+
+            <span class="kd">synchronized</span> <span class="o">(</span><span class="n">mToastQueue</span><span class="o">)</span> <span class="o">{</span>
+                <span class="kt">int</span> <span class="n">callingPid</span> <span class="o">=</span> <span class="n">Binder</span><span class="o">.</span><span class="na">getCallingPid</span><span class="o">();</span>
+                <span class="kt">long</span> <span class="n">callingId</span> <span class="o">=</span> <span class="n">Binder</span><span class="o">.</span><span class="na">clearCallingIdentity</span><span class="o">();</span>
+                <span class="k">try</span> <span class="o">{</span>
+                    <span class="n">ToastRecord</span> <span class="n">record</span><span class="o">;</span>
+                    <span class="kt">int</span> <span class="n">index</span> <span class="o">=</span> <span class="n">indexOfToastLocked</span><span class="o">(</span><span class="n">pkg</span><span class="o">,</span> <span class="n">callback</span><span class="o">);</span>
+                    <span class="c1">// If it's already in the queue, we update it in place, we don't</span>
+                    <span class="c1">// move it to the end of the queue.</span>
+                    <span class="k">if</span> <span class="o">(</span><span class="n">index</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="o">)</span> <span class="o">{</span>
+                        <span class="n">record</span> <span class="o">=</span> <span class="n">mToastQueue</span><span class="o">.</span><span class="na">get</span><span class="o">(</span><span class="n">index</span><span class="o">);</span>
+                        <span class="n">record</span><span class="o">.</span><span class="na">update</span><span class="o">(</span><span class="n">duration</span><span class="o">);</span>
+                    <span class="o">}</span> <span class="k">else</span> <span class="o">{</span>
+                        <span class="c1">// Limit the number of toasts that any given package except the android</span>
+                        <span class="c1">// package can enqueue.  Prevents DOS attacks and deals with leaks.</span>
+                        <span class="k">if</span> <span class="o">(!</span><span class="n">isSystemToast</span><span class="o">)</span> <span class="o">{</span>
+                            <span class="kt">int</span> <span class="n">count</span> <span class="o">=</span> <span class="mi">0</span><span class="o">;</span>
+                            <span class="kd">final</span> <span class="kt">int</span> <span class="n">N</span> <span class="o">=</span> <span class="n">mToastQueue</span><span class="o">.</span><span class="na">size</span><span class="o">();</span>
+                            <span class="k">for</span> <span class="o">(</span><span class="kt">int</span> <span class="n">i</span><span class="o">=</span><span class="mi">0</span><span class="o">;</span> <span class="n">i</span><span class="o">&lt;</span><span class="n">N</span><span class="o">;</span> <span class="n">i</span><span class="o">++)</span> <span class="o">{</span>
+                                 <span class="kd">final</span> <span class="n">ToastRecord</span> <span class="n">r</span> <span class="o">=</span> <span class="n">mToastQueue</span><span class="o">.</span><span class="na">get</span><span class="o">(</span><span class="n">i</span><span class="o">);</span>
+                                 <span class="k">if</span> <span class="o">(</span><span class="n">r</span><span class="o">.</span><span class="na">pkg</span><span class="o">.</span><span class="na">equals</span><span class="o">(</span><span class="n">pkg</span><span class="o">))</span> <span class="o">{</span>
+                                     <span class="n">count</span><span class="o">++;</span>
+                                     <span class="k">if</span> <span class="o">(</span><span class="n">count</span> <span class="o">&gt;=</span> <span class="n">MAX_PACKAGE_NOTIFICATIONS</span><span class="o">)</span> <span class="o">{</span>
+                                         <span class="n">Slog</span><span class="o">.</span><span class="na">e</span><span class="o">(</span><span class="n">TAG</span><span class="o">,</span> <span class="s">"Package has already posted "</span> <span class="o">+</span> <span class="n">count</span>
+                                                <span class="o">+</span> <span class="s">" toasts. Not showing more. Package="</span> <span class="o">+</span> <span class="n">pkg</span><span class="o">);</span>
+                                         <span class="k">return</span><span class="o">;</span>
+                                     <span class="o">}</span>
+                                 <span class="o">}</span>
+                            <span class="o">}</span>
+                        <span class="o">}</span>
+
+                        <span class="n">record</span> <span class="o">=</span> <span class="k">new</span> <span class="n">ToastRecord</span><span class="o">(</span><span class="n">callingPid</span><span class="o">,</span> <span class="n">pkg</span><span class="o">,</span> <span class="n">callback</span><span class="o">,</span> <span class="n">duration</span><span class="o">);</span>
+                        <span class="n">mToastQueue</span><span class="o">.</span><span class="na">add</span><span class="o">(</span><span class="n">record</span><span class="o">);</span>
+                        <span class="n">index</span> <span class="o">=</span> <span class="n">mToastQueue</span><span class="o">.</span><span class="na">size</span><span class="o">()</span> <span class="o">-</span> <span class="mi">1</span><span class="o">;</span>
+                        <span class="n">keepProcessAliveLocked</span><span class="o">(</span><span class="n">callingPid</span><span class="o">);</span>
+                    <span class="o">}</span>
+                    <span class="c1">// If it's at index 0, it's the current toast.  It doesn't matter if it's</span>
+                    <span class="c1">// new or just been updated.  Call back and tell it to show itself.</span>
+                    <span class="c1">// If the callback fails, this will remove it from the list, so don't</span>
+                    <span class="c1">// assume that it's valid after this.</span>
+                    <span class="k">if</span> <span class="o">(</span><span class="n">index</span> <span class="o">==</span> <span class="mi">0</span><span class="o">)</span> <span class="o">{</span>
+                        <span class="n">showNextToastLocked</span><span class="o">();</span>
+                    <span class="o">}</span>
+                <span class="o">}</span> <span class="k">finally</span> <span class="o">{</span>
+                    <span class="n">Binder</span><span class="o">.</span><span class="na">restoreCallingIdentity</span><span class="o">(</span><span class="n">callingId</span><span class="o">);</span>
+                <span class="o">}</span>
+            <span class="o">}</span>
+        <span class="o">}</span></code></pre></figure>
+
+<p>这里检查了当前应用发送的toast有没有超过50个，如果超过就不入队了，否则就创建ToastRecord，这是为了防止Dos攻击</p>
+
+<p><img src="http://i.imgur.com/evsFtQv.png" alt="" /></p>
+
+<p>我们从队列中取出一个ToastRecord就会调用此方法，在这里我们可以看见它做了两件事情：</p>
+<ol>
+  <li>它回调了callback的show方法，callback就是我们在客户端的Toast.show()方法时传过来的 TN 对象；</li>
+  <li>然后调用scheduleTimeoutLocked(record)；方法，通过Handler机制，过了duration时间段后，这个方法会回调TN对象的hide方法；</li>
+</ol>
+
+<p>我们返回来看看TN是什么？</p>
+
+<p><img src="http://i.imgur.com/dCfGokN.png" alt="" /></p>
+
+<p>我们可以从继承关系中很容易发现，TN是一个Binder对象，它内部有一个Handler对象（所以toast必须是在调用了Looper.prepare（）的线程中运行），这也就是为什么NMS能够回调TN的接口，因为TN就是一个Binder对象</p>
+
+<p><img src="http://i.imgur.com/vrcKEnv.png" alt="" /></p>
+
+<p>当我们从Binder线程池中读到 来自 NMS的回调时，我们这个时候是在Binder线程池的线程中，所以要通过hander来回调回原来的线程</p>
+
+<figure class="highlight"><pre><code class="language-java" data-lang="java">	<span class="kd">public</span> <span class="kt">void</span> <span class="nf">handleShow</span><span class="o">()</span> <span class="o">{</span>
+            <span class="k">if</span> <span class="o">(</span><span class="n">localLOGV</span><span class="o">)</span> <span class="n">Log</span><span class="o">.</span><span class="na">v</span><span class="o">(</span><span class="n">TAG</span><span class="o">,</span> <span class="s">"HANDLE SHOW: "</span> <span class="o">+</span> <span class="k">this</span> <span class="o">+</span> <span class="s">" mView="</span> <span class="o">+</span> <span class="n">mView</span>
+                    <span class="o">+</span> <span class="s">" mNextView="</span> <span class="o">+</span> <span class="n">mNextView</span><span class="o">);</span>
+            <span class="k">if</span> <span class="o">(</span><span class="n">mView</span> <span class="o">!=</span> <span class="n">mNextView</span><span class="o">)</span> <span class="o">{</span>
+                <span class="c1">// remove the old view if necessary</span>
+                <span class="n">handleHide</span><span class="o">();</span>
+                <span class="n">mView</span> <span class="o">=</span> <span class="n">mNextView</span><span class="o">;</span>
+                <span class="n">Context</span> <span class="n">context</span> <span class="o">=</span> <span class="n">mView</span><span class="o">.</span><span class="na">getContext</span><span class="o">().</span><span class="na">getApplicationContext</span><span class="o">();</span>
+                <span class="n">String</span> <span class="n">packageName</span> <span class="o">=</span> <span class="n">mView</span><span class="o">.</span><span class="na">getContext</span><span class="o">().</span><span class="na">getOpPackageName</span><span class="o">();</span>
+                <span class="k">if</span> <span class="o">(</span><span class="n">context</span> <span class="o">==</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span>
+                    <span class="n">context</span> <span class="o">=</span> <span class="n">mView</span><span class="o">.</span><span class="na">getContext</span><span class="o">();</span>
+                <span class="o">}</span>
+                <span class="n">mWM</span> <span class="o">=</span> <span class="o">(</span><span class="n">WindowManager</span><span class="o">)</span><span class="n">context</span><span class="o">.</span><span class="na">getSystemService</span><span class="o">(</span><span class="n">Context</span><span class="o">.</span><span class="na">WINDOW_SERVICE</span><span class="o">);</span>
+                <span class="c1">// We can resolve the Gravity here by using the Locale for getting</span>
+                <span class="c1">// the layout direction</span>
+                <span class="kd">final</span> <span class="n">Configuration</span> <span class="n">config</span> <span class="o">=</span> <span class="n">mView</span><span class="o">.</span><span class="na">getContext</span><span class="o">().</span><span class="na">getResources</span><span class="o">().</span><span class="na">getConfiguration</span><span class="o">();</span>
+                <span class="kd">final</span> <span class="kt">int</span> <span class="n">gravity</span> <span class="o">=</span> <span class="n">Gravity</span><span class="o">.</span><span class="na">getAbsoluteGravity</span><span class="o">(</span><span class="n">mGravity</span><span class="o">,</span> <span class="n">config</span><span class="o">.</span><span class="na">getLayoutDirection</span><span class="o">());</span>
+                <span class="n">mParams</span><span class="o">.</span><span class="na">gravity</span> <span class="o">=</span> <span class="n">gravity</span><span class="o">;</span>
+                <span class="k">if</span> <span class="o">((</span><span class="n">gravity</span> <span class="o">&amp;</span> <span class="n">Gravity</span><span class="o">.</span><span class="na">HORIZONTAL_GRAVITY_MASK</span><span class="o">)</span> <span class="o">==</span> <span class="n">Gravity</span><span class="o">.</span><span class="na">FILL_HORIZONTAL</span><span class="o">)</span> <span class="o">{</span>
+                    <span class="n">mParams</span><span class="o">.</span><span class="na">horizontalWeight</span> <span class="o">=</span> <span class="mf">1.0f</span><span class="o">;</span>
+                <span class="o">}</span>
+                <span class="k">if</span> <span class="o">((</span><span class="n">gravity</span> <span class="o">&amp;</span> <span class="n">Gravity</span><span class="o">.</span><span class="na">VERTICAL_GRAVITY_MASK</span><span class="o">)</span> <span class="o">==</span> <span class="n">Gravity</span><span class="o">.</span><span class="na">FILL_VERTICAL</span><span class="o">)</span> <span class="o">{</span>
+                    <span class="n">mParams</span><span class="o">.</span><span class="na">verticalWeight</span> <span class="o">=</span> <span class="mf">1.0f</span><span class="o">;</span>
+                <span class="o">}</span>
+                <span class="n">mParams</span><span class="o">.</span><span class="na">x</span> <span class="o">=</span> <span class="n">mX</span><span class="o">;</span>
+                <span class="n">mParams</span><span class="o">.</span><span class="na">y</span> <span class="o">=</span> <span class="n">mY</span><span class="o">;</span>
+                <span class="n">mParams</span><span class="o">.</span><span class="na">verticalMargin</span> <span class="o">=</span> <span class="n">mVerticalMargin</span><span class="o">;</span>
+                <span class="n">mParams</span><span class="o">.</span><span class="na">horizontalMargin</span> <span class="o">=</span> <span class="n">mHorizontalMargin</span><span class="o">;</span>
+                <span class="n">mParams</span><span class="o">.</span><span class="na">packageName</span> <span class="o">=</span> <span class="n">packageName</span><span class="o">;</span>
+                <span class="n">mParams</span><span class="o">.</span><span class="na">removeTimeoutMilliseconds</span> <span class="o">=</span> <span class="n">mDuration</span> <span class="o">==</span>
+                    <span class="n">Toast</span><span class="o">.</span><span class="na">LENGTH_LONG</span> <span class="o">?</span> <span class="n">LONG_DURATION_TIMEOUT</span> <span class="o">:</span> <span class="n">SHORT_DURATION_TIMEOUT</span><span class="o">;</span>
+                <span class="k">if</span> <span class="o">(</span><span class="n">mView</span><span class="o">.</span><span class="na">getParent</span><span class="o">()</span> <span class="o">!=</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span>
+                    <span class="k">if</span> <span class="o">(</span><span class="n">localLOGV</span><span class="o">)</span> <span class="n">Log</span><span class="o">.</span><span class="na">v</span><span class="o">(</span><span class="n">TAG</span><span class="o">,</span> <span class="s">"REMOVE! "</span> <span class="o">+</span> <span class="n">mView</span> <span class="o">+</span> <span class="s">" in "</span> <span class="o">+</span> <span class="k">this</span><span class="o">);</span>
+                    <span class="n">mWM</span><span class="o">.</span><span class="na">removeView</span><span class="o">(</span><span class="n">mView</span><span class="o">);</span>
+                <span class="o">}</span>
+                <span class="k">if</span> <span class="o">(</span><span class="n">localLOGV</span><span class="o">)</span> <span class="n">Log</span><span class="o">.</span><span class="na">v</span><span class="o">(</span><span class="n">TAG</span><span class="o">,</span> <span class="s">"ADD! "</span> <span class="o">+</span> <span class="n">mView</span> <span class="o">+</span> <span class="s">" in "</span> <span class="o">+</span> <span class="k">this</span><span class="o">);</span>
+                <span class="n">mWM</span><span class="o">.</span><span class="na">addView</span><span class="o">(</span><span class="n">mView</span><span class="o">,</span> <span class="n">mParams</span><span class="o">);</span>
+                <span class="n">trySendAccessibilityEvent</span><span class="o">();</span>
+            <span class="o">}</span>
+        <span class="o">}</span></code></pre></figure>
+
+<p>到这里又非常明显了，通过WindowManager来将 Toast的 View 发送到 WMS 去显示。。这里是没有window回调的。我们还记得NMS作了两个操作，一个是回调TN的show方法，过了duration后，又会回调TN的hide方法，这个时候将用windowManager移除掉view；</p>
+
+<p>到此完成了toast的显示和duration时间后取消toast的显示</p>
+
+
+                <hr>
+
+                
+                <!-- 多说 Share start -->
+                </style>
+                <div class="ds-share"
+                    style="text-align: right"
+                    data-thread-key="/2017/03/18/wms"
+                    data-title="WindowManager"
+                    data-url="https://drearming.github.io/drearming.github.com/2017/03/18/wms/"
+                    data-images="https://drearming.github.io/drearming.github.com/img/post-bg-2015.jpg"
+                    data-content="理解 Window 和 WindowManager
+
+参考：任玉刚 《Android开发艺术探索》 第八章理解Window 和 WindowManager... | 陈俊杰 | MVCoder " >
+                    <div class="ds-share-inline">
+                      <ul  class="ds-share-icons-16">
+                        <li data-toggle="ds-share-icons-more"><a class="ds-more" href="#">分享到：</a></li>
+                        <li><a class="ds-wechat flat" href="javascript:void(0);" data-service="wechat">微信</a></li>
+                        <li><a class="ds-weibo flat" href="javascript:void(0);" data-service="weibo">微博</a></li>
+                        <li><a class="ds-douban flat" href="javascript:void(0);" data-service="douban">豆瓣</a></li>
+                      </ul>
+                      <div class="ds-share-icons-more">
+                      </div>
+                    </div>
+                <hr>
+                </div>
+                <!-- 多说 Share end-->
+                
+
+
+                <ul class="pager">
+                    
+                    <li class="previous">
+                        <a href="/drearming.github.com/2017/03/18/wms/" data-toggle="tooltip" data-placement="top" title="WindowManager">&larr; Previous Post</a>
+                    </li>
+                    
+                    
+                </ul>
+
+
+                
+                <!-- 多说评论框 start -->
+                <div class="comment">
+                    <div class="ds-thread"
+                        data-thread-key="/2017/03/18/wms"
+                        data-title="WindowManager"
+                        data-url="https://drearming.github.io/drearming.github.com/2017/03/18/wms/" >
+                    </div>
+                </div>
+                <!-- 多说评论框 end -->
+                
+
+                
+
+            </div>
+
+    <!-- Sidebar Container -->
+            <div class="
+                col-lg-8 col-lg-offset-2
+                col-md-10 col-md-offset-1
+                sidebar-container">
+
+                <!-- Featured Tags -->
+                
+                <section>
+                    <hr class="hidden-sm hidden-xs">
+                    <h5><a href="/tags/">FEATURED TAGS</a></h5>
+                    <div class="tags">
+        				
+                            
+        				
+                            
+                				<a href="/drearming.github.com/tags/#Android" title="Android" rel="10">
+                                    Android
+                                </a>
+                            
+        				
+                            
+        				
+                            
+                				<a href="/drearming.github.com/tags/#MealOrder" title="MealOrder" rel="2">
+                                    MealOrder
+                                </a>
+                            
+        				
+                            
+                				<a href="/drearming.github.com/tags/#Java" title="Java" rel="3">
+                                    Java
+                                </a>
+                            
+        				
+                            
+        				
+                            
+        				
+                            
+        				
+                            
+        				
+                            
+                				<a href="/drearming.github.com/tags/#Framework" title="Framework" rel="3">
+                                    Framework
+                                </a>
+                            
+        				
+        			</div>
+                </section>
+                
+
+                <!-- Friends Blog -->
+                
+                <hr>
+                <h5>FRIENDS</h5>
+                <ul class="list-inline">
+                    
+                        <li><a href="https://github.com/DREARMING">MVCoder</a></li>
+                    
+                        <li><a href="http://blog.csdn.net/lmj623565791/article/details/48129405">鸿洋</a></li>
+                    
+                        <li><a href="http://blog.csdn.net/guolin_blog/article/details/9097463/">郭霖</a></li>
+                    
+                        <li><a href="http://blog.csdn.net/aigestudio">爱歌</a></li>
+                    
+                        <li><a href="http://www.jianshu.com/p/6a8c2ae0b1c6?utm_campaign=haruki">死党</a></li>
+                    
+                </ul>
+                
+            </div>
+        </div>
+    </div>
+</article>
+
+
+<!-- 多说公共JS代码 start (一个网页只需插入一次) -->
+<script type="text/javascript">
+    // dynamic User by Hux
+    var _user = 'mvcoder';
+
+    // duoshuo comment query.
+    var duoshuoQuery = {short_name: _user };
+    (function() {
+        var ds = document.createElement('script');
+        ds.type = 'text/javascript';ds.async = true;
+        ds.src = (document.location.protocol == 'https:' ? 'https:' : 'http:') + '//static.duoshuo.com/embed.js';
+        ds.charset = 'UTF-8';
+        (document.getElementsByTagName('head')[0]
+         || document.getElementsByTagName('body')[0]).appendChild(ds);
+    })();
+</script>
+<!-- 多说公共JS代码 end -->
+
+
+
+
+
+
+
+<!-- async load function -->
+<script>
+    function async(u, c) {
+      var d = document, t = 'script',
+          o = d.createElement(t),
+          s = d.getElementsByTagName(t)[0];
+      o.src = u;
+      if (c) { o.addEventListener('load', function (e) { c(null, e); }, false); }
+      s.parentNode.insertBefore(o, s);
+    }
+</script>
+<!-- anchor-js, Doc:http://bryanbraun.github.io/anchorjs/ -->
+<script>
+    async("http://cdn.bootcss.com/anchor-js/1.1.1/anchor.min.js",function(){
+        anchors.options = {
+          visible: 'always',
+          placement: 'right',
+          icon: '#'
+        };
+        anchors.add().remove('.intro-header h1').remove('.subheading').remove('.sidebar-container h5');
+    })
+</script>
+<style>
+    /* place left on bigger screen */
+    @media all and (min-width: 800px) {
+        .anchorjs-link{
+            position: absolute;
+            left: -0.75em;
+            font-size: 1.1em;
+            margin-top : -0.1em;
+        }
+    }
+</style>
+
+
+
+    <!-- Footer -->
+<footer>
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+                <ul class="list-inline text-center">
+                    
+                    
+
+                    <!-- add Weibo, Zhihu by Hux, add target = "_blank" to <a> by Hux -->
+                    
+                    
+
+
+                    
+                    
+                    <li>
+                        <a target="_blank" href="https://github.com/drearming">
+                            <span class="fa-stack fa-lg">
+                                <i class="fa fa-circle fa-stack-2x"></i>
+                                <i class="fa fa-github fa-stack-1x fa-inverse"></i>
+                            </span>
+                        </a>
+                    </li>
+                    
+                </ul>
+                <p class="copyright text-muted">
+                    Copyright &copy; MVCoder Blog 2017
+                    <br>
+                    Theme by <a href="http://huangxuan.me">Hux</a> |
+                    <iframe
+                        style="margin-left: 2px; margin-bottom:-5px;"
+                        frameborder="0" scrolling="0" width="91px" height="20px"
+                        src="https://ghbtns.com/github-btn.html?user=huxpro&repo=huxpro.github.io&type=star&count=true" >
+                    </iframe>
+                </p>
+            </div>
+        </div>
+    </div>
+</footer>
+
+<!-- jQuery -->
+<script src="/drearming.github.com/js/jquery.min.js "></script>
+
+<!-- Bootstrap Core JavaScript -->
+<script src="/drearming.github.com/js/bootstrap.min.js "></script>
+
+<!-- Custom Theme JavaScript -->
+<script src="/drearming.github.com/js/hux-blog.min.js "></script>
+
+
+<!-- async load function -->
+<script>
+    function async(u, c) {
+      var d = document, t = 'script',
+          o = d.createElement(t),
+          s = d.getElementsByTagName(t)[0];
+      o.src = u;
+      if (c) { o.addEventListener('load', function (e) { c(null, e); }, false); }
+      s.parentNode.insertBefore(o, s);
+    }
+</script>
+
+<!-- 
+     Because of the native support for backtick-style fenced code blocks 
+     right within the Markdown is landed in Github Pages, 
+     From V1.6, There is no need for Highlight.js, 
+     so Huxblog drops it officially.
+
+     - https://github.com/blog/2100-github-pages-now-faster-and-simpler-with-jekyll-3-0  
+     - https://help.github.com/articles/creating-and-highlighting-code-blocks/    
+-->
+<!--
+    <script>
+        async("http://cdn.bootcss.com/highlight.js/8.6/highlight.min.js", function(){
+            hljs.initHighlightingOnLoad();
+        })
+    </script>
+    <link href="http://cdn.bootcss.com/highlight.js/8.6/styles/github.min.css" rel="stylesheet">
+-->
+
+
+<!-- jquery.tagcloud.js -->
+<script>
+    // only load tagcloud.js in tag.html
+    if($('#tag_cloud').length !== 0){
+        async("/js/jquery.tagcloud.js",function(){
+            $.fn.tagcloud.defaults = {
+                //size: {start: 1, end: 1, unit: 'em'},
+                color: {start: '#bbbbee', end: '#0085a1'},
+            };
+            $('#tag_cloud a').tagcloud();
+        })
+    }
+</script>
+
+<!--fastClick.js -->
+<script>
+    async("http://cdn.bootcss.com/fastclick/1.0.6/fastclick.min.js", function(){
+        var $nav = document.querySelector("nav");
+        if($nav) FastClick.attach($nav);
+    })
+</script>
+
+
+<!-- Google Analytics -->
+
+<script>
+    // dynamic User by Hux
+    var _gaId = 'UA-49627206-1';
+    var _gaDomain = 'drearming.github.io';
+
+    // Originial
+    (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+    (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+    m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+    })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+    ga('create', _gaId, _gaDomain);
+    ga('send', 'pageview');
+</script>
+
+
+
+<!-- Baidu Tongji -->
+
+<script>
+    // dynamic User by Hux
+    var _baId = '4cc1f2d8f3067386cc5cdb626a202900';
+
+    // Originial
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "//hm.baidu.com/hm.js?" + _baId;
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+</script>
+
+
+
+
+<!-- Image to hack wechat -->
+<img src="/img/icon_wechat.png" width="0" height="0" />
+<!-- Migrate from head to bottom, no longer block render and still work -->
+
+</body>
+
+</html>
