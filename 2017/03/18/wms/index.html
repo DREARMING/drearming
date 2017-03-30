@@ -348,7 +348,7 @@
     <p>回调activity的onContentChange 方法，通知activity的视图已经发生改变</p>
   </li>
   <li>
-    <p>到此为止，PhoneWindow的decorView已经实例化完成了，但是并不能够被WindowManager识别，因为还没有调用WindowManager add这个decorView，那么什么时候会WindowManager会将其呈现出来呢？ 很容易联想到activity的onResume方法，最后会调用activity的makeVisible()方法</p>
+    <p>到此为止，PhoneWindow的decorView已经实例化完成了，但是并不能够被WindowManager识别，因为还没有调用WindowManager add这个decorView，那么什么时候会WindowManager会将其呈现出来呢？ 很容易联想到activity的onResume方法，最后会调用activity的makeVisible()方法，这个时候当 WindowManager 调用addView的时候，会设置一些属性，同时调用 ViewRootImpl 的 setLayoutParams或者setView方法，内部会调用scheduleTraversals（）方法 -&gt; performTraversal()； 这也解释了为什么在oncreate方法或者onResume方法中，无法获取控件的大小，因为 在 <strong>onResume</strong> 方法里面，整个DecorView才开始测量，布局，绘制，再发送到WMS</p>
   </li>
 </ol>
 
@@ -359,7 +359,7 @@
 <ol>
   <li>我们activity初始化的时候，就已经添加了一个PhoneWindow对象</li>
   <li>通过setContentView方法，实际是调用PhoneWindow的setContentView方法，这里如果是第一次初始化的话，会创建DecorView，加载decorView的布局，然后将我们的布局添加到decorView的mContentParent中，这个时候PhoneWindow的decorView 就创建完毕。</li>
-  <li>我们调用onResume方法，真正把DecorView 通过Binder机制 发送给WMS，WMS将其呈现在我们手机屏幕上</li>
+  <li>我们调用onResume方法，真正把DecorView进行绘制，然后 通过Binder机制 发送给WMS，WMS将其呈现在我们手机屏幕上</li>
 </ol>
 
 <p>不太懂activity的创建原理，可以看我的另外一篇博客：<a href="https://drearming.github.io/drearming.github.com/2017/03/14/App-start-process/">app的启动流程</a></p>
@@ -651,6 +651,10 @@ updateLayoutView(View,Parameters)
                     </li>
                     
                     
+                    <li class="next">
+                        <a href="/drearming.github.com/2017/03/30/volley/" data-toggle="tooltip" data-placement="top" title="Volley网络框架">Next Post &rarr;</a>
+                    </li>
+                    
                 </ul>
 
 
@@ -686,7 +690,7 @@ updateLayoutView(View,Parameters)
                             
         				
                             
-                				<a href="/drearming.github.com/tags/#Android" title="Android" rel="9">
+                				<a href="/drearming.github.com/tags/#Android" title="Android" rel="10">
                                     Android
                                 </a>
                             
@@ -714,7 +718,7 @@ updateLayoutView(View,Parameters)
                             
         				
                             
-                				<a href="/drearming.github.com/tags/#Framework" title="Framework" rel="2">
+                				<a href="/drearming.github.com/tags/#Framework" title="Framework" rel="3">
                                     Framework
                                 </a>
                             
