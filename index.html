@@ -154,6 +154,38 @@
             ">
     			
 <div class="post-preview">
+    <a href="/drearming.github.com/2017/05/17/%E4%BA%8B%E4%BB%B6%E5%88%86%E5%8F%91%E6%9C%BA%E5%88%B6/">
+        <h2 class="post-title">
+            Android事件分发机制
+        </h2>
+        
+        <h3 class="post-subtitle">
+            带你理清View的事件体系
+        </h3>
+        
+        <div class="post-content-preview">
+            Android事件分发机制
+
+参考：任玉刚《Android 开发艺术探索》
+
+事件序列
+
+当用户触碰了屏幕开始，就会产生一次事件序列
+
+down事件 -&gt; …( 0 到 n个Move事件) -&gt; up事件
+
+我们称用户从触碰屏幕到抬起手所触发的一系列事件成为一次事件序列。
+
+当事件序列第一个 down事件进行分发的时候，首先到达的是 Activity，调用activity的dis...
+        </div>
+    </a>
+    <p class="post-meta">
+        Posted by MVCoder on May 17, 2017
+    </p>
+</div>
+<hr>
+
+<div class="post-preview">
     <a href="/drearming.github.com/2017/05/13/%E8%B7%A8%E8%BF%9B%E7%A8%8B%E9%80%9A%E4%BF%A1/">
         <h2 class="post-title">
             Android跨进程通信
@@ -407,32 +439,6 @@ Android的跨进程通信方式有多种，可以通过 Bundle、文件、ShareP
 </div>
 <hr>
 
-<div class="post-preview">
-    <a href="/drearming.github.com/2017/01/10/Java-multiThread/">
-        <h2 class="post-title">
-            Java 多线程详解
-        </h2>
-        
-        <h3 class="post-subtitle">
-            涉及ThreadLocal，同步机制，CAS，BlockingQueue等
-        </h3>
-        
-        <div class="post-content-preview">
-            多线程
-
-ThreadLocal
-
-ThreadLocal，其机制是每一条线程都拥有一个ThreadLocalMap的公有属性，调用get或者set方法，就会确认当前是哪条线程？比如是A线程，通过getMap方法，获取A线程的ThreadLocalMap的变量，然后通过ThreadLocal作为key值存取Value
-
-	//使用ThreadLocal，每一条线程都可以通过这个ThreadL...
-        </div>
-    </a>
-    <p class="post-meta">
-        Posted by MVCoder on January 10, 2017
-    </p>
-</div>
-<hr>
-
 
 <!-- Pager -->
 
@@ -465,7 +471,7 @@ ThreadLocal，其机制是每一条线程都拥有一个ThreadLocalMap的公有�
                             
                         
                             
-                                <a href="/drearming.github.com/tags/#Android" title="Android" rel="15">
+                                <a href="/drearming.github.com/tags/#Android" title="Android" rel="16">
                                     Android
                                 </a>
                             
@@ -497,7 +503,7 @@ ThreadLocal，其机制是每一条线程都拥有一个ThreadLocalMap的公有�
                             
                         
                             
-                                <a href="/drearming.github.com/tags/#Framework" title="Framework" rel="4">
+                                <a href="/drearming.github.com/tags/#Framework" title="Framework" rel="5">
                                     Framework
                                 </a>
                             

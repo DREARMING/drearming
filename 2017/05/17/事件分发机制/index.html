@@ -1,0 +1,985 @@
+<!DOCTYPE html>
+
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="google-site-verification" content="xBT4GhYoi5qRD5tr338pgPM5OWHHIDR6mNg1a3euekI" />
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="So live a life you will remember">
+    <meta name="keyword"  content="Android Java Web">
+    <link rel="shortcut icon" href="/drearming.github.com/img/favicon.jpg">
+
+    <title>Android事件分发机制 - 陈俊杰 | MVCoder</title>
+
+    <link rel="canonical" href="https://drearming.github.io/drearming.github.com/2017/05/17/%E4%BA%8B%E4%BB%B6%E5%88%86%E5%8F%91%E6%9C%BA%E5%88%B6/">
+
+    <!-- Bootstrap Core CSS -->
+    <link rel="stylesheet" href="/drearming.github.com/css/bootstrap.min.css">
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="/drearming.github.com/css/hux-blog.min.css">
+
+    <!-- Pygments Github CSS -->
+    <link rel="stylesheet" href="/drearming.github.com/css/syntax.css">
+
+    <!-- Custom Fonts -->
+    <!-- <link href="http://maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css" rel="stylesheet" type="text/css"> -->
+    <!-- Hux change font-awesome CDN to qiniu -->
+    <link href="https://cdn.staticfile.org/font-awesome/4.2.0/css/font-awesome.min.css" rel="stylesheet" type="text/css">
+
+    <!-- Hux Delete, sad but pending in China
+    <link href='http://fonts.googleapis.com/css?family=Lora:400,700,400italic,700italic' rel='stylesheet' type='text/css'>
+    <link href='http://fonts.googleapis.com/css?family=Open+Sans:300italic,400italic,600italic,700italic,800italic,400,300,600,700,800' rel='stylesheet' type='text/
+    css'>
+    -->
+
+
+    <!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
+    <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
+    <!--[if lt IE 9]>
+        <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+        <script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
+    <![endif]-->
+
+    <!-- ga & ba script hoook -->
+    <script></script>
+</head>
+
+
+<!-- hack iOS CSS :active style -->
+<body ontouchstart="">
+
+    <!-- Navigation -->
+<nav class="navbar navbar-default navbar-custom navbar-fixed-top">
+    <div class="container-fluid">
+        <!-- Brand and toggle get grouped for better mobile display -->
+        <div class="navbar-header page-scroll">
+            <button type="button" class="navbar-toggle">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+            <a class="navbar-brand" href="/drearming.github.com/">MVCoder Blog</a>
+        </div>
+
+        <!-- Collect the nav links, forms, and other content for toggling -->
+        <!-- Known Issue, found by Hux:
+            <nav>'s height woule be hold on by its content.
+            so, when navbar scale out, the <nav> will cover tags.
+            also mask any touch event of tags, unfortunately.
+        -->
+        <div id="huxblog_navbar">
+            <div class="navbar-collapse">
+                <ul class="nav navbar-nav navbar-right">
+                    <li>
+                        <a href="/drearming.github.com/">Home</a>
+                    </li>
+                    
+                    <li>
+                        <a href="/drearming.github.com/about/">About</a>
+                    </li>
+                    
+                    <li>
+                        <a href="/drearming.github.com/tags/">Tags</a>
+                    </li>
+                    
+                </ul>
+            </div>
+        </div>
+        <!-- /.navbar-collapse -->
+    </div>
+    <!-- /.container -->
+</nav>
+<script>
+    // Drop Bootstarp low-performance Navbar
+    // Use customize navbar with high-quality material design animation
+    // in high-perf jank-free CSS3 implementation
+    var $body   = document.body;
+    var $toggle = document.querySelector('.navbar-toggle');
+    var $navbar = document.querySelector('#huxblog_navbar');
+    var $collapse = document.querySelector('.navbar-collapse');
+
+    $toggle.addEventListener('click', handleMagic)
+    function handleMagic(e){
+        if ($navbar.className.indexOf('in') > 0) {
+        // CLOSE
+            $navbar.className = " ";
+            // wait until animation end.
+            setTimeout(function(){
+                // prevent frequently toggle
+                if($navbar.className.indexOf('in') < 0) {
+                    $collapse.style.height = "0px"
+                }
+            },400)
+        }else{
+        // OPEN
+            $collapse.style.height = "auto"
+            $navbar.className += " in";
+        }
+    }
+</script>
+
+
+    <!-- Image to hack wechat -->
+<!-- <img src="/img/icon_wechat.png" width="0" height="0"> -->
+<!-- <img src="/drearming.github.com/img/post-bg-2015.jpg" width="0" height="0"> -->
+
+<!-- Post Header -->
+<style type="text/css">
+    header.intro-header{
+        background-image: url('/drearming.github.com/img/post-bg-2015.jpg')
+    }
+</style>
+<header class="intro-header" >
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+                <div class="post-heading">
+                    <div class="tags">
+                        
+                        <a class="tag" href="/drearming.github.com/tags/#Framework" title="Framework">Framework</a>
+                        
+                        <a class="tag" href="/drearming.github.com/tags/#Android" title="Android">Android</a>
+                        
+                    </div>
+                    <h1>Android事件分发机制</h1>
+                    
+                    
+                    <h2 class="subheading">带你理清View的事件体系</h2>
+                    
+                    <span class="meta">Posted by MVCoder on May 17, 2017</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</header>
+
+<!-- Post Content -->
+<article>
+    <div class="container">
+        <div class="row">
+
+    <!-- Post Container -->
+            <div class="
+                col-lg-8 col-lg-offset-2
+                col-md-10 col-md-offset-1
+                post-container">
+
+				<h1 id="android事件分发机制">Android事件分发机制</h1>
+
+<p>参考：任玉刚《Android 开发艺术探索》</p>
+
+<h3 id="事件序列">事件序列</h3>
+
+<p>当用户触碰了屏幕开始，就会产生一次事件序列</p>
+
+<p>down事件 -&gt; …( 0 到 n个Move事件) -&gt; up事件</p>
+
+<p>我们称用户从触碰屏幕到抬起手所触发的一系列事件成为一次事件序列。</p>
+
+<p>当事件序列第一个 down事件进行分发的时候，首先到达的是 Activity，调用activity的dispatchMotionEvent( MotionEvent )</p>
+
+<p><img src="http://i.imgur.com/BsT4bzS.png" alt="调用PhoneWindow的superDispatchMotionEvent" /></p>
+
+<p>可以看到，当 PhoneWindow 对象消耗了这次事件，这次就会返回true，不会触发Activity的onTouchEvent事件</p>
+
+<p>PhoneWindow它会调用顶层View - DecorView来处理分发事件。</p>
+
+<figure class="highlight"><pre><code class="language-java" data-lang="java">	<span class="kd">public</span> <span class="kt">boolean</span> <span class="nf">superDispatchTouchEvent</span><span class="o">(</span><span class="n">MotionEvent</span> <span class="n">event</span><span class="o">)</span> <span class="o">{</span>
+        <span class="k">return</span> <span class="kd">super</span><span class="o">.</span><span class="na">dispatchTouchEvent</span><span class="o">(</span><span class="n">event</span><span class="o">);</span>
+    <span class="o">}</span></code></pre></figure>
+
+<p>而DecorView extends 于 FrameLayout，所以会出发 ViewGroup的 dispatchTouchEvent方法</p>
+
+<p>在看源码的时候，我们需要理清一下事件分发的思路：</p>
+
+<p>事件分发目的 遍历整个View树，找到可以处理 当前用户操作的事件序列的View控件，如果这个View接受处理，那么这一系列事件都直接交给它处理。</p>
+
+<p>View树的结构是从上之下，一个View只有一个父View，而一个ViewGroup可以有多个View，并且ViewGroup本身也是一个View，本身也可以处理事件</p>
+
+<p>基于View树的结构，在事件分发的时候，事件就会首先经过ViewGroup，如果ViewGroup不拦截的话，那么就将事件分发给它的子View处理。 如果ViewGroup进行事件拦截的话，那么应该调用ViewGroup本身的 onTouchEvent处理这次事件。如果ViewGroup设置了 onTouchListener 的话，则先调用 onTouchListener 的 onTouch事件，所以 onTouch 的优先程度是高于 onTouchEvent 的。</p>
+
+<p>事件分发到View时，有两种结果：1. 返回了true，即消耗了事件，那么这一系列事件都交由它处理。如果返回false，则会调用父类ViewGroup的 onTouchEvent，向上递归处理。假如整个View树都不处理这次事件，那么就会回调Activity的 onTouchEvent。</p>
+
+<p>但是假如View树中有View处理这次Down事件，那么我们就找到了这个View了，就将一系列事件交给它处理。但是考虑到优化，如果每次都要遍历View树，把这个View找出来，肯定是性能低下的，我们在父View中找到这个View时，view返回true，代表消耗这个事件，那么我们就在父view记下这个View，然后当前父View返回true，父view的父view又记下这个父view，那么一直往上记下来，Down事件后面的事件则不管其他情况，无论父View是否拦截的，都不用管，直接沿着这条索引链分发下来，到达目标View，交给它的onTouchEvent处理。</p>
+
+<p>下面是ViewGroup的 dispatchTouchEvent的源码，非常长，注意看注释（有删减）：</p>
+
+<figure class="highlight"><pre><code class="language-java" data-lang="java">	<span class="nd">@Override</span>
+    <span class="kd">public</span> <span class="kt">boolean</span> <span class="nf">dispatchTouchEvent</span><span class="o">(</span><span class="n">MotionEvent</span> <span class="n">ev</span><span class="o">)</span> <span class="o">{</span>
+
+        <span class="kt">boolean</span> <span class="n">handled</span> <span class="o">=</span> <span class="kc">false</span><span class="o">;</span>
+        <span class="k">if</span> <span class="o">(</span><span class="n">onFilterTouchEventForSecurity</span><span class="o">(</span><span class="n">ev</span><span class="o">))</span> <span class="o">{</span>
+            <span class="kd">final</span> <span class="kt">int</span> <span class="n">action</span> <span class="o">=</span> <span class="n">ev</span><span class="o">.</span><span class="na">getAction</span><span class="o">();</span>
+            <span class="kd">final</span> <span class="kt">int</span> <span class="n">actionMasked</span> <span class="o">=</span> <span class="n">action</span> <span class="o">&amp;</span> <span class="n">MotionEvent</span><span class="o">.</span><span class="na">ACTION_MASK</span><span class="o">;</span>
+
+            <span class="c1">// Handle an initial down.</span>
+			<span class="cm">/*
+				当发现是Down事件时，则是这次事件序列的第一个事件，这个事件非常重要，它决定后面的事件交给谁处理。
+				第一次接受Down事件需要重置一些基本信息。比如上一次事件序列留下的痕迹，包括 mFirstTouchTarget。
+			*/</span>
+            <span class="k">if</span> <span class="o">(</span><span class="n">actionMasked</span> <span class="o">==</span> <span class="n">MotionEvent</span><span class="o">.</span><span class="na">ACTION_DOWN</span><span class="o">)</span> <span class="o">{</span>
+                <span class="c1">// Throw away all previous state when starting a new touch gesture.</span>
+                <span class="c1">// The framework may have dropped the up or cancel event for the previous gesture</span>
+                <span class="c1">// due to an app switch, ANR, or some other state change.</span>
+                <span class="n">cancelAndClearTouchTargets</span><span class="o">(</span><span class="n">ev</span><span class="o">);</span>
+                <span class="n">resetTouchState</span><span class="o">();</span>
+            <span class="o">}</span>
+
+			<span class="c1">//如果是Down事件，需要检查当前父view需不需要拦截，ViewGroup可以通过OnInterceptTouchEvent()来拦截此次事件，不分发给子View</span>
+			<span class="c1">//如果mFirstTouchTarget不为null，即此ViewGroup的View树已经确定了能处理整个事件序列的View了，而不会遭到任何拦截，即父View的onIntercep方法全部失效，直接将事件交给那个View处理</span>
+            <span class="c1">// Check for interception.</span>
+            <span class="kd">final</span> <span class="kt">boolean</span> <span class="n">intercepted</span><span class="o">;</span>
+            <span class="k">if</span> <span class="o">(</span><span class="n">actionMasked</span> <span class="o">==</span> <span class="n">MotionEvent</span><span class="o">.</span><span class="na">ACTION_DOWN</span>
+                    <span class="o">||</span> <span class="n">mFirstTouchTarget</span> <span class="o">!=</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span>
+				
+				<span class="cm">/*
+					FLAG_DISALLOW_INTERCEPT标志位是子类用来阻止父类拦截事件用的。但是当发生down事件时，resetTouchState被调用了所以这个标志位在down事件分发的时候无用
+				*/</span>
+                <span class="kd">final</span> <span class="kt">boolean</span> <span class="n">disallowIntercept</span> <span class="o">=</span> <span class="o">(</span><span class="n">mGroupFlags</span> <span class="o">&amp;</span> <span class="n">FLAG_DISALLOW_INTERCEPT</span><span class="o">)</span> <span class="o">!=</span> <span class="mi">0</span><span class="o">;</span>
+                <span class="k">if</span> <span class="o">(!</span><span class="n">disallowIntercept</span><span class="o">)</span> <span class="o">{</span>
+                    <span class="n">intercepted</span> <span class="o">=</span> <span class="n">onInterceptTouchEvent</span><span class="o">(</span><span class="n">ev</span><span class="o">);</span>
+                    <span class="n">ev</span><span class="o">.</span><span class="na">setAction</span><span class="o">(</span><span class="n">action</span><span class="o">);</span> <span class="c1">// restore action in case it was changed</span>
+                <span class="o">}</span> <span class="k">else</span> <span class="o">{</span>
+                    <span class="n">intercepted</span> <span class="o">=</span> <span class="kc">false</span><span class="o">;</span>
+                <span class="o">}</span>
+            <span class="o">}</span> <span class="k">else</span> <span class="o">{</span>
+                <span class="c1">// There are no touch targets and this action is not an initial down</span>
+                <span class="c1">// so this view group continues to intercept touches.</span>
+                <span class="n">intercepted</span> <span class="o">=</span> <span class="kc">true</span><span class="o">;</span>
+            <span class="o">}</span>
+
+            <span class="kd">final</span> <span class="kt">boolean</span> <span class="n">canceled</span> <span class="o">=</span> <span class="n">resetCancelNextUpFlag</span><span class="o">(</span><span class="k">this</span><span class="o">)</span>
+                    <span class="o">||</span> <span class="n">actionMasked</span> <span class="o">==</span> <span class="n">MotionEvent</span><span class="o">.</span><span class="na">ACTION_CANCEL</span><span class="o">;</span>
+
+            <span class="c1">// Update list of touch targets for pointer down, if needed.</span>
+            <span class="kd">final</span> <span class="kt">boolean</span> <span class="n">split</span> <span class="o">=</span> <span class="o">(</span><span class="n">mGroupFlags</span> <span class="o">&amp;</span> <span class="n">FLAG_SPLIT_MOTION_EVENTS</span><span class="o">)</span> <span class="o">!=</span> <span class="mi">0</span><span class="o">;</span>
+            <span class="n">TouchTarget</span> <span class="n">newTouchTarget</span> <span class="o">=</span> <span class="kc">null</span><span class="o">;</span>
+            <span class="kt">boolean</span> <span class="n">alreadyDispatchedToNewTouchTarget</span> <span class="o">=</span> <span class="kc">false</span><span class="o">;</span>
+            <span class="k">if</span> <span class="o">(!</span><span class="n">canceled</span> <span class="o">&amp;&amp;</span> <span class="o">!</span><span class="n">intercepted</span><span class="o">)</span> <span class="o">{</span>
+
+                <span class="c1">// If the event is targeting accessiiblity focus we give it to the</span>
+                <span class="c1">// view that has accessibility focus and if it does not handle it</span>
+                <span class="c1">// we clear the flag and dispatch the event to all children as usual.</span>
+                <span class="c1">// We are looking up the accessibility focused host to avoid keeping</span>
+                <span class="c1">// state since these events are very rare.</span>
+                <span class="n">View</span> <span class="n">childWithAccessibilityFocus</span> <span class="o">=</span> <span class="n">ev</span><span class="o">.</span><span class="na">isTargetAccessibilityFocus</span><span class="o">()</span>
+                        <span class="o">?</span> <span class="n">findChildWithAccessibilityFocus</span><span class="o">()</span> <span class="o">:</span> <span class="kc">null</span><span class="o">;</span>
+
+                <span class="k">if</span> <span class="o">(</span><span class="n">actionMasked</span> <span class="o">==</span> <span class="n">MotionEvent</span><span class="o">.</span><span class="na">ACTION_DOWN</span>
+                        <span class="o">||</span> <span class="o">(</span><span class="n">split</span> <span class="o">&amp;&amp;</span> <span class="n">actionMasked</span> <span class="o">==</span> <span class="n">MotionEvent</span><span class="o">.</span><span class="na">ACTION_POINTER_DOWN</span><span class="o">)</span>
+                        <span class="o">||</span> <span class="n">actionMasked</span> <span class="o">==</span> <span class="n">MotionEvent</span><span class="o">.</span><span class="na">ACTION_HOVER_MOVE</span><span class="o">)</span> <span class="o">{</span>
+                    <span class="kd">final</span> <span class="kt">int</span> <span class="n">actionIndex</span> <span class="o">=</span> <span class="n">ev</span><span class="o">.</span><span class="na">getActionIndex</span><span class="o">();</span> <span class="c1">// always 0 for down</span>
+                    <span class="kd">final</span> <span class="kt">int</span> <span class="n">idBitsToAssign</span> <span class="o">=</span> <span class="n">split</span> <span class="o">?</span> <span class="mi">1</span> <span class="o">&lt;&lt;</span> <span class="n">ev</span><span class="o">.</span><span class="na">getPointerId</span><span class="o">(</span><span class="n">actionIndex</span><span class="o">)</span>
+                            <span class="o">:</span> <span class="n">TouchTarget</span><span class="o">.</span><span class="na">ALL_POINTER_IDS</span><span class="o">;</span>
+
+                    <span class="c1">// Clean up earlier touch targets for this pointer id in case they</span>
+                    <span class="c1">// have become out of sync.</span>
+                    <span class="n">removePointersFromTouchTargets</span><span class="o">(</span><span class="n">idBitsToAssign</span><span class="o">);</span>
+
+                    <span class="kd">final</span> <span class="kt">int</span> <span class="n">childrenCount</span> <span class="o">=</span> <span class="n">mChildrenCount</span><span class="o">;</span>
+
+					<span class="c1">//当前ViewGroup的Views树中，有View第一次处理了Down事件，那么newTouchTarget是不为空的。上面说过，newTouchTarget则是快速找到处理事件序列的View的索引链结点，它的child可能或者包含 处理事件的View。</span>
+                    <span class="k">if</span> <span class="o">(</span><span class="n">newTouchTarget</span> <span class="o">==</span> <span class="kc">null</span> <span class="o">&amp;&amp;</span> <span class="n">childrenCount</span> <span class="o">!=</span> <span class="mi">0</span><span class="o">)</span> <span class="o">{</span>
+                        <span class="kd">final</span> <span class="kt">float</span> <span class="n">x</span> <span class="o">=</span> <span class="n">ev</span><span class="o">.</span><span class="na">getX</span><span class="o">(</span><span class="n">actionIndex</span><span class="o">);</span>
+                        <span class="kd">final</span> <span class="kt">float</span> <span class="n">y</span> <span class="o">=</span> <span class="n">ev</span><span class="o">.</span><span class="na">getY</span><span class="o">(</span><span class="n">actionIndex</span><span class="o">);</span>
+                        <span class="c1">// Find a child that can receive the event.</span>
+                        <span class="c1">// Scan children from front to back.</span>
+                        <span class="kd">final</span> <span class="n">ArrayList</span><span class="o">&lt;</span><span class="n">View</span><span class="o">&gt;</span> <span class="n">preorderedList</span> <span class="o">=</span> <span class="n">buildTouchDispatchChildList</span><span class="o">();</span>
+                        <span class="kd">final</span> <span class="kt">boolean</span> <span class="n">customOrder</span> <span class="o">=</span> <span class="n">preorderedList</span> <span class="o">==</span> <span class="kc">null</span>
+                                <span class="o">&amp;&amp;</span> <span class="n">isChildrenDrawingOrderEnabled</span><span class="o">();</span>
+                        <span class="kd">final</span> <span class="n">View</span><span class="o">[]</span> <span class="n">children</span> <span class="o">=</span> <span class="n">mChildren</span><span class="o">;</span>
+						
+						<span class="c1">//遍历子View</span>
+                        <span class="k">for</span> <span class="o">(</span><span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="n">childrenCount</span> <span class="o">-</span> <span class="mi">1</span><span class="o">;</span> <span class="n">i</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="o">;</span> <span class="n">i</span><span class="o">--)</span> <span class="o">{</span>
+                            <span class="kd">final</span> <span class="kt">int</span> <span class="n">childIndex</span> <span class="o">=</span> <span class="n">getAndVerifyPreorderedIndex</span><span class="o">(</span>
+                                    <span class="n">childrenCount</span><span class="o">,</span> <span class="n">i</span><span class="o">,</span> <span class="n">customOrder</span><span class="o">);</span>
+                            <span class="kd">final</span> <span class="n">View</span> <span class="n">child</span> <span class="o">=</span> <span class="n">getAndVerifyPreorderedView</span><span class="o">(</span>
+                                    <span class="n">preorderedList</span><span class="o">,</span> <span class="n">children</span><span class="o">,</span> <span class="n">childIndex</span><span class="o">);</span>
+
+                            <span class="c1">// If there is a view that has accessibility focus we want it</span>
+                            <span class="c1">// to get the event first and if not handled we will perform a</span>
+                            <span class="c1">// normal dispatch. We may do a double iteration but this is</span>
+                            <span class="c1">// safer given the timeframe.</span>
+                            <span class="k">if</span> <span class="o">(</span><span class="n">childWithAccessibilityFocus</span> <span class="o">!=</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span>
+                                <span class="k">if</span> <span class="o">(</span><span class="n">childWithAccessibilityFocus</span> <span class="o">!=</span> <span class="n">child</span><span class="o">)</span> <span class="o">{</span>
+                                    <span class="k">continue</span><span class="o">;</span>
+                                <span class="o">}</span>
+                                <span class="n">childWithAccessibilityFocus</span> <span class="o">=</span> <span class="kc">null</span><span class="o">;</span>
+                                <span class="n">i</span> <span class="o">=</span> <span class="n">childrenCount</span> <span class="o">-</span> <span class="mi">1</span><span class="o">;</span>
+                            <span class="o">}</span>
+							
+							<span class="c1">//验证 这个childView是否在播放动画并且点击事件的左表是否落在这个childview的区域内，假如有一个不合适，就不符合接受down事件。</span>
+                            <span class="k">if</span> <span class="o">(!</span><span class="n">canViewReceivePointerEvents</span><span class="o">(</span><span class="n">child</span><span class="o">)</span>
+                                    <span class="o">||</span> <span class="o">!</span><span class="n">isTransformedTouchPointInView</span><span class="o">(</span><span class="n">x</span><span class="o">,</span> <span class="n">y</span><span class="o">,</span> <span class="n">child</span><span class="o">,</span> <span class="kc">null</span><span class="o">))</span> <span class="o">{</span>
+                                <span class="n">ev</span><span class="o">.</span><span class="na">setTargetAccessibilityFocus</span><span class="o">(</span><span class="kc">false</span><span class="o">);</span>
+                                <span class="k">continue</span><span class="o">;</span>
+                            <span class="o">}</span>
+							<span class="c1">//找到符合接受down事件的View了，将其获取赋值到 TouchTarget 对象的child中，那么newTouchTarget则不为空了。</span>
+                            <span class="n">newTouchTarget</span> <span class="o">=</span> <span class="n">getTouchTarget</span><span class="o">(</span><span class="n">child</span><span class="o">);</span>
+                            <span class="k">if</span> <span class="o">(</span><span class="n">newTouchTarget</span> <span class="o">!=</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span>
+                                <span class="c1">// Child is already receiving touch within its bounds.</span>
+                                <span class="c1">// Give it the new pointer in addition to the ones it is handling.</span>
+                                <span class="n">newTouchTarget</span><span class="o">.</span><span class="na">pointerIdBits</span> <span class="o">|=</span> <span class="n">idBitsToAssign</span><span class="o">;</span>
+                                <span class="k">break</span><span class="o">;</span>
+                            <span class="o">}</span>
+
+                            <span class="n">resetCancelNextUpFlag</span><span class="o">(</span><span class="n">child</span><span class="o">);</span>
+							<span class="c1">//把Down事件交给child去分发。</span>
+                            <span class="k">if</span> <span class="o">(</span><span class="n">dispatchTransformedTouchEvent</span><span class="o">(</span><span class="n">ev</span><span class="o">,</span> <span class="kc">false</span><span class="o">,</span> <span class="n">child</span><span class="o">,</span> <span class="n">idBitsToAssign</span><span class="o">))</span> <span class="o">{</span>
+                                <span class="c1">// Child wants to receive touch within its bounds.</span>
+                                <span class="n">mLastTouchDownTime</span> <span class="o">=</span> <span class="n">ev</span><span class="o">.</span><span class="na">getDownTime</span><span class="o">();</span>
+                                <span class="k">if</span> <span class="o">(</span><span class="n">preorderedList</span> <span class="o">!=</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span>
+                                    <span class="c1">// childIndex points into presorted list, find original index</span>
+                                    <span class="k">for</span> <span class="o">(</span><span class="kt">int</span> <span class="n">j</span> <span class="o">=</span> <span class="mi">0</span><span class="o">;</span> <span class="n">j</span> <span class="o">&lt;</span> <span class="n">childrenCount</span><span class="o">;</span> <span class="n">j</span><span class="o">++)</span> <span class="o">{</span>
+                                        <span class="k">if</span> <span class="o">(</span><span class="n">children</span><span class="o">[</span><span class="n">childIndex</span><span class="o">]</span> <span class="o">==</span> <span class="n">mChildren</span><span class="o">[</span><span class="n">j</span><span class="o">])</span> <span class="o">{</span>
+                                            <span class="n">mLastTouchDownIndex</span> <span class="o">=</span> <span class="n">j</span><span class="o">;</span>
+                                            <span class="k">break</span><span class="o">;</span>
+                                        <span class="o">}</span>
+                                    <span class="o">}</span>
+                                <span class="o">}</span> <span class="k">else</span> <span class="o">{</span>
+                                    <span class="n">mLastTouchDownIndex</span> <span class="o">=</span> <span class="n">childIndex</span><span class="o">;</span>
+                                <span class="o">}</span>
+                                <span class="n">mLastTouchDownX</span> <span class="o">=</span> <span class="n">ev</span><span class="o">.</span><span class="na">getX</span><span class="o">();</span>
+                                <span class="n">mLastTouchDownY</span> <span class="o">=</span> <span class="n">ev</span><span class="o">.</span><span class="na">getY</span><span class="o">();</span>
+                                <span class="n">newTouchTarget</span> <span class="o">=</span> <span class="n">addTouchTarget</span><span class="o">(</span><span class="n">child</span><span class="o">,</span> <span class="n">idBitsToAssign</span><span class="o">);</span>
+                                <span class="n">alreadyDispatchedToNewTouchTarget</span> <span class="o">=</span> <span class="kc">true</span><span class="o">;</span>
+                                <span class="k">break</span><span class="o">;</span>
+                            <span class="o">}</span>
+
+                            <span class="c1">// The accessibility focus didn't handle the event, so clear</span>
+                            <span class="c1">// the flag and do a normal dispatch to all children.</span>
+                            <span class="n">ev</span><span class="o">.</span><span class="na">setTargetAccessibilityFocus</span><span class="o">(</span><span class="kc">false</span><span class="o">);</span>
+                        <span class="o">}</span>
+                        <span class="k">if</span> <span class="o">(</span><span class="n">preorderedList</span> <span class="o">!=</span> <span class="kc">null</span><span class="o">)</span> <span class="n">preorderedList</span><span class="o">.</span><span class="na">clear</span><span class="o">();</span>
+                    <span class="o">}</span>
+					
+                    <span class="k">if</span> <span class="o">(</span><span class="n">newTouchTarget</span> <span class="o">==</span> <span class="kc">null</span> <span class="o">&amp;&amp;</span> <span class="n">mFirstTouchTarget</span> <span class="o">!=</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span>
+                        <span class="c1">// Did not find a child to receive the event.</span>
+                        <span class="c1">// Assign the pointer to the least recently added target.</span>
+                        <span class="n">newTouchTarget</span> <span class="o">=</span> <span class="n">mFirstTouchTarget</span><span class="o">;</span>
+                        <span class="k">while</span> <span class="o">(</span><span class="n">newTouchTarget</span><span class="o">.</span><span class="na">next</span> <span class="o">!=</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span>
+                            <span class="n">newTouchTarget</span> <span class="o">=</span> <span class="n">newTouchTarget</span><span class="o">.</span><span class="na">next</span><span class="o">;</span>
+                        <span class="o">}</span>
+                        <span class="n">newTouchTarget</span><span class="o">.</span><span class="na">pointerIdBits</span> <span class="o">|=</span> <span class="n">idBitsToAssign</span><span class="o">;</span>
+                    <span class="o">}</span>
+                <span class="o">}</span>
+            <span class="o">}</span>
+
+			<span class="cm">/*
+				找不到 mFirstTouchTarget 那么就两种情况：
+				1. 事件被当前ViewGroup拦截了，ViewGroup对此做处理 2. 子View都不处理Down事件
+				这种情况都将会交由当前ViewGroup的 dispatchTransformedTouchEvent去处理触发TouchEvent。
+			*/</span>
+            <span class="c1">// Dispatch to touch targets.</span>
+            <span class="k">if</span> <span class="o">(</span><span class="n">mFirstTouchTarget</span> <span class="o">==</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span>
+                <span class="c1">// No touch targets so treat this as an ordinary view.</span>
+				<span class="c1">//调用当前ViewGroup的父类View的onTouchEvent。</span>
+                <span class="n">handled</span> <span class="o">=</span> <span class="n">dispatchTransformedTouchEvent</span><span class="o">(</span><span class="n">ev</span><span class="o">,</span> <span class="n">canceled</span><span class="o">,</span> <span class="kc">null</span><span class="o">,</span>
+                        <span class="n">TouchTarget</span><span class="o">.</span><span class="na">ALL_POINTER_IDS</span><span class="o">);</span>
+            <span class="o">}</span> <span class="k">else</span> <span class="o">{</span>
+
+				<span class="c1">//到达了这里，我们已经找到要分发的View了。</span>
+                <span class="c1">// Dispatch to touch targets, excluding the new touch target if we already</span>
+                <span class="c1">// dispatched to it.  Cancel touch targets if necessary.</span>
+                <span class="n">TouchTarget</span> <span class="n">predecessor</span> <span class="o">=</span> <span class="kc">null</span><span class="o">;</span>
+                <span class="n">TouchTarget</span> <span class="n">target</span> <span class="o">=</span> <span class="n">mFirstTouchTarget</span><span class="o">;</span>
+                <span class="k">while</span> <span class="o">(</span><span class="n">target</span> <span class="o">!=</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span>
+                    <span class="kd">final</span> <span class="n">TouchTarget</span> <span class="n">next</span> <span class="o">=</span> <span class="n">target</span><span class="o">.</span><span class="na">next</span><span class="o">;</span>
+					<span class="c1">//上面如果已经处理了Down事件，那么alreadyDispatchedToNewTouchTarget为true</span>
+					<span class="c1">//否则如果处理事件序列的其他事件，则这个值为false；</span>
+                    <span class="k">if</span> <span class="o">(</span><span class="n">alreadyDispatchedToNewTouchTarget</span> <span class="o">&amp;&amp;</span> <span class="n">target</span> <span class="o">==</span> <span class="n">newTouchTarget</span><span class="o">)</span> <span class="o">{</span>
+                        <span class="n">handled</span> <span class="o">=</span> <span class="kc">true</span><span class="o">;</span>
+                    <span class="o">}</span> <span class="k">else</span> <span class="o">{</span>
+						<span class="c1">//一般到达这里，都是事件序列其他事件直接分发给当前ViewGroup处理了Down事件的子View了。可以看到，无论是否取消和拦截，都不会影响这里的执行，我们可以得出一个结论，一旦有View处理了Down事件，整个事件序列都会直接交付给这个View；</span>
+                        <span class="kd">final</span> <span class="kt">boolean</span> <span class="n">cancelChild</span> <span class="o">=</span> <span class="n">resetCancelNextUpFlag</span><span class="o">(</span><span class="n">target</span><span class="o">.</span><span class="na">child</span><span class="o">)</span>
+                                <span class="o">||</span> <span class="n">intercepted</span><span class="o">;</span>
+						<span class="c1">//将事件分发给子View</span>
+                        <span class="k">if</span> <span class="o">(</span><span class="n">dispatchTransformedTouchEvent</span><span class="o">(</span><span class="n">ev</span><span class="o">,</span> <span class="n">cancelChild</span><span class="o">,</span>
+                                <span class="n">target</span><span class="o">.</span><span class="na">child</span><span class="o">,</span> <span class="n">target</span><span class="o">.</span><span class="na">pointerIdBits</span><span class="o">))</span> <span class="o">{</span>
+                            <span class="n">handled</span> <span class="o">=</span> <span class="kc">true</span><span class="o">;</span>
+                        <span class="o">}</span>
+                        <span class="k">if</span> <span class="o">(</span><span class="n">cancelChild</span><span class="o">)</span> <span class="o">{</span>
+                            <span class="k">if</span> <span class="o">(</span><span class="n">predecessor</span> <span class="o">==</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span>
+                                <span class="n">mFirstTouchTarget</span> <span class="o">=</span> <span class="n">next</span><span class="o">;</span>
+                            <span class="o">}</span> <span class="k">else</span> <span class="o">{</span>
+                                <span class="n">predecessor</span><span class="o">.</span><span class="na">next</span> <span class="o">=</span> <span class="n">next</span><span class="o">;</span>
+                            <span class="o">}</span>
+                            <span class="n">target</span><span class="o">.</span><span class="na">recycle</span><span class="o">();</span>
+                            <span class="n">target</span> <span class="o">=</span> <span class="n">next</span><span class="o">;</span>
+                            <span class="k">continue</span><span class="o">;</span>
+                        <span class="o">}</span>
+                    <span class="o">}</span>
+                    <span class="n">predecessor</span> <span class="o">=</span> <span class="n">target</span><span class="o">;</span>
+                    <span class="n">target</span> <span class="o">=</span> <span class="n">next</span><span class="o">;</span>
+                <span class="o">}</span>
+            <span class="o">}</span>
+
+            <span class="c1">// Update list of touch targets for pointer up or cancel, if needed.</span>
+            <span class="k">if</span> <span class="o">(</span><span class="n">canceled</span>
+                    <span class="o">||</span> <span class="n">actionMasked</span> <span class="o">==</span> <span class="n">MotionEvent</span><span class="o">.</span><span class="na">ACTION_UP</span>
+                    <span class="o">||</span> <span class="n">actionMasked</span> <span class="o">==</span> <span class="n">MotionEvent</span><span class="o">.</span><span class="na">ACTION_HOVER_MOVE</span><span class="o">)</span> <span class="o">{</span>
+                <span class="n">resetTouchState</span><span class="o">();</span>
+            <span class="o">}</span> <span class="k">else</span> <span class="k">if</span> <span class="o">(</span><span class="n">split</span> <span class="o">&amp;&amp;</span> <span class="n">actionMasked</span> <span class="o">==</span> <span class="n">MotionEvent</span><span class="o">.</span><span class="na">ACTION_POINTER_UP</span><span class="o">)</span> <span class="o">{</span>
+                <span class="kd">final</span> <span class="kt">int</span> <span class="n">actionIndex</span> <span class="o">=</span> <span class="n">ev</span><span class="o">.</span><span class="na">getActionIndex</span><span class="o">();</span>
+                <span class="kd">final</span> <span class="kt">int</span> <span class="n">idBitsToRemove</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">&lt;&lt;</span> <span class="n">ev</span><span class="o">.</span><span class="na">getPointerId</span><span class="o">(</span><span class="n">actionIndex</span><span class="o">);</span>
+                <span class="n">removePointersFromTouchTargets</span><span class="o">(</span><span class="n">idBitsToRemove</span><span class="o">);</span>
+            <span class="o">}</span>
+        <span class="o">}</span>
+
+        <span class="k">if</span> <span class="o">(!</span><span class="n">handled</span> <span class="o">&amp;&amp;</span> <span class="n">mInputEventConsistencyVerifier</span> <span class="o">!=</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span>
+            <span class="n">mInputEventConsistencyVerifier</span><span class="o">.</span><span class="na">onUnhandledEvent</span><span class="o">(</span><span class="n">ev</span><span class="o">,</span> <span class="mi">1</span><span class="o">);</span>
+        <span class="o">}</span>
+        <span class="k">return</span> <span class="n">handled</span><span class="o">;</span>
+    <span class="o">}</span></code></pre></figure>
+
+<p>上面的注释已经非常详细地分析了整个ViewGroup分发的流程，我们可以得出下面几个结论：</p>
+
+<ol>
+  <li>事件序列只能被一个View拦截且消耗，处理了Down事件的View将会接收整个事件序列，并且后续所有事件是通过索引链直接沿 DecorView的顶层View下来，不用再次遍历View树，并且不会经过ViewGroup的拦截。</li>
+  <li>当某个ViewGroup一旦决定拦截Down事件，那么这一个事件序列都只能由它处理（如果事件序列能够传递给它的话），而不会继续调用它的 onInterceptTouchEvent 方法</li>
+  <li>如果一个View不处理Down事件，那么事件序列其他事件都不会经过它了，如果ViewGroup的所有子View都不处理Down事件，那么将交由ViewGroup自己处理，调用它的 onTouchEvent 方法，如果这个ViewGroup也不处理，一直递归向上，直到调用actviity的onTouchEvent方法。</li>
+  <li>ViewGroup默认不拦截子View的onTouch事件分发，即 onInterceptTouchEvent 默认返回false，如果想要拦截，需要重写为true。</li>
+</ol>
+
+<p>我们ViewGroup将事件传到处理Down事件的View时，调用它的 dispatchTouchEvent 方法，下面看下它的核心代码：</p>
+
+<figure class="highlight"><pre><code class="language-java" data-lang="java">	<span class="kd">public</span> <span class="kt">boolean</span> <span class="nf">dispatchTouchEvent</span><span class="o">(</span><span class="n">MotionEvent</span> <span class="n">event</span><span class="o">)</span> <span class="o">{</span>
+	<span class="o">...</span>
+	<span class="k">if</span> <span class="o">(</span><span class="n">onFilterTouchEventForSecurity</span><span class="o">(</span><span class="n">event</span><span class="o">))</span> <span class="o">{</span>
+            <span class="k">if</span> <span class="o">((</span><span class="n">mViewFlags</span> <span class="o">&amp;</span> <span class="n">ENABLED_MASK</span><span class="o">)</span> <span class="o">==</span> <span class="n">ENABLED</span> <span class="o">&amp;&amp;</span> <span class="n">handleScrollBarDragging</span><span class="o">(</span><span class="n">event</span><span class="o">))</span> <span class="o">{</span>
+                <span class="n">result</span> <span class="o">=</span> <span class="kc">true</span><span class="o">;</span>
+            <span class="o">}</span>
+            <span class="c1">//noinspection SimplifiableIfStatement</span>
+            <span class="n">ListenerInfo</span> <span class="n">li</span> <span class="o">=</span> <span class="n">mListenerInfo</span><span class="o">;</span>
+            <span class="k">if</span> <span class="o">(</span><span class="n">li</span> <span class="o">!=</span> <span class="kc">null</span> <span class="o">&amp;&amp;</span> <span class="n">li</span><span class="o">.</span><span class="na">mOnTouchListener</span> <span class="o">!=</span> <span class="kc">null</span>
+                    <span class="o">&amp;&amp;</span> <span class="o">(</span><span class="n">mViewFlags</span> <span class="o">&amp;</span> <span class="n">ENABLED_MASK</span><span class="o">)</span> <span class="o">==</span> <span class="n">ENABLED</span>
+                    <span class="o">&amp;&amp;</span> <span class="n">li</span><span class="o">.</span><span class="na">mOnTouchListener</span><span class="o">.</span><span class="na">onTouch</span><span class="o">(</span><span class="k">this</span><span class="o">,</span> <span class="n">event</span><span class="o">))</span> <span class="o">{</span>
+                <span class="n">result</span> <span class="o">=</span> <span class="kc">true</span><span class="o">;</span>
+            <span class="o">}</span>
+
+            <span class="k">if</span> <span class="o">(!</span><span class="n">result</span> <span class="o">&amp;&amp;</span> <span class="n">onTouchEvent</span><span class="o">(</span><span class="n">event</span><span class="o">))</span> <span class="o">{</span>
+                <span class="n">result</span> <span class="o">=</span> <span class="kc">true</span><span class="o">;</span>
+            <span class="o">}</span>
+        <span class="o">}</span>
+	<span class="o">...</span>
+	<span class="k">return</span> <span class="n">result</span><span class="o">;</span>
+	<span class="o">}</span></code></pre></figure>
+
+<p>可以看到，获取listener的信息，如果当前View的 touchListener 被设定，那么 MotionEvent将会交由这个listener来处理，如果listener处理事件并且返回true，那么 当前View的 onTouchEvent 将不会再执行。</p>
+
+<p>但是如果没有设置listener，那么将会调用View的onTouchEvent。</p>
+
+<p>这里可以看到 View不管是否是Enable，都会执行 onTouchEvent，如果是disable状态下，listener则不可用。</p>
+
+<p>再来看看 onTouchEvent 的源码</p>
+
+<figure class="highlight"><pre><code class="language-java" data-lang="java">	<span class="kd">public</span> <span class="kt">boolean</span> <span class="nf">onTouchEvent</span><span class="o">(</span><span class="n">MotionEvent</span> <span class="n">event</span><span class="o">)</span> <span class="o">{</span>
+        <span class="kd">final</span> <span class="kt">float</span> <span class="n">x</span> <span class="o">=</span> <span class="n">event</span><span class="o">.</span><span class="na">getX</span><span class="o">();</span>
+        <span class="kd">final</span> <span class="kt">float</span> <span class="n">y</span> <span class="o">=</span> <span class="n">event</span><span class="o">.</span><span class="na">getY</span><span class="o">();</span>
+        <span class="kd">final</span> <span class="kt">int</span> <span class="n">viewFlags</span> <span class="o">=</span> <span class="n">mViewFlags</span><span class="o">;</span>
+        <span class="kd">final</span> <span class="kt">int</span> <span class="n">action</span> <span class="o">=</span> <span class="n">event</span><span class="o">.</span><span class="na">getAction</span><span class="o">();</span>
+
+		<span class="c1">//可以看到，当View是disable的话，只要 clickable 和 long_clickable 有一个为true，都会消耗事件，虽然不做什么事情。</span>
+        <span class="k">if</span> <span class="o">((</span><span class="n">viewFlags</span> <span class="o">&amp;</span> <span class="n">ENABLED_MASK</span><span class="o">)</span> <span class="o">==</span> <span class="n">DISABLED</span><span class="o">)</span> <span class="o">{</span>
+            <span class="k">if</span> <span class="o">(</span><span class="n">action</span> <span class="o">==</span> <span class="n">MotionEvent</span><span class="o">.</span><span class="na">ACTION_UP</span> <span class="o">&amp;&amp;</span> <span class="o">(</span><span class="n">mPrivateFlags</span> <span class="o">&amp;</span> <span class="n">PFLAG_PRESSED</span><span class="o">)</span> <span class="o">!=</span> <span class="mi">0</span><span class="o">)</span> <span class="o">{</span>
+                <span class="n">setPressed</span><span class="o">(</span><span class="kc">false</span><span class="o">);</span>
+            <span class="o">}</span>
+            <span class="c1">// A disabled view that is clickable still consumes the touch</span>
+            <span class="c1">// events, it just doesn't respond to them.</span>
+            <span class="k">return</span> <span class="o">(((</span><span class="n">viewFlags</span> <span class="o">&amp;</span> <span class="n">CLICKABLE</span><span class="o">)</span> <span class="o">==</span> <span class="n">CLICKABLE</span>
+                    <span class="o">||</span> <span class="o">(</span><span class="n">viewFlags</span> <span class="o">&amp;</span> <span class="n">LONG_CLICKABLE</span><span class="o">)</span> <span class="o">==</span> <span class="n">LONG_CLICKABLE</span><span class="o">)</span>
+                    <span class="o">||</span> <span class="o">(</span><span class="n">viewFlags</span> <span class="o">&amp;</span> <span class="n">CONTEXT_CLICKABLE</span><span class="o">)</span> <span class="o">==</span> <span class="n">CONTEXT_CLICKABLE</span><span class="o">);</span>
+        <span class="o">}</span>
+		<span class="c1">//存在代理的话，调用代理的onTouchEvent方法</span>
+        <span class="k">if</span> <span class="o">(</span><span class="n">mTouchDelegate</span> <span class="o">!=</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span>
+            <span class="k">if</span> <span class="o">(</span><span class="n">mTouchDelegate</span><span class="o">.</span><span class="na">onTouchEvent</span><span class="o">(</span><span class="n">event</span><span class="o">))</span> <span class="o">{</span>
+                <span class="k">return</span> <span class="kc">true</span><span class="o">;</span>
+            <span class="o">}</span>
+        <span class="o">}</span>
+
+		<span class="c1">//如果View可以点击的话，那么，就可以触发下面的action_down,move,up事件，按下，抬上会触发performClick事件，调用onclicklistener的onclick事件。</span>
+
+        <span class="k">if</span> <span class="o">(((</span><span class="n">viewFlags</span> <span class="o">&amp;</span> <span class="n">CLICKABLE</span><span class="o">)</span> <span class="o">==</span> <span class="n">CLICKABLE</span> <span class="o">||</span>
+                <span class="o">(</span><span class="n">viewFlags</span> <span class="o">&amp;</span> <span class="n">LONG_CLICKABLE</span><span class="o">)</span> <span class="o">==</span> <span class="n">LONG_CLICKABLE</span><span class="o">)</span> <span class="o">||</span>
+                <span class="o">(</span><span class="n">viewFlags</span> <span class="o">&amp;</span> <span class="n">CONTEXT_CLICKABLE</span><span class="o">)</span> <span class="o">==</span> <span class="n">CONTEXT_CLICKABLE</span><span class="o">)</span> <span class="o">{</span>
+            <span class="k">switch</span> <span class="o">(</span><span class="n">action</span><span class="o">)</span> <span class="o">{</span>
+                <span class="k">case</span> <span class="n">MotionEvent</span><span class="o">.</span><span class="na">ACTION_UP</span><span class="o">:</span>
+                    <span class="kt">boolean</span> <span class="n">prepressed</span> <span class="o">=</span> <span class="o">(</span><span class="n">mPrivateFlags</span> <span class="o">&amp;</span> <span class="n">PFLAG_PREPRESSED</span><span class="o">)</span> <span class="o">!=</span> <span class="mi">0</span><span class="o">;</span>
+                    <span class="k">if</span> <span class="o">((</span><span class="n">mPrivateFlags</span> <span class="o">&amp;</span> <span class="n">PFLAG_PRESSED</span><span class="o">)</span> <span class="o">!=</span> <span class="mi">0</span> <span class="o">||</span> <span class="n">prepressed</span><span class="o">)</span> <span class="o">{</span>
+                        <span class="c1">// take focus if we don't have it already and we should in</span>
+                        <span class="c1">// touch mode.</span>
+                        <span class="kt">boolean</span> <span class="n">focusTaken</span> <span class="o">=</span> <span class="kc">false</span><span class="o">;</span>
+                        <span class="k">if</span> <span class="o">(</span><span class="n">isFocusable</span><span class="o">()</span> <span class="o">&amp;&amp;</span> <span class="n">isFocusableInTouchMode</span><span class="o">()</span> <span class="o">&amp;&amp;</span> <span class="o">!</span><span class="n">isFocused</span><span class="o">())</span> <span class="o">{</span>
+                            <span class="n">focusTaken</span> <span class="o">=</span> <span class="n">requestFocus</span><span class="o">();</span>
+                        <span class="o">}</span>
+
+                        <span class="k">if</span> <span class="o">(</span><span class="n">prepressed</span><span class="o">)</span> <span class="o">{</span>
+                            <span class="c1">// The button is being released before we actually</span>
+                            <span class="c1">// showed it as pressed.  Make it show the pressed</span>
+                            <span class="c1">// state now (before scheduling the click) to ensure</span>
+                            <span class="c1">// the user sees it.</span>
+                            <span class="n">setPressed</span><span class="o">(</span><span class="kc">true</span><span class="o">,</span> <span class="n">x</span><span class="o">,</span> <span class="n">y</span><span class="o">);</span>
+                       <span class="o">}</span>
+
+                        <span class="k">if</span> <span class="o">(!</span><span class="n">mHasPerformedLongPress</span> <span class="o">&amp;&amp;</span> <span class="o">!</span><span class="n">mIgnoreNextUpEvent</span><span class="o">)</span> <span class="o">{</span>
+                            <span class="c1">// This is a tap, so remove the longpress check</span>
+                            <span class="n">removeLongPressCallback</span><span class="o">();</span>
+
+                            <span class="c1">// Only perform take click actions if we were in the pressed state</span>
+                            <span class="k">if</span> <span class="o">(!</span><span class="n">focusTaken</span><span class="o">)</span> <span class="o">{</span>
+                                <span class="c1">// Use a Runnable and post this rather than calling</span>
+                                <span class="c1">// performClick directly. This lets other visual state</span>
+                                <span class="c1">// of the view update before click actions start.</span>
+                                <span class="k">if</span> <span class="o">(</span><span class="n">mPerformClick</span> <span class="o">==</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span>
+                                    <span class="n">mPerformClick</span> <span class="o">=</span> <span class="k">new</span> <span class="n">PerformClick</span><span class="o">();</span>
+                                <span class="o">}</span>
+                                <span class="k">if</span> <span class="o">(!</span><span class="n">post</span><span class="o">(</span><span class="n">mPerformClick</span><span class="o">))</span> <span class="o">{</span>
+                                    <span class="n">performClick</span><span class="o">();</span>
+                                <span class="o">}</span>
+                            <span class="o">}</span>
+                        <span class="o">}</span>
+
+                        <span class="k">if</span> <span class="o">(</span><span class="n">mUnsetPressedState</span> <span class="o">==</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span>
+                            <span class="n">mUnsetPressedState</span> <span class="o">=</span> <span class="k">new</span> <span class="n">UnsetPressedState</span><span class="o">();</span>
+                        <span class="o">}</span>
+
+                        <span class="k">if</span> <span class="o">(</span><span class="n">prepressed</span><span class="o">)</span> <span class="o">{</span>
+                            <span class="n">postDelayed</span><span class="o">(</span><span class="n">mUnsetPressedState</span><span class="o">,</span>
+                                    <span class="n">ViewConfiguration</span><span class="o">.</span><span class="na">getPressedStateDuration</span><span class="o">());</span>
+                        <span class="o">}</span> <span class="k">else</span> <span class="k">if</span> <span class="o">(!</span><span class="n">post</span><span class="o">(</span><span class="n">mUnsetPressedState</span><span class="o">))</span> <span class="o">{</span>
+                            <span class="c1">// If the post failed, unpress right now</span>
+                            <span class="n">mUnsetPressedState</span><span class="o">.</span><span class="na">run</span><span class="o">();</span>
+                        <span class="o">}</span>
+
+                        <span class="n">removeTapCallback</span><span class="o">();</span>
+                    <span class="o">}</span>
+                    <span class="n">mIgnoreNextUpEvent</span> <span class="o">=</span> <span class="kc">false</span><span class="o">;</span>
+                    <span class="k">break</span><span class="o">;</span>
+
+                <span class="k">case</span> <span class="n">MotionEvent</span><span class="o">.</span><span class="na">ACTION_DOWN</span><span class="o">:</span>
+                    <span class="n">mHasPerformedLongPress</span> <span class="o">=</span> <span class="kc">false</span><span class="o">;</span>
+
+                    <span class="k">if</span> <span class="o">(</span><span class="n">performButtonActionOnTouchDown</span><span class="o">(</span><span class="n">event</span><span class="o">))</span> <span class="o">{</span>
+                        <span class="k">break</span><span class="o">;</span>
+                    <span class="o">}</span>
+
+                    <span class="c1">// Walk up the hierarchy to determine if we're inside a scrolling container.</span>
+                    <span class="kt">boolean</span> <span class="n">isInScrollingContainer</span> <span class="o">=</span> <span class="n">isInScrollingContainer</span><span class="o">();</span>
+
+                    <span class="c1">// For views inside a scrolling container, delay the pressed feedback for</span>
+                    <span class="c1">// a short period in case this is a scroll.</span>
+                    <span class="k">if</span> <span class="o">(</span><span class="n">isInScrollingContainer</span><span class="o">)</span> <span class="o">{</span>
+                        <span class="n">mPrivateFlags</span> <span class="o">|=</span> <span class="n">PFLAG_PREPRESSED</span><span class="o">;</span>
+                        <span class="k">if</span> <span class="o">(</span><span class="n">mPendingCheckForTap</span> <span class="o">==</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span>
+                            <span class="n">mPendingCheckForTap</span> <span class="o">=</span> <span class="k">new</span> <span class="n">CheckForTap</span><span class="o">();</span>
+                        <span class="o">}</span>
+                        <span class="n">mPendingCheckForTap</span><span class="o">.</span><span class="na">x</span> <span class="o">=</span> <span class="n">event</span><span class="o">.</span><span class="na">getX</span><span class="o">();</span>
+                        <span class="n">mPendingCheckForTap</span><span class="o">.</span><span class="na">y</span> <span class="o">=</span> <span class="n">event</span><span class="o">.</span><span class="na">getY</span><span class="o">();</span>
+                        <span class="n">postDelayed</span><span class="o">(</span><span class="n">mPendingCheckForTap</span><span class="o">,</span> <span class="n">ViewConfiguration</span><span class="o">.</span><span class="na">getTapTimeout</span><span class="o">());</span>
+                    <span class="o">}</span> <span class="k">else</span> <span class="o">{</span>
+                        <span class="c1">// Not inside a scrolling container, so show the feedback right away</span>
+                        <span class="n">setPressed</span><span class="o">(</span><span class="kc">true</span><span class="o">,</span> <span class="n">x</span><span class="o">,</span> <span class="n">y</span><span class="o">);</span>
+                        <span class="n">checkForLongClick</span><span class="o">(</span><span class="mi">0</span><span class="o">,</span> <span class="n">x</span><span class="o">,</span> <span class="n">y</span><span class="o">);</span>
+                    <span class="o">}</span>
+                    <span class="k">break</span><span class="o">;</span>
+
+                <span class="k">case</span> <span class="n">MotionEvent</span><span class="o">.</span><span class="na">ACTION_CANCEL</span><span class="o">:</span>
+                    <span class="n">setPressed</span><span class="o">(</span><span class="kc">false</span><span class="o">);</span>
+                    <span class="n">removeTapCallback</span><span class="o">();</span>
+                    <span class="n">removeLongPressCallback</span><span class="o">();</span>
+                    <span class="n">mInContextButtonPress</span> <span class="o">=</span> <span class="kc">false</span><span class="o">;</span>
+                    <span class="n">mHasPerformedLongPress</span> <span class="o">=</span> <span class="kc">false</span><span class="o">;</span>
+                    <span class="n">mIgnoreNextUpEvent</span> <span class="o">=</span> <span class="kc">false</span><span class="o">;</span>
+                    <span class="k">break</span><span class="o">;</span>
+
+                <span class="k">case</span> <span class="n">MotionEvent</span><span class="o">.</span><span class="na">ACTION_MOVE</span><span class="o">:</span>
+                    <span class="n">drawableHotspotChanged</span><span class="o">(</span><span class="n">x</span><span class="o">,</span> <span class="n">y</span><span class="o">);</span>
+
+                    <span class="c1">// Be lenient about moving outside of buttons</span>
+                    <span class="k">if</span> <span class="o">(!</span><span class="n">pointInView</span><span class="o">(</span><span class="n">x</span><span class="o">,</span> <span class="n">y</span><span class="o">,</span> <span class="n">mTouchSlop</span><span class="o">))</span> <span class="o">{</span>
+                        <span class="c1">// Outside button</span>
+                        <span class="n">removeTapCallback</span><span class="o">();</span>
+                        <span class="k">if</span> <span class="o">((</span><span class="n">mPrivateFlags</span> <span class="o">&amp;</span> <span class="n">PFLAG_PRESSED</span><span class="o">)</span> <span class="o">!=</span> <span class="mi">0</span><span class="o">)</span> <span class="o">{</span>
+                            <span class="c1">// Remove any future long press/tap checks</span>
+                            <span class="n">removeLongPressCallback</span><span class="o">();</span>
+
+                            <span class="n">setPressed</span><span class="o">(</span><span class="kc">false</span><span class="o">);</span>
+                        <span class="o">}</span>
+                    <span class="o">}</span>
+                    <span class="k">break</span><span class="o">;</span>
+            <span class="o">}</span>
+
+            <span class="k">return</span> <span class="kc">true</span><span class="o">;</span>
+        <span class="o">}</span>
+
+        <span class="k">return</span> <span class="kc">false</span><span class="o">;</span>
+    <span class="o">}</span></code></pre></figure>
+
+<p>从 onTouchEvent 的源码可以得出下面这几个结论：</p>
+
+<ol>
+  <li>如果绑定了 onTouchListener，那么将会优先调用listener的 onTouch方法，将事件交由listener处理。如果返回true，则事件消耗掉，不会继续分发到 onTouchEvent了。</li>
+  <li>假如没设置listener，当前View的状态尽管是 Disable，都不会影响 onTouchEvent的执行。并且只要View是支持clickable或者long_clickable的话，都会消耗这个事件序列，虽然不做什么事情。</li>
+  <li>如果View不是disable状态的话，那么在事件处理过程中会发生控件的onclick事件，所以 onTouchEvent是优先于onClick的。</li>
+</ol>
+
+
+                <hr>
+
+                
+                <!-- 多说 Share start -->
+                </style>
+                <div class="ds-share"
+                    style="text-align: right"
+                    data-thread-key="/2017/05/17/事件分发机制"
+                    data-title="Android事件分发机制"
+                    data-url="https://drearming.github.io/drearming.github.com/2017/05/17/%E4%BA%8B%E4%BB%B6%E5%88%86%E5%8F%91%E6%9C%BA%E5%88%B6/"
+                    data-images="https://drearming.github.io/drearming.github.com/img/post-bg-2015.jpg"
+                    data-content="Android事件分发机制
+
+参考：任玉刚《Android 开发艺术探索》
+
+事件序列
+
+当用户触碰了屏幕开始，就会产生一次事件序列
+
+down事件 -&... | 陈俊杰 | MVCoder " >
+                    <div class="ds-share-inline">
+                      <ul  class="ds-share-icons-16">
+                        <li data-toggle="ds-share-icons-more"><a class="ds-more" href="#">分享到：</a></li>
+                        <li><a class="ds-wechat flat" href="javascript:void(0);" data-service="wechat">微信</a></li>
+                        <li><a class="ds-weibo flat" href="javascript:void(0);" data-service="weibo">微博</a></li>
+                        <li><a class="ds-douban flat" href="javascript:void(0);" data-service="douban">豆瓣</a></li>
+                      </ul>
+                      <div class="ds-share-icons-more">
+                      </div>
+                    </div>
+                <hr>
+                </div>
+                <!-- 多说 Share end-->
+                
+
+
+                <ul class="pager">
+                    
+                    <li class="previous">
+                        <a href="/drearming.github.com/2017/05/13/%E8%B7%A8%E8%BF%9B%E7%A8%8B%E9%80%9A%E4%BF%A1/" data-toggle="tooltip" data-placement="top" title="Android跨进程通信">&larr; Previous Post</a>
+                    </li>
+                    
+                    
+                </ul>
+
+
+                
+                <!-- 多说评论框 start -->
+                <div class="comment">
+                    <div class="ds-thread"
+                        data-thread-key="/2017/05/17/事件分发机制"
+                        data-title="Android事件分发机制"
+                        data-url="https://drearming.github.io/drearming.github.com/2017/05/17/%E4%BA%8B%E4%BB%B6%E5%88%86%E5%8F%91%E6%9C%BA%E5%88%B6/" >
+                    </div>
+                </div>
+                <!-- 多说评论框 end -->
+                
+
+                
+
+            </div>
+
+    <!-- Sidebar Container -->
+            <div class="
+                col-lg-8 col-lg-offset-2
+                col-md-10 col-md-offset-1
+                sidebar-container">
+
+                <!-- Featured Tags -->
+                
+                <section>
+                    <hr class="hidden-sm hidden-xs">
+                    <h5><a href="/tags/">FEATURED TAGS</a></h5>
+                    <div class="tags">
+        				
+                            
+        				
+                            
+                				<a href="/drearming.github.com/tags/#Android" title="Android" rel="16">
+                                    Android
+                                </a>
+                            
+        				
+                            
+        				
+                            
+                				<a href="/drearming.github.com/tags/#MealOrder" title="MealOrder" rel="2">
+                                    MealOrder
+                                </a>
+                            
+        				
+                            
+                				<a href="/drearming.github.com/tags/#Java" title="Java" rel="3">
+                                    Java
+                                </a>
+                            
+        				
+                            
+        				
+                            
+        				
+                            
+        				
+                            
+                				<a href="/drearming.github.com/tags/#网络" title="网络" rel="5">
+                                    网络
+                                </a>
+                            
+        				
+                            
+                				<a href="/drearming.github.com/tags/#Framework" title="Framework" rel="5">
+                                    Framework
+                                </a>
+                            
+        				
+        			</div>
+                </section>
+                
+
+                <!-- Friends Blog -->
+                
+                <hr>
+                <h5>FRIENDS</h5>
+                <ul class="list-inline">
+                    
+                        <li><a href="https://github.com/DREARMING">MVCoder</a></li>
+                    
+                        <li><a href="http://blog.csdn.net/lmj623565791/article/details/48129405">鸿洋</a></li>
+                    
+                        <li><a href="http://blog.csdn.net/guolin_blog/article/details/9097463/">郭霖</a></li>
+                    
+                        <li><a href="http://blog.csdn.net/aigestudio">爱歌</a></li>
+                    
+                        <li><a href="http://www.jianshu.com/p/6a8c2ae0b1c6?utm_campaign=haruki">死党</a></li>
+                    
+                </ul>
+                
+            </div>
+        </div>
+    </div>
+</article>
+
+
+<!-- 多说公共JS代码 start (一个网页只需插入一次) -->
+<script type="text/javascript">
+    // dynamic User by Hux
+    var _user = 'mvcoder';
+
+    // duoshuo comment query.
+    var duoshuoQuery = {short_name: _user };
+    (function() {
+        var ds = document.createElement('script');
+        ds.type = 'text/javascript';ds.async = true;
+        ds.src = (document.location.protocol == 'https:' ? 'https:' : 'http:') + '//static.duoshuo.com/embed.js';
+        ds.charset = 'UTF-8';
+        (document.getElementsByTagName('head')[0]
+         || document.getElementsByTagName('body')[0]).appendChild(ds);
+    })();
+</script>
+<!-- 多说公共JS代码 end -->
+
+
+
+
+
+
+
+<!-- async load function -->
+<script>
+    function async(u, c) {
+      var d = document, t = 'script',
+          o = d.createElement(t),
+          s = d.getElementsByTagName(t)[0];
+      o.src = u;
+      if (c) { o.addEventListener('load', function (e) { c(null, e); }, false); }
+      s.parentNode.insertBefore(o, s);
+    }
+</script>
+<!-- anchor-js, Doc:http://bryanbraun.github.io/anchorjs/ -->
+<script>
+    async("http://cdn.bootcss.com/anchor-js/1.1.1/anchor.min.js",function(){
+        anchors.options = {
+          visible: 'always',
+          placement: 'right',
+          icon: '#'
+        };
+        anchors.add().remove('.intro-header h1').remove('.subheading').remove('.sidebar-container h5');
+    })
+</script>
+<style>
+    /* place left on bigger screen */
+    @media all and (min-width: 800px) {
+        .anchorjs-link{
+            position: absolute;
+            left: -0.75em;
+            font-size: 1.1em;
+            margin-top : -0.1em;
+        }
+    }
+</style>
+
+
+
+    <!-- Footer -->
+<footer>
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+                <ul class="list-inline text-center">
+                    
+                    
+
+                    <!-- add Weibo, Zhihu by Hux, add target = "_blank" to <a> by Hux -->
+                    
+                    
+
+
+                    
+                    
+                    <li>
+                        <a target="_blank" href="https://github.com/drearming">
+                            <span class="fa-stack fa-lg">
+                                <i class="fa fa-circle fa-stack-2x"></i>
+                                <i class="fa fa-github fa-stack-1x fa-inverse"></i>
+                            </span>
+                        </a>
+                    </li>
+                    
+                </ul>
+                <p class="copyright text-muted">
+                    Copyright &copy; MVCoder Blog 2017
+                    <br>
+                    Theme by <a href="http://huangxuan.me">Hux</a> |
+                    <iframe
+                        style="margin-left: 2px; margin-bottom:-5px;"
+                        frameborder="0" scrolling="0" width="91px" height="20px"
+                        src="https://ghbtns.com/github-btn.html?user=huxpro&repo=huxpro.github.io&type=star&count=true" >
+                    </iframe>
+					<br>
+					粤ICP备17049060号
+                </p>
+            </div>
+        </div>
+    </div>
+</footer>
+
+<!-- jQuery -->
+<script src="/drearming.github.com/js/jquery.min.js "></script>
+
+<!-- Bootstrap Core JavaScript -->
+<script src="/drearming.github.com/js/bootstrap.min.js "></script>
+
+<!-- Custom Theme JavaScript -->
+<script src="/drearming.github.com/js/hux-blog.min.js "></script>
+
+
+<!-- async load function -->
+<script>
+    function async(u, c) {
+      var d = document, t = 'script',
+          o = d.createElement(t),
+          s = d.getElementsByTagName(t)[0];
+      o.src = u;
+      if (c) { o.addEventListener('load', function (e) { c(null, e); }, false); }
+      s.parentNode.insertBefore(o, s);
+    }
+</script>
+
+<!-- 
+     Because of the native support for backtick-style fenced code blocks 
+     right within the Markdown is landed in Github Pages, 
+     From V1.6, There is no need for Highlight.js, 
+     so Huxblog drops it officially.
+
+     - https://github.com/blog/2100-github-pages-now-faster-and-simpler-with-jekyll-3-0  
+     - https://help.github.com/articles/creating-and-highlighting-code-blocks/    
+-->
+<!--
+    <script>
+        async("http://cdn.bootcss.com/highlight.js/8.6/highlight.min.js", function(){
+            hljs.initHighlightingOnLoad();
+        })
+    </script>
+    <link href="http://cdn.bootcss.com/highlight.js/8.6/styles/github.min.css" rel="stylesheet">
+-->
+
+
+<!-- jquery.tagcloud.js -->
+<script>
+    // only load tagcloud.js in tag.html
+    if($('#tag_cloud').length !== 0){
+        async("/js/jquery.tagcloud.js",function(){
+            $.fn.tagcloud.defaults = {
+                //size: {start: 1, end: 1, unit: 'em'},
+                color: {start: '#bbbbee', end: '#0085a1'},
+            };
+            $('#tag_cloud a').tagcloud();
+        })
+    }
+</script>
+
+<!--fastClick.js -->
+<script>
+    async("http://cdn.bootcss.com/fastclick/1.0.6/fastclick.min.js", function(){
+        var $nav = document.querySelector("nav");
+        if($nav) FastClick.attach($nav);
+    })
+</script>
+
+
+<!-- Google Analytics -->
+
+<script>
+    // dynamic User by Hux
+    var _gaId = 'UA-49627206-1';
+    var _gaDomain = 'drearming.github.io';
+
+    // Originial
+    (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+    (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+    m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+    })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+    ga('create', _gaId, _gaDomain);
+    ga('send', 'pageview');
+</script>
+
+
+
+<!-- Baidu Tongji -->
+
+<script>
+    // dynamic User by Hux
+    var _baId = '4cc1f2d8f3067386cc5cdb626a202900';
+
+    // Originial
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "//hm.baidu.com/hm.js?" + _baId;
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+</script>
+
+
+
+
+<!-- Image to hack wechat -->
+<img src="/img/icon_wechat.png" width="0" height="0" />
+<!-- Migrate from head to bottom, no longer block render and still work -->
+
+</body>
+
+</html>
