@@ -222,194 +222,193 @@
 
 <p>首先我们可以在Android的app目录下建立一个aidl文件夹，然后建立一个aidl的接口文件,aidl的接口文件很简单，就是远程服务提供的接口而已，如果接口引用了 自定义对象，则需要为这种对象创建个aidl文件</p>
 
-<div class="highlighter-rouge">IRemoteService.aidl
-
-package com.mvp.githubdemo;
-interface IRemoteService {
-void basicTypes(int anInt, long aLong, boolean aBoolean, float aFloat,
-        double aDouble, String aString);
-void getServiceName();}
-</div>
+<figure class="highlight"><pre><code class="language-java" data-lang="java">	<span class="n">IRemoteService</span><span class="o">.</span><span class="na">aidl</span>
+	
+	<span class="kn">package</span> <span class="n">com</span><span class="o">.</span><span class="na">mvp</span><span class="o">.</span><span class="na">githubdemo</span><span class="o">;</span>
+	<span class="kd">interface</span> <span class="nc">IRemoteService</span> <span class="o">{</span>
+    <span class="kt">void</span> <span class="nf">basicTypes</span><span class="o">(</span><span class="kt">int</span> <span class="n">anInt</span><span class="o">,</span> <span class="kt">long</span> <span class="n">aLong</span><span class="o">,</span> <span class="kt">boolean</span> <span class="n">aBoolean</span><span class="o">,</span> <span class="kt">float</span> <span class="n">aFloat</span><span class="o">,</span>
+            <span class="kt">double</span> <span class="n">aDouble</span><span class="o">,</span> <span class="n">String</span> <span class="n">aString</span><span class="o">);</span>
+    <span class="kt">void</span> <span class="nf">getServiceName</span><span class="o">();}</span></code></pre></figure>
 
 <p>我们这个接口方法很简单，就提供一个getServiceName()的方法供 客户端访问，这个aidl文件，是需要向外公布的，客户端持有它，就知道远程服务提供什么方法了。并且如果有自定义对象，也会知道这种自定义长什么样子了。</p>
 
 <p>当然 单单一个接口文件，根本无法解决我们上面提到的各种问题。aidl文件定义好了后，我们rebuild一下项目，Android的IDE会为我们生成一个 IRemoteService.java 的类，这个类就是整个 aidl 机制的核心了。我们看看它的源码：</p>
 
-<div class="highlighter-rouge">public interface IRemoteService extends android.os.IInterface {
-/**
- * Local-side IPC implementation stub class.
- */
-public static abstract class Stub extends android.os.Binder implements com.mvp.githubdemo.IRemoteService {
+<figure class="highlight"><pre><code class="language-java" data-lang="java">	<span class="kd">public</span> <span class="kd">interface</span> <span class="nc">IRemoteService</span> <span class="kd">extends</span> <span class="n">android</span><span class="o">.</span><span class="na">os</span><span class="o">.</span><span class="na">IInterface</span> <span class="o">{</span>
+    <span class="cm">/**
+     * Local-side IPC implementation stub class.
+     */</span>
+    <span class="kd">public</span> <span class="kd">static</span> <span class="kd">abstract</span> <span class="kd">class</span> <span class="nc">Stub</span> <span class="kd">extends</span> <span class="n">android</span><span class="o">.</span><span class="na">os</span><span class="o">.</span><span class="na">Binder</span> <span class="kd">implements</span> <span class="n">com</span><span class="o">.</span><span class="na">mvp</span><span class="o">.</span><span class="na">githubdemo</span><span class="o">.</span><span class="na">IRemoteService</span> <span class="o">{</span>
+	
+		<span class="c1">//这个字符串就是远程服务对象 Binder 的唯一标识符了，用包名+类名唯一标识。</span>
+		<span class="c1">//当我们发送调用出去，至于怎么根据这个标识符找到 远程进程的 Binder 对象，</span>
+		<span class="c1">//这是Binder驱动的事情了，这里不做底层探究。</span>
 
-	//这个字符串就是远程服务对象 Binder 的唯一标识符了，用包名+类名唯一标识。
-	//当我们发送调用出去，至于怎么根据这个标识符找到 远程进程的 Binder 对象，
-	//这是Binder驱动的事情了，这里不做底层探究。
+        <span class="kd">private</span> <span class="kd">static</span> <span class="kd">final</span> <span class="n">java</span><span class="o">.</span><span class="na">lang</span><span class="o">.</span><span class="na">String</span> <span class="n">DESCRIPTOR</span> <span class="o">=</span> <span class="s">"com.mvp.githubdemo.IRemoteService"</span><span class="o">;</span>
 
-    private static final java.lang.String DESCRIPTOR = "com.mvp.githubdemo.IRemoteService";
+        <span class="cm">/**
+         * Construct the stub at attach it to the interface.
+         */</span>
 
-    /**
-     * Construct the stub at attach it to the interface.
-     */
+		<span class="c1">//注意，当我们构造了 Stub 对象，会将这个 Stub对象（继承了Binder，实现了aidl接口方法，它就是远程服务的Binder对象了）与标识符绑定。</span>
+        <span class="kd">public</span> <span class="nf">Stub</span><span class="o">()</span> <span class="o">{</span>
+            <span class="k">this</span><span class="o">.</span><span class="na">attachInterface</span><span class="o">(</span><span class="k">this</span><span class="o">,</span> <span class="n">DESCRIPTOR</span><span class="o">);</span>
+        <span class="o">}</span>
 
-	//注意，当我们构造了 Stub 对象，会将这个 Stub对象（继承了Binder，实现了aidl接口方法，它就是远程服务的Binder对象了）与标识符绑定。
-    public Stub() {
-        this.attachInterface(this, DESCRIPTOR);
-    }
+        <span class="cm">/**
+         * Cast an IBinder object into an com.mvp.githubdemo.IRemoteService interface,
+         * generating a proxy if needed.
+         */</span>
 
-    /**
-     * Cast an IBinder object into an com.mvp.githubdemo.IRemoteService interface,
-     * generating a proxy if needed.
-     */
+		<span class="c1">//这个方法就是客户端获取 实现了远程服务Binder代理的关键。</span>
+		<span class="c1">//当本地 bindservice回调 onServiceConnect 时，会返回一个 IBinder对象，这个Ibinder就是远程服务 Binder的代理。</span>
+        <span class="kd">public</span> <span class="kd">static</span> <span class="n">com</span><span class="o">.</span><span class="na">mvp</span><span class="o">.</span><span class="na">githubdemo</span><span class="o">.</span><span class="na">IRemoteService</span> <span class="nf">asInterface</span><span class="o">(</span><span class="n">android</span><span class="o">.</span><span class="na">os</span><span class="o">.</span><span class="na">IBinder</span> <span class="n">obj</span><span class="o">)</span> <span class="o">{</span>
+            <span class="k">if</span> <span class="o">((</span><span class="n">obj</span> <span class="o">==</span> <span class="kc">null</span><span class="o">))</span> <span class="o">{</span>
+                <span class="k">return</span> <span class="kc">null</span><span class="o">;</span>
+            <span class="o">}</span>
+			
+			<span class="c1">//这句话非常有用，根据DESCRIPTOR来判断 服务所在的进程是否是本地进程，进而决定是否需要跨进程</span>
+			<span class="c1">//原理：因为服务实现了 Stub里面的接口方法（即向本地提供的服务），构造的时候，</span>
+			<span class="c1">//绑定了descriptor。而服务端和客户端shi处于同一个进程的话，那么这个 IBinder</span>
+			<span class="c1">//就是属于同一个对象，那么通过 queryLocalInterface(descriptor)就不会返回null</span>
+			<span class="c1">//相反，如果不是处于一个进程，那么当前进程肯定不存在 绑定关系，这个时候就知道是否需要跨进程调用了。</span>
 
-	//这个方法就是客户端获取 实现了远程服务Binder代理的关键。
-	//当本地 bindservice回调 onServiceConnect 时，会返回一个 IBinder对象，这个Ibinder就是远程服务 Binder的代理。
-    public static com.mvp.githubdemo.IRemoteService asInterface(android.os.IBinder obj) {
-        if ((obj == null)) {
-            return null;
-        }
-		
-		//这句话非常有用，根据DESCRIPTOR来判断 服务所在的进程是否是本地进程，进而决定是否需要跨进程
-		//原理：因为服务实现了 Stub里面的接口方法（即向本地提供的服务），构造的时候，
-		//绑定了descriptor。而服务端和客户端shi处于同一个进程的话，那么这个 IBinder
-		//就是属于同一个对象，那么通过 queryLocalInterface(descriptor)就不会返回null
-		//相反，如果不是处于一个进程，那么当前进程肯定不存在 绑定关系，这个时候就知道是否需要跨进程调用了。
+			<span class="c1">//从下面的调用也可以看到，如果是本地进程，那么直接返回接口对象</span>
+			<span class="c1">//如果是跨进程的话，那么会返回了一个代理，进行跨进程调用。</span>
+            <span class="n">android</span><span class="o">.</span><span class="na">os</span><span class="o">.</span><span class="na">IInterface</span> <span class="n">iin</span> <span class="o">=</span> <span class="n">obj</span><span class="o">.</span><span class="na">queryLocalInterface</span><span class="o">(</span><span class="n">DESCRIPTOR</span><span class="o">);</span>
+            <span class="k">if</span> <span class="o">(((</span><span class="n">iin</span> <span class="o">!=</span> <span class="kc">null</span><span class="o">)</span> <span class="o">&amp;&amp;</span> <span class="o">(</span><span class="n">iin</span> <span class="k">instanceof</span> <span class="n">com</span><span class="o">.</span><span class="na">mvp</span><span class="o">.</span><span class="na">githubdemo</span><span class="o">.</span><span class="na">IRemoteService</span><span class="o">)))</span> <span class="o">{</span>
+                <span class="k">return</span> <span class="o">((</span><span class="n">com</span><span class="o">.</span><span class="na">mvp</span><span class="o">.</span><span class="na">githubdemo</span><span class="o">.</span><span class="na">IRemoteService</span><span class="o">)</span> <span class="n">iin</span><span class="o">);</span>
+            <span class="o">}</span>
+            <span class="k">return</span> <span class="k">new</span> <span class="n">com</span><span class="o">.</span><span class="na">mvp</span><span class="o">.</span><span class="na">githubdemo</span><span class="o">.</span><span class="na">IRemoteService</span><span class="o">.</span><span class="na">Stub</span><span class="o">.</span><span class="na">Proxy</span><span class="o">(</span><span class="n">obj</span><span class="o">);</span>
+        <span class="o">}</span>
 
-		//从下面的调用也可以看到，如果是本地进程，那么直接返回接口对象
-		//如果是跨进程的话，那么会返回了一个代理，进行跨进程调用。
-        android.os.IInterface iin = obj.queryLocalInterface(DESCRIPTOR);
-        if (((iin != null) &amp;&amp; (iin instanceof com.mvp.githubdemo.IRemoteService))) {
-            return ((com.mvp.githubdemo.IRemoteService) iin);
-        }
-        return new com.mvp.githubdemo.IRemoteService.Stub.Proxy(obj);
-    }
+        <span class="nd">@Override</span>
+        <span class="kd">public</span> <span class="n">android</span><span class="o">.</span><span class="na">os</span><span class="o">.</span><span class="na">IBinder</span> <span class="nf">asBinder</span><span class="o">()</span> <span class="o">{</span>
+            <span class="k">return</span> <span class="k">this</span><span class="o">;</span>
+        <span class="o">}</span>
 
-    @Override
-    public android.os.IBinder asBinder() {
-        return this;
-    }
+		<span class="cm">/*
+			当服务端接收到客户端的跨进程调用时，即客户端代理 IBinder调用了 transact方法，服务端就会出发 onTransact 的调用，并且参数是一一对应的。
+			比对code值，调用在服务端的具体实现，返回结果后封装在reply，相应客户端
+			注意的是：服务器的回调OnTransact方法，是在 Binder 线程池中的线程，需要注意多线程安全。
+		*/</span>
+        <span class="nd">@Override</span>
+        <span class="kd">public</span> <span class="kt">boolean</span> <span class="nf">onTransact</span><span class="o">(</span><span class="kt">int</span> <span class="n">code</span><span class="o">,</span> <span class="n">android</span><span class="o">.</span><span class="na">os</span><span class="o">.</span><span class="na">Parcel</span> <span class="n">data</span><span class="o">,</span> <span class="n">android</span><span class="o">.</span><span class="na">os</span><span class="o">.</span><span class="na">Parcel</span> <span class="n">reply</span><span class="o">,</span> <span class="kt">int</span> <span class="n">flags</span><span class="o">)</span> <span class="kd">throws</span> <span class="n">android</span><span class="o">.</span><span class="na">os</span><span class="o">.</span><span class="na">RemoteException</span> <span class="o">{</span>
+            <span class="k">switch</span> <span class="o">(</span><span class="n">code</span><span class="o">)</span> <span class="o">{</span>
+                <span class="k">case</span> <span class="nl">INTERFACE_TRANSACTION:</span> <span class="o">{</span>
+                    <span class="n">reply</span><span class="o">.</span><span class="na">writeString</span><span class="o">(</span><span class="n">DESCRIPTOR</span><span class="o">);</span>
+                    <span class="k">return</span> <span class="kc">true</span><span class="o">;</span>
+                <span class="o">}</span>
+                <span class="k">case</span> <span class="nl">TRANSACTION_basicTypes:</span> <span class="o">{</span>
+                    <span class="n">data</span><span class="o">.</span><span class="na">enforceInterface</span><span class="o">(</span><span class="n">DESCRIPTOR</span><span class="o">);</span>
+                    <span class="kt">int</span> <span class="n">_arg0</span><span class="o">;</span>
+                    <span class="n">_arg0</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="na">readInt</span><span class="o">();</span>
+                    <span class="kt">long</span> <span class="n">_arg1</span><span class="o">;</span>
+                    <span class="n">_arg1</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="na">readLong</span><span class="o">();</span>
+                    <span class="kt">boolean</span> <span class="n">_arg2</span><span class="o">;</span>
+                    <span class="n">_arg2</span> <span class="o">=</span> <span class="o">(</span><span class="mi">0</span> <span class="o">!=</span> <span class="n">data</span><span class="o">.</span><span class="na">readInt</span><span class="o">());</span>
+                    <span class="kt">float</span> <span class="n">_arg3</span><span class="o">;</span>
+                    <span class="n">_arg3</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="na">readFloat</span><span class="o">();</span>
+                    <span class="kt">double</span> <span class="n">_arg4</span><span class="o">;</span>
+                    <span class="n">_arg4</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="na">readDouble</span><span class="o">();</span>
+                    <span class="n">java</span><span class="o">.</span><span class="na">lang</span><span class="o">.</span><span class="na">String</span> <span class="n">_arg5</span><span class="o">;</span>
+                    <span class="n">_arg5</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="na">readString</span><span class="o">();</span>
+                    <span class="k">this</span><span class="o">.</span><span class="na">basicTypes</span><span class="o">(</span><span class="n">_arg0</span><span class="o">,</span> <span class="n">_arg1</span><span class="o">,</span> <span class="n">_arg2</span><span class="o">,</span> <span class="n">_arg3</span><span class="o">,</span> <span class="n">_arg4</span><span class="o">,</span> <span class="n">_arg5</span><span class="o">);</span>
+                    <span class="n">reply</span><span class="o">.</span><span class="na">writeNoException</span><span class="o">();</span>
+                    <span class="k">return</span> <span class="kc">true</span><span class="o">;</span>
+                <span class="o">}</span>
+                <span class="k">case</span> <span class="nl">TRANSACTION_getServiceName:</span> <span class="o">{</span>
+                    <span class="n">data</span><span class="o">.</span><span class="na">enforceInterface</span><span class="o">(</span><span class="n">DESCRIPTOR</span><span class="o">);</span>
+                    <span class="k">this</span><span class="o">.</span><span class="na">getServiceName</span><span class="o">();</span>
+                    <span class="n">reply</span><span class="o">.</span><span class="na">writeNoException</span><span class="o">();</span>
+                    <span class="k">return</span> <span class="kc">true</span><span class="o">;</span>
+                <span class="o">}</span>
+            <span class="o">}</span>
+            <span class="k">return</span> <span class="kd">super</span><span class="o">.</span><span class="na">onTransact</span><span class="o">(</span><span class="n">code</span><span class="o">,</span> <span class="n">data</span><span class="o">,</span> <span class="n">reply</span><span class="o">,</span> <span class="n">flags</span><span class="o">);</span>
+        <span class="o">}</span>
 
-	/*
-		当服务端接收到客户端的跨进程调用时，即客户端代理 IBinder调用了 transact方法，服务端就会出发 onTransact 的调用，并且参数是一一对应的。
-		比对code值，调用在服务端的具体实现，返回结果后封装在reply，相应客户端
-		注意的是：服务器的回调OnTransact方法，是在 Binder 线程池中的线程，需要注意多线程安全。
-	*/
-    @Override
-    public boolean onTransact(int code, android.os.Parcel data, android.os.Parcel reply, int flags) throws android.os.RemoteException {
-        switch (code) {
-            case INTERFACE_TRANSACTION: {
-                reply.writeString(DESCRIPTOR);
-                return true;
-            }
-            case TRANSACTION_basicTypes: {
-                data.enforceInterface(DESCRIPTOR);
-                int _arg0;
-                _arg0 = data.readInt();
-                long _arg1;
-                _arg1 = data.readLong();
-                boolean _arg2;
-                _arg2 = (0 != data.readInt());
-                float _arg3;
-                _arg3 = data.readFloat();
-                double _arg4;
-                _arg4 = data.readDouble();
-                java.lang.String _arg5;
-                _arg5 = data.readString();
-                this.basicTypes(_arg0, _arg1, _arg2, _arg3, _arg4, _arg5);
-                reply.writeNoException();
-                return true;
-            }
-            case TRANSACTION_getServiceName: {
-                data.enforceInterface(DESCRIPTOR);
-                this.getServiceName();
-                reply.writeNoException();
-                return true;
-            }
-        }
-        return super.onTransact(code, data, reply, flags);
-    }
+		<span class="c1">//这是跨进程调用 远程服务Binder的代理类，实现了需要为客户端提供的接口</span>
+        <span class="kd">private</span> <span class="kd">static</span> <span class="kd">class</span> <span class="nc">Proxy</span> <span class="kd">implements</span> <span class="n">com</span><span class="o">.</span><span class="na">mvp</span><span class="o">.</span><span class="na">githubdemo</span><span class="o">.</span><span class="na">IRemoteService</span> <span class="o">{</span>
+            <span class="kd">private</span> <span class="n">android</span><span class="o">.</span><span class="na">os</span><span class="o">.</span><span class="na">IBinder</span> <span class="n">mRemote</span><span class="o">;</span>
 
-	//这是跨进程调用 远程服务Binder的代理类，实现了需要为客户端提供的接口
-    private static class Proxy implements com.mvp.githubdemo.IRemoteService {
-        private android.os.IBinder mRemote;
+            <span class="n">Proxy</span><span class="o">(</span><span class="n">android</span><span class="o">.</span><span class="na">os</span><span class="o">.</span><span class="na">IBinder</span> <span class="n">remote</span><span class="o">)</span> <span class="o">{</span>
+                <span class="n">mRemote</span> <span class="o">=</span> <span class="n">remote</span><span class="o">;</span>
+            <span class="o">}</span>
 
-        Proxy(android.os.IBinder remote) {
-            mRemote = remote;
-        }
+            <span class="nd">@Override</span>
+            <span class="kd">public</span> <span class="n">android</span><span class="o">.</span><span class="na">os</span><span class="o">.</span><span class="na">IBinder</span> <span class="nf">asBinder</span><span class="o">()</span> <span class="o">{</span>
+                <span class="k">return</span> <span class="n">mRemote</span><span class="o">;</span>
+            <span class="o">}</span>
 
-        @Override
-        public android.os.IBinder asBinder() {
-            return mRemote;
-        }
+            <span class="kd">public</span> <span class="n">java</span><span class="o">.</span><span class="na">lang</span><span class="o">.</span><span class="na">String</span> <span class="nf">getInterfaceDescriptor</span><span class="o">()</span> <span class="o">{</span>
+                <span class="k">return</span> <span class="n">DESCRIPTOR</span><span class="o">;</span>
+            <span class="o">}</span>
 
-        public java.lang.String getInterfaceDescriptor() {
-            return DESCRIPTOR;
-        }
+            <span class="cm">/**
+             * Demonstrates some basic types that you can use as parameters
+             * and return values in AIDL.
+             */</span>
+            <span class="nd">@Override</span>
+            <span class="kd">public</span> <span class="kt">void</span> <span class="nf">basicTypes</span><span class="o">(</span><span class="kt">int</span> <span class="n">anInt</span><span class="o">,</span> <span class="kt">long</span> <span class="n">aLong</span><span class="o">,</span> <span class="kt">boolean</span> <span class="n">aBoolean</span><span class="o">,</span> <span class="kt">float</span> <span class="n">aFloat</span><span class="o">,</span> <span class="kt">double</span> <span class="n">aDouble</span><span class="o">,</span> <span class="n">java</span><span class="o">.</span><span class="na">lang</span><span class="o">.</span><span class="na">String</span> <span class="n">aString</span><span class="o">)</span> <span class="kd">throws</span> <span class="n">android</span><span class="o">.</span><span class="na">os</span><span class="o">.</span><span class="na">RemoteException</span> <span class="o">{</span>
+                <span class="n">android</span><span class="o">.</span><span class="na">os</span><span class="o">.</span><span class="na">Parcel</span> <span class="n">_data</span> <span class="o">=</span> <span class="n">android</span><span class="o">.</span><span class="na">os</span><span class="o">.</span><span class="na">Parcel</span><span class="o">.</span><span class="na">obtain</span><span class="o">();</span>
+                <span class="n">android</span><span class="o">.</span><span class="na">os</span><span class="o">.</span><span class="na">Parcel</span> <span class="n">_reply</span> <span class="o">=</span> <span class="n">android</span><span class="o">.</span><span class="na">os</span><span class="o">.</span><span class="na">Parcel</span><span class="o">.</span><span class="na">obtain</span><span class="o">();</span>
+                <span class="k">try</span> <span class="o">{</span>
+                    <span class="n">_data</span><span class="o">.</span><span class="na">writeInterfaceToken</span><span class="o">(</span><span class="n">DESCRIPTOR</span><span class="o">);</span>
+                    <span class="n">_data</span><span class="o">.</span><span class="na">writeInt</span><span class="o">(</span><span class="n">anInt</span><span class="o">);</span>
+                    <span class="n">_data</span><span class="o">.</span><span class="na">writeLong</span><span class="o">(</span><span class="n">aLong</span><span class="o">);</span>
+                    <span class="n">_data</span><span class="o">.</span><span class="na">writeInt</span><span class="o">(((</span><span class="n">aBoolean</span><span class="o">)</span> <span class="o">?</span> <span class="o">(</span><span class="mi">1</span><span class="o">)</span> <span class="o">:</span> <span class="o">(</span><span class="mi">0</span><span class="o">)));</span>
+                    <span class="n">_data</span><span class="o">.</span><span class="na">writeFloat</span><span class="o">(</span><span class="n">aFloat</span><span class="o">);</span>
+                    <span class="n">_data</span><span class="o">.</span><span class="na">writeDouble</span><span class="o">(</span><span class="n">aDouble</span><span class="o">);</span>
+                    <span class="n">_data</span><span class="o">.</span><span class="na">writeString</span><span class="o">(</span><span class="n">aString</span><span class="o">);</span>
+                    <span class="n">mRemote</span><span class="o">.</span><span class="na">transact</span><span class="o">(</span><span class="n">Stub</span><span class="o">.</span><span class="na">TRANSACTION_basicTypes</span><span class="o">,</span> <span class="n">_data</span><span class="o">,</span> <span class="n">_reply</span><span class="o">,</span> <span class="mi">0</span><span class="o">);</span>
+                    <span class="n">_reply</span><span class="o">.</span><span class="na">readException</span><span class="o">();</span>
+                <span class="o">}</span> <span class="k">finally</span> <span class="o">{</span>
+                    <span class="n">_reply</span><span class="o">.</span><span class="na">recycle</span><span class="o">();</span>
+                    <span class="n">_data</span><span class="o">.</span><span class="na">recycle</span><span class="o">();</span>
+                <span class="o">}</span>
+            <span class="o">}</span>
 
-        /**
-         * Demonstrates some basic types that you can use as parameters
-         * and return values in AIDL.
-         */
-        @Override
-        public void basicTypes(int anInt, long aLong, boolean aBoolean, float aFloat, double aDouble, java.lang.String aString) throws android.os.RemoteException {
-            android.os.Parcel _data = android.os.Parcel.obtain();
-            android.os.Parcel _reply = android.os.Parcel.obtain();
-            try {
-                _data.writeInterfaceToken(DESCRIPTOR);
-                _data.writeInt(anInt);
-                _data.writeLong(aLong);
-                _data.writeInt(((aBoolean) ? (1) : (0)));
-                _data.writeFloat(aFloat);
-                _data.writeDouble(aDouble);
-                _data.writeString(aString);
-                mRemote.transact(Stub.TRANSACTION_basicTypes, _data, _reply, 0);
-                _reply.readException();
-            } finally {
-                _reply.recycle();
-                _data.recycle();
-            }
-        }
+			
+            <span class="nd">@Override</span>
+            <span class="kd">public</span> <span class="kt">void</span> <span class="nf">getServiceName</span><span class="o">()</span> <span class="kd">throws</span> <span class="n">android</span><span class="o">.</span><span class="na">os</span><span class="o">.</span><span class="na">RemoteException</span> <span class="o">{</span>
+				<span class="c1">//这是要发送到服务端的数据，包括我们的参数</span>
+                <span class="n">android</span><span class="o">.</span><span class="na">os</span><span class="o">.</span><span class="na">Parcel</span> <span class="n">_data</span> <span class="o">=</span> <span class="n">android</span><span class="o">.</span><span class="na">os</span><span class="o">.</span><span class="na">Parcel</span><span class="o">.</span><span class="na">obtain</span><span class="o">();</span>
+				<span class="c1">//这是服务端响应我们的结果</span>
+                <span class="n">android</span><span class="o">.</span><span class="na">os</span><span class="o">.</span><span class="na">Parcel</span> <span class="n">_reply</span> <span class="o">=</span> <span class="n">android</span><span class="o">.</span><span class="na">os</span><span class="o">.</span><span class="na">Parcel</span><span class="o">.</span><span class="na">obtain</span><span class="o">();</span>
+				<span class="c1">//上面两个分别充当进程交互的输出流和输入流了</span>
+                <span class="k">try</span> <span class="o">{</span>
+					<span class="cm">/*
+					首先写 远程服务Binder对象的标识符，让Binder驱动帮我们找到它
+                    _data.writeInterfaceToken(DESCRIPTOR);
+					//这个是核心方法，通过 mRemote 这个IBinder代理对象，映射到远程的真实实现类Binder，参数分别是：
+					1. int型的整数，用于标识调用远程服务Binder对象的哪个方法，因为aidl是客户端和服务端共同的协议，所以这个int型值就正确的映射了具体方法
+					2. _data 我们传送到远程服务端的参数，很容易猜到，当服务端 Binder 接收到调用请求后，会按客户端封装数据的顺序去读取_data,这也是 AIDL协议需要约束的，确保程序的正确性。
+					3. _reply 服务端的响应数据，读取的时候，线程会挂起，直到远程服务返回了响应，所以我们做耗时任务的时候，需要考虑这种情况
+					4. flag，一般为0
+					*/</span>
+					
+                    <span class="n">mRemote</span><span class="o">.</span><span class="na">transact</span><span class="o">(</span><span class="n">Stub</span><span class="o">.</span><span class="na">TRANSACTION_getServiceName</span><span class="o">,</span> <span class="n">_data</span><span class="o">,</span> <span class="n">_reply</span><span class="o">,</span> <span class="mi">0</span><span class="o">);</span>
+                    <span class="n">_reply</span><span class="o">.</span><span class="na">readException</span><span class="o">();</span>
+                <span class="o">}</span> <span class="k">finally</span> <span class="o">{</span>
+                    <span class="n">_reply</span><span class="o">.</span><span class="na">recycle</span><span class="o">();</span>
+                    <span class="n">_data</span><span class="o">.</span><span class="na">recycle</span><span class="o">();</span>
+                <span class="o">}</span>
+            <span class="o">}</span>
+        <span class="o">}</span>
 
-		
-        @Override
-        public void getServiceName() throws android.os.RemoteException {
-			//这是要发送到服务端的数据，包括我们的参数
-            android.os.Parcel _data = android.os.Parcel.obtain();
-			//这是服务端响应我们的结果
-            android.os.Parcel _reply = android.os.Parcel.obtain();
-			//上面两个分别充当进程交互的输出流和输入流了
-            try {
-				/*
-				首先写 远程服务Binder对象的标识符，让Binder驱动帮我们找到它
-                _data.writeInterfaceToken(DESCRIPTOR);
-				//这个是核心方法，通过 mRemote 这个IBinder代理对象，映射到远程的真实实现类Binder，参数分别是：
-				1. int型的整数，用于标识调用远程服务Binder对象的哪个方法，因为aidl是客户端和服务端共同的协议，所以这个int型值就正确的映射了具体方法
-				2. _data 我们传送到远程服务端的参数，很容易猜到，当服务端 Binder 接收到调用请求后，会按客户端封装数据的顺序去读取_data,这也是 AIDL协议需要约束的，确保程序的正确性。
-				3. _reply 服务端的响应数据，读取的时候，线程会挂起，直到远程服务返回了响应，所以我们做耗时任务的时候，需要考虑这种情况
-				4. flag，一般为0
-				*/
-				
-                mRemote.transact(Stub.TRANSACTION_getServiceName, _data, _reply, 0);
-                _reply.readException();
-            } finally {
-                _reply.recycle();
-                _data.recycle();
-            }
-        }
-    }
+        <span class="kd">static</span> <span class="kd">final</span> <span class="kt">int</span> <span class="n">TRANSACTION_basicTypes</span> <span class="o">=</span> <span class="o">(</span><span class="n">android</span><span class="o">.</span><span class="na">os</span><span class="o">.</span><span class="na">IBinder</span><span class="o">.</span><span class="na">FIRST_CALL_TRANSACTION</span> <span class="o">+</span> <span class="mi">0</span><span class="o">);</span>
+        <span class="kd">static</span> <span class="kd">final</span> <span class="kt">int</span> <span class="n">TRANSACTION_getServiceName</span> <span class="o">=</span> <span class="o">(</span><span class="n">android</span><span class="o">.</span><span class="na">os</span><span class="o">.</span><span class="na">IBinder</span><span class="o">.</span><span class="na">FIRST_CALL_TRANSACTION</span> <span class="o">+</span> <span class="mi">1</span><span class="o">);</span>
+    <span class="o">}</span>
 
-    static final int TRANSACTION_basicTypes = (android.os.IBinder.FIRST_CALL_TRANSACTION + 0);
-    static final int TRANSACTION_getServiceName = (android.os.IBinder.FIRST_CALL_TRANSACTION + 1);
-}
+    <span class="cm">/**
+     * Demonstrates some basic types that you can use as parameters
+     * and return values in AIDL.
+     */</span>
+    <span class="kd">public</span> <span class="kt">void</span> <span class="nf">basicTypes</span><span class="o">(</span><span class="kt">int</span> <span class="n">anInt</span><span class="o">,</span> <span class="kt">long</span> <span class="n">aLong</span><span class="o">,</span> <span class="kt">boolean</span> <span class="n">aBoolean</span><span class="o">,</span> <span class="kt">float</span> <span class="n">aFloat</span><span class="o">,</span> <span class="kt">double</span> <span class="n">aDouble</span><span class="o">,</span> <span class="n">java</span><span class="o">.</span><span class="na">lang</span><span class="o">.</span><span class="na">String</span> <span class="n">aString</span><span class="o">)</span> <span class="kd">throws</span> <span class="n">android</span><span class="o">.</span><span class="na">os</span><span class="o">.</span><span class="na">RemoteException</span><span class="o">;</span>
 
-/**
- * Demonstrates some basic types that you can use as parameters
- * and return values in AIDL.
- */
-public void basicTypes(int anInt, long aLong, boolean aBoolean, float aFloat, double aDouble, java.lang.String aString) throws android.os.RemoteException;
-
-public void getServiceName() throws android.os.RemoteException;
-}
-</div>
+    <span class="kd">public</span> <span class="kt">void</span> <span class="nf">getServiceName</span><span class="o">()</span> <span class="kd">throws</span> <span class="n">android</span><span class="o">.</span><span class="na">os</span><span class="o">.</span><span class="na">RemoteException</span><span class="o">;</span>
+	<span class="o">}</span>
+	</code></pre></figure>
 
 <p>上面的注释非常详细的列出了各个细节的调用，客户端和服务端正是基于同一个aidl文件，遵守了跨进程数据交流的协议，从而解决了我一开始列出跨进程需要解决的一系列设计难题。</p>
 
