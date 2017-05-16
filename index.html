@@ -154,6 +154,151 @@
             ">
     			
 <div class="post-preview">
+    <a href="/drearming.github.com/2017/05/13/%E8%B7%A8%E8%BF%9B%E7%A8%8B%E9%80%9A%E4%BF%A1/">
+        <h2 class="post-title">
+            Android跨进程通信
+        </h2>
+        
+        <h3 class="post-subtitle">
+            从AIDL出发全面分析Binder机制
+        </h3>
+        
+        <div class="post-content-preview">
+            Android 跨进程通信
+
+Android的跨进程通信方式有多种，可以通过 Bundle、文件、SharePreference、Binder、Messenger、AIDL、socket等方式；
+
+这些方式有各自的应用场景：
+
+
+  bundle 实现了Parcelable接口，一般用于四大组件之间的数据交流。
+  文件  简单易用，不过不适用于高并发的情况，并且无法做到实时通信
+  Mes...
+        </div>
+    </a>
+    <p class="post-meta">
+        Posted by MVCoder on May 13, 2017
+    </p>
+</div>
+<hr>
+
+<div class="post-preview">
+    <a href="/drearming.github.com/2017/05/06/%E5%8F%8D%E5%90%91%E4%BB%A3%E7%90%86%E6%9C%8D%E5%8A%A1%E5%99%A8%E5%92%8C%E8%B4%9F%E8%BD%BD%E5%9D%87%E8%A1%A1/">
+        <h2 class="post-title">
+            反向代理和负载均衡
+        </h2>
+        
+        <h3 class="post-subtitle">
+            其实CND网络也就那么回事
+        </h3>
+        
+        <div class="post-content-preview">
+            反向代理服务器和DNS原理
+
+先丢出这么一个问题：像微信这种大型应用，每天上百亿的请求，其服务器是处理呢？如果一台服务器，那得有多么强大才可以？这根本不可能是一台服务器来做的事情，而是一群服务器来处理这上百亿的请求。
+
+不仅仅如此，微信还可以实现CDN网络，避开网络中堵塞的节点，实现数据的快速传输，可这样动态选择路线，又是如何做到呢？即CDN是如何实现的呢？
+
+这样的过程就实现就产生了疑问：...
+        </div>
+    </a>
+    <p class="post-meta">
+        Posted by MVCoder on May 6, 2017
+    </p>
+</div>
+<hr>
+
+<div class="post-preview">
+    <a href="/drearming.github.com/2017/05/01/HTTPS/">
+        <h2 class="post-title">
+            HTTPS协议
+        </h2>
+        
+        <h3 class="post-subtitle">
+            完美的防攻击协议
+        </h3>
+        
+        <div class="post-content-preview">
+            Https协议
+
+
+  Https协议是基于Http协议进行改进的，Https协议在Http和传输层协议之间假如了SSL（secure socket layer）层，ssl规定了更加安全的数据交换协议，所以https协议也可以说是更加安全的http协议
+
+
+背景
+
+我们在网络传输数据的时候，有时候会涉及到一些隐私性的数据，比如密码之类的，必须要防范在数据传输过程中，被黑客窃取的。
+
+本人对攻...
+        </div>
+    </a>
+    <p class="post-meta">
+        Posted by MVCoder on May 1, 2017
+    </p>
+</div>
+<hr>
+
+<div class="post-preview">
+    <a href="/drearming.github.com/2017/04/28/Okhttp/">
+        <h2 class="post-title">
+            okhttp源码分析
+        </h2>
+        
+        <h3 class="post-subtitle">
+            其实就是几个拦截器的事
+        </h3>
+        
+        <div class="post-content-preview">
+            Okhttp
+
+参考博客：okhttp源码分析
+
+
+  在Android端，最出名的网络框架要数Retrofit了，而Retrofit本身不处理网络，而是由内部的网络请求框架 okhttp 进行处理，并且现在Android内部的网络框架 HttpUrlConnection 也是改为基于okhttp 实现，这样子，okhttp是当今最厉害的网络请求框架。
+
+
+在Android客户端中，我们的网...
+        </div>
+    </a>
+    <p class="post-meta">
+        Posted by MVCoder on April 28, 2017
+    </p>
+</div>
+<hr>
+
+<div class="post-preview">
+    <a href="/drearming.github.com/2017/04/20/RxJava2/">
+        <h2 class="post-title">
+            RxJava 源码分析
+        </h2>
+        
+        <h3 class="post-subtitle">
+            操作符的和线程变换的原理
+        </h3>
+        
+        <div class="post-content-preview">
+            RxJava2
+
+参考链接：Rxjava2源码分析
+
+
+  RxJava 是基于观察者模式搭建的第三方库，拥有数量庞大且功能极其强大的操作符集合，线程切换变得异常简单，Rxjava可以使程序的逻辑更加清晰。
+
+
+基本例子:
+
+Observable.create(new ObservableOnSubscribe&lt;String&gt;() {
+        @Override
+    ...
+        </div>
+    </a>
+    <p class="post-meta">
+        Posted by MVCoder on April 20, 2017
+    </p>
+</div>
+<hr>
+
+<div class="post-preview">
     <a href="/drearming.github.com/2017/03/30/volley/">
         <h2 class="post-title">
             Volley网络框架
@@ -289,160 +434,6 @@ ThreadLocal，其机制是每一条线程都拥有一个ThreadLocalMap的公有�
 </div>
 <hr>
 
-<div class="post-preview">
-    <a href="/drearming.github.com/2017/01/03/Java_virtual_machine/">
-        <h2 class="post-title">
-            Java虚拟机全面了解
-        </h2>
-        
-        <h3 class="post-subtitle">
-            关于Java虚拟的内存布局，类加载机制，垃圾回收算法等等
-        </h3>
-        
-        <div class="post-content-preview">
-            Java虚拟机
-
-Java虚拟机的作用是什么？它如何实现这些基本功能的？
-
-作用：通过将.java文件编译成目标字节码.class文件，Java虚拟机通过加载.class文件，解析，将Java指令替换成系统底层指令，从而能够使Java程序无差别运行在各种平台上
-
-生命周期
-在Java虚拟机内部有两种线程：守护线程和非守护线程。守护线程通常是由虚拟机自己使用的，比如执行垃圾收集任务的线程。但是...
-        </div>
-    </a>
-    <p class="post-meta">
-        Posted by MVCoder on January 3, 2017
-    </p>
-</div>
-<hr>
-
-<div class="post-preview">
-    <a href="/drearming.github.com/2016/12/16/ScanSQCode/">
-        <h2 class="post-title">
-            利用zxing实现二维码扫描和生成
-        </h2>
-        
-        <h3 class="post-subtitle">
-            来研究一下这个非常常用的功能-板凳
-        </h3>
-        
-        <div class="post-content-preview">
-            二维码扫描和生成
-
-
-  参考博客：
-
-  二维码生成
-
-  二维码扫描1
-
-  二维码扫描2
-
-
-二维码的生成和识别都是采用了二维码第三方类库 - Zxing
-
-二维码的生成
-调用Zxing第三方库可以很容易生成二维码，我们用到的类是 MultiFormatWriter
-
-	public final class MultiFormatWriter implements Writer {
-
-...
-        </div>
-    </a>
-    <p class="post-meta">
-        Posted by MVCoder on December 16, 2016
-    </p>
-</div>
-<hr>
-
-<div class="post-preview">
-    <a href="/drearming.github.com/2016/12/10/Camera/">
-        <h2 class="post-title">
-            Camera 类
-        </h2>
-        
-        <h3 class="post-subtitle">
-            Camera是如何记录下你最美的时刻呢？
-        </h3>
-        
-        <div class="post-content-preview">
-            Camera
-
-首先检测运行环境，手机是否有摄像功能
-
-    
-
-	/** Check if this device has a camera */
-	private boolean checkCameraHardware(Context context) {
-   	 if (context.getPackageManager().hasSystemFeature(PackageMana...
-        </div>
-    </a>
-    <p class="post-meta">
-        Posted by MVCoder on December 10, 2016
-    </p>
-</div>
-<hr>
-
-<div class="post-preview">
-    <a href="/drearming.github.com/2016/11/21/NFC/">
-        <h2 class="post-title">
-            NFC刷卡原理和功能实现
-        </h2>
-        
-        <h3 class="post-subtitle">
-            生活中常用到的NFC功能是如何实现的呢？
-        </h3>
-        
-        <div class="post-content-preview">
-            NFC刷卡原理和功能实现
-
-
-  参考文献：Android API Guide的NFC
-
-
-如果想直接了解系统中的NFC功能模块，直接跳到文章的非NDEF TAG部分进行阅读，因为公司用的饭卡都是属于MifareClassic技术的，不含有NDEF数据
-
-如何检测手机是否支持NFC功能，或者是否打开了NFC功能
-
-    &lt;uses-feature android:name="andr...
-        </div>
-    </a>
-    <p class="post-meta">
-        Posted by MVCoder on November 21, 2016
-    </p>
-</div>
-<hr>
-
-<div class="post-preview">
-    <a href="/drearming.github.com/2016/11/02/java-hashmap/">
-        <h2 class="post-title">
-            从源码去了解HashMap
-        </h2>
-        
-        <h3 class="post-subtitle">
-            HashMap到底是如何实现的呢？
-        </h3>
-        
-        <div class="post-content-preview">
-            HashMap
-
-参考链接
-
-HashMap是我们经常使用的键值对集合，它的内部原理是如何实现的呢？
-
-在要理解hashmap的内部机制前，我们先要来了解一下一种数据结构hash表，我们常常使用的数据结构是Array，链表，Array在查询的时候非常快，但是删除操作却比较慢；而链表是查询比较慢，而插入删除比较快，有没有一种相对来说，更好的数据结构？有，这就是hash表
-
-hash表
-
-has...
-        </div>
-    </a>
-    <p class="post-meta">
-        Posted by MVCoder on November 2, 2016
-    </p>
-</div>
-<hr>
-
 
 <!-- Pager -->
 
@@ -475,7 +466,7 @@ has...
                             
                         
                             
-                                <a href="/drearming.github.com/tags/#Android" title="Android" rel="10">
+                                <a href="/drearming.github.com/tags/#Android" title="Android" rel="15">
                                     Android
                                 </a>
                             
@@ -501,9 +492,13 @@ has...
                             
                         
                             
+                                <a href="/drearming.github.com/tags/#网络" title="网络" rel="5">
+                                    网络
+                                </a>
+                            
                         
                             
-                                <a href="/drearming.github.com/tags/#Framework" title="Framework" rel="3">
+                                <a href="/drearming.github.com/tags/#Framework" title="Framework" rel="4">
                                     Framework
                                 </a>
                             

@@ -11,9 +11,9 @@
     <meta name="keyword"  content="Android Java Web">
     <link rel="shortcut icon" href="/drearming.github.com/img/favicon.jpg">
 
-    <title>从源码去了解HashMap - 陈俊杰 | MVCoder</title>
+    <title>HTTPS协议 - 陈俊杰 | MVCoder</title>
 
-    <link rel="canonical" href="https://drearming.github.io/drearming.github.com/2016/11/02/java-hashmap/">
+    <link rel="canonical" href="https://drearming.github.io/drearming.github.com/2017/05/01/HTTPS/">
 
     <!-- Bootstrap Core CSS -->
     <link rel="stylesheet" href="/drearming.github.com/css/bootstrap.min.css">
@@ -140,17 +140,17 @@
                 <div class="post-heading">
                     <div class="tags">
                         
-                        <a class="tag" href="/drearming.github.com/tags/#Java" title="Java">Java</a>
+                        <a class="tag" href="/drearming.github.com/tags/#网络" title="网络">网络</a>
                         
-                        <a class="tag" href="/drearming.github.com/tags/#容器" title="容器">容器</a>
+                        <a class="tag" href="/drearming.github.com/tags/#Android" title="Android">Android</a>
                         
                     </div>
-                    <h1>从源码去了解HashMap</h1>
+                    <h1>HTTPS协议</h1>
                     
                     
-                    <h2 class="subheading">HashMap到底是如何实现的呢？</h2>
+                    <h2 class="subheading">完美的防攻击协议</h2>
                     
-                    <span class="meta">Posted by MVCoder on November 2, 2016</span>
+                    <span class="meta">Posted by MVCoder on May 1, 2017</span>
                 </div>
             </div>
         </div>
@@ -168,70 +168,56 @@
                 col-md-10 col-md-offset-1
                 post-container">
 
-				<h2 id="hashmap">HashMap</h2>
+				<h1 id="https协议">Https协议</h1>
 
-<p><a href="http://blog.csdn.net/vking_wang/article/details/14166593">参考链接</a></p>
+<blockquote>
+  <p>Https协议是基于Http协议进行改进的，Https协议在Http和传输层协议之间假如了SSL（secure socket layer）层，ssl规定了更加安全的数据交换协议，所以https协议也可以说是更加安全的http协议</p>
+</blockquote>
 
-<p>HashMap是我们经常使用的键值对集合，它的内部原理是如何实现的呢？</p>
+<h2 id="背景">背景</h2>
 
-<p>在要理解hashmap的内部机制前，我们先要来了解一下一种数据结构hash表，我们常常使用的数据结构是Array，链表，Array在查询的时候非常快，但是删除操作却比较慢；而链表是查询比较慢，而插入删除比较快，有没有一种相对来说，更好的数据结构？有，这就是hash表</p>
+<p>我们在网络传输数据的时候，有时候会涉及到一些隐私性的数据，比如密码之类的，必须要防范在数据传输过程中，被黑客窃取的。</p>
 
-<h2 id="hash表">hash表</h2>
+<p>本人对攻防知识不太清楚，有错误和遗漏的地方麻烦指点一下。</p>
 
-<p>hash表是一个线性数组，但是跟Array不同的是，hash表存储的是一个Entry,Entry中有一个key值，一个value值，还有一个hash值，还有一个next(属于一个Entry)；</p>
+<p>防范的黑客手段有：</p>
 
-<p>我们在插入元素的时候，我们会对key值 调用hash函数(一般我们常用的hash函数是对数组的长度进行取模)，得出这个key值在hash表中的位置，然后将传进来的key，value键值对生成一个Entry，把Entry插进去。</p>
+<ol>
+  <li>客户端有可能在跟一个假冒的服务器进行数据交互，客户端从而有可能暴露隐私数据</li>
+  <li>客户端和服务端在传输数据过程中，有可能数据遭到拦截</li>
+  <li>黑客模仿客户端，做出非法请求</li>
+</ol>
 
-<p>但是有这么一种情况，因为不同的key值可能会出现相同的hash值，假如长度为10的数组，key是整型的，那么2和12都会插到数组下标为2这个位置中，所以这个时候就会发生冲突，这个我们常用的解决冲突的办法是用链表来解决这种问题。</p>
+<p>HTTPS可以有效解决上述几种入侵手段：</p>
 
-<figure class="highlight"><pre><code class="language-java" data-lang="java"><span class="o">![](</span><span class="nl">http:</span><span class="c1">//i.imgur.com/Z64NUz2.png)</span>
+<p>比如第一种情况：只要在建立连接的过程中，确定服务器的合法性即可避免入侵。那么如何做到呢？HTTPS有一个叫CA证书，它需要到CA机构去申请（提供个人信息、服务器信息、CA确认个人信息和服务器信息的正确性），证书包含我们服务器的公钥，数字签名（数字签名包含我们的服务器信息、公钥等信息签名而成，由CA机构的私钥进行加密，非服务器私钥）。</p>
 
-	<span class="kd">public</span> <span class="n">V</span> <span class="nf">put</span><span class="o">(</span><span class="n">K</span> <span class="n">key</span><span class="o">,</span> <span class="n">V</span> <span class="n">value</span><span class="o">)</span> <span class="o">{</span>
-        <span class="k">if</span> <span class="o">(</span><span class="n">table</span> <span class="o">==</span> <span class="n">EMPTY_TABLE</span><span class="o">)</span> <span class="o">{</span>
-            <span class="n">inflateTable</span><span class="o">(</span><span class="n">threshold</span><span class="o">);</span>
-        <span class="o">}</span>
-        <span class="k">if</span> <span class="o">(</span><span class="n">key</span> <span class="o">==</span> <span class="kc">null</span><span class="o">)</span>
-            <span class="k">return</span> <span class="nf">putForNullKey</span><span class="o">(</span><span class="n">value</span><span class="o">);</span>
-        <span class="kt">int</span> <span class="n">hash</span> <span class="o">=</span> <span class="n">sun</span><span class="o">.</span><span class="na">misc</span><span class="o">.</span><span class="na">Hashing</span><span class="o">.</span><span class="na">singleWordWangJenkinsHash</span><span class="o">(</span><span class="n">key</span><span class="o">);</span>
-        <span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="n">indexFor</span><span class="o">(</span><span class="n">hash</span><span class="o">,</span> <span class="n">table</span><span class="o">.</span><span class="na">length</span><span class="o">);</span>
-        <span class="k">for</span> <span class="o">(</span><span class="n">HashMapEntry</span><span class="o">&lt;</span><span class="n">K</span><span class="o">,</span><span class="n">V</span><span class="o">&gt;</span> <span class="n">e</span> <span class="o">=</span> <span class="n">table</span><span class="o">[</span><span class="n">i</span><span class="o">];</span> <span class="n">e</span> <span class="o">!=</span> <span class="kc">null</span><span class="o">;</span> <span class="n">e</span> <span class="o">=</span> <span class="n">e</span><span class="o">.</span><span class="na">next</span><span class="o">)</span> <span class="o">{</span>
-            <span class="n">Object</span> <span class="n">k</span><span class="o">;</span>
-			<span class="c1">//遍历是否有相同key值的Enrty，因为hashCode相等，key却不一定相等</span>
-            <span class="k">if</span> <span class="o">(</span><span class="n">e</span><span class="o">.</span><span class="na">hash</span> <span class="o">==</span> <span class="n">hash</span> <span class="o">&amp;&amp;</span> <span class="o">((</span><span class="n">k</span> <span class="o">=</span> <span class="n">e</span><span class="o">.</span><span class="na">key</span><span class="o">)</span> <span class="o">==</span> <span class="n">key</span> <span class="o">||</span> <span class="n">key</span><span class="o">.</span><span class="na">equals</span><span class="o">(</span><span class="n">k</span><span class="o">)))</span> <span class="o">{</span>
-                <span class="n">V</span> <span class="n">oldValue</span> <span class="o">=</span> <span class="n">e</span><span class="o">.</span><span class="na">value</span><span class="o">;</span>
-                <span class="n">e</span><span class="o">.</span><span class="na">value</span> <span class="o">=</span> <span class="n">value</span><span class="o">;</span>
-                <span class="n">e</span><span class="o">.</span><span class="na">recordAccess</span><span class="o">(</span><span class="k">this</span><span class="o">);</span>
-                <span class="k">return</span> <span class="n">oldValue</span><span class="o">;</span>
-            <span class="o">}</span>
-        <span class="o">}</span>
+<p>那么在客户端建立连接的过程中，服务端返回证书给客户端，客户端从自己的信任CA证书管理器里面读取信息到此证书的签名信息，向CA机构申请此证书的公钥，对签名信息进行解密，获取到数字签名中的服务器信息、公钥等信息，如果可以用公钥解开，则证明此证书是合法的，因为黑客不知道私钥，私钥保存在CA机构里面，CA机构确保私钥的安全性。</p>
 
-        <span class="n">modCount</span><span class="o">++;</span>
-        <span class="n">addEntry</span><span class="o">(</span><span class="n">hash</span><span class="o">,</span> <span class="n">key</span><span class="o">,</span> <span class="n">value</span><span class="o">,</span> <span class="n">i</span><span class="o">);</span>
-        <span class="k">return</span> <span class="kc">null</span><span class="o">;</span>
-    <span class="o">}</span>
+<p>第二种情况：客户端和服务端传输时，只需要数据进行加密，黑客无法知道密钥，即可避免拦截和串改的事件发生。</p>
 
-	<span class="kt">void</span> <span class="nf">addEntry</span><span class="o">(</span><span class="kt">int</span> <span class="n">hash</span><span class="o">,</span> <span class="n">K</span> <span class="n">key</span><span class="o">,</span> <span class="n">V</span> <span class="n">value</span><span class="o">,</span> <span class="kt">int</span> <span class="n">bucketIndex</span><span class="o">)</span> <span class="o">{</span>
-        <span class="k">if</span> <span class="o">((</span><span class="n">size</span> <span class="o">&gt;=</span> <span class="n">threshold</span><span class="o">)</span> <span class="o">&amp;&amp;</span> <span class="o">(</span><span class="kc">null</span> <span class="o">!=</span> <span class="n">table</span><span class="o">[</span><span class="n">bucketIndex</span><span class="o">]))</span> <span class="o">{</span>
-            <span class="n">resize</span><span class="o">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">table</span><span class="o">.</span><span class="na">length</span><span class="o">);</span>
-            <span class="n">hash</span> <span class="o">=</span> <span class="o">(</span><span class="kc">null</span> <span class="o">!=</span> <span class="n">key</span><span class="o">)</span> <span class="o">?</span> <span class="n">sun</span><span class="o">.</span><span class="na">misc</span><span class="o">.</span><span class="na">Hashing</span><span class="o">.</span><span class="na">singleWordWangJenkinsHash</span><span class="o">(</span><span class="n">key</span><span class="o">)</span> <span class="o">:</span> <span class="mi">0</span><span class="o">;</span>
-            <span class="n">bucketIndex</span> <span class="o">=</span> <span class="n">indexFor</span><span class="o">(</span><span class="n">hash</span><span class="o">,</span> <span class="n">table</span><span class="o">.</span><span class="na">length</span><span class="o">);</span>
-        <span class="o">}</span>
+<p>上面说过：当客户端验证服务器合法性时，服务器返回了证书给客户端，此证书除了可以确认服务器合法性的数字签名，还包括了公钥，这是服务器的公钥，非CA机构的公钥。客户端将随机产生一个对称加密密钥，然后用公钥进行加密，返回给服务器，服务器接收到之后，就知道了密钥，在建立数据连接后，对请求进行对称加密，即可完成加密操作。</p>
 
-        <span class="n">createEntry</span><span class="o">(</span><span class="n">hash</span><span class="o">,</span> <span class="n">key</span><span class="o">,</span> <span class="n">value</span><span class="o">,</span> <span class="n">bucketIndex</span><span class="o">);</span>
-    <span class="o">}</span>
+<p>因为黑客无法知道服务器私钥，且客户端生成的密钥完全随机，那么在传输过程中，就不会发生密钥泄漏了</p>
 
-	<span class="kt">void</span> <span class="nf">createEntry</span><span class="o">(</span><span class="kt">int</span> <span class="n">hash</span><span class="o">,</span> <span class="n">K</span> <span class="n">key</span><span class="o">,</span> <span class="n">V</span> <span class="n">value</span><span class="o">,</span> <span class="kt">int</span> <span class="n">bucketIndex</span><span class="o">)</span> <span class="o">{</span>
-        <span class="n">HashMapEntry</span><span class="o">&lt;</span><span class="n">K</span><span class="o">,</span><span class="n">V</span><span class="o">&gt;</span> <span class="n">e</span> <span class="o">=</span> <span class="n">table</span><span class="o">[</span><span class="n">bucketIndex</span><span class="o">];</span>
-		<span class="c1">//e参数就是指Entry.next；意思是在链表头插入最新的键值对</span>
-        <span class="n">table</span><span class="o">[</span><span class="n">bucketIndex</span><span class="o">]</span> <span class="o">=</span> <span class="k">new</span> <span class="n">HashMapEntry</span><span class="o">&lt;&gt;(</span><span class="n">hash</span><span class="o">,</span> <span class="n">key</span><span class="o">,</span> <span class="n">value</span><span class="o">,</span> <span class="n">e</span><span class="o">);</span>
-        <span class="n">size</span><span class="o">++;</span>
-    <span class="o">}</span></code></pre></figure>
+<p>第三种情况：不是Https做的事情，是Token做的事情，建立连接后，生成token，而token这些数据又经过对称加密，所以也确保了黑客无法冒认身份做非法请求。</p>
 
-<h2 id="-和equal-的区别">== 和equal() 的区别</h2>
+<h2 id="https-建立连接的流程">HTTPS 建立连接的流程</h2>
 
-<p>很简单，==有两种使用情况，都是比较栈堆中的value值； 例如是基本数据类型的话，就比较基本类型的值；如果是对象的话，就比较对象的引用，两者相等返回true；</p>
+<ol>
+  <li>客户端发出建立连接请求（包含加密算法的类型，证书的类型），服务端响应之后，返回给客户端一个CA证书</li>
+  <li>客户端收到CA证书之后，查询本地的信任CA证书列表，是否认证过，如果没认证过，提示用户通过验证。如果认证通过话，客户端会根据所制定的证书，向CA机构申请证书的公钥，用来解开服务器返回的证书的数字签名。如果可以解开的话，CA机构确保此证书是合法的，否则，断开连接，被认为是假冒证书。如果证书合法，则对比数字签名中的服务器信息，不一致，则认为证书被串改了，断开连接。如果一致，则承认服务器的合法性。</li>
+  <li>承认服务器合法性后，客户端随机生成一个对称加密的密钥，用证书中的公钥（服务端的公钥，非CA机构的证书公钥）对其进行加密，返回给客户端。</li>
+  <li>服务端用其私钥对公钥进行解密，获取到密钥（这个密钥是采用对称加密的，这效率比非对称加密快多了），返回客户端一个确认信号</li>
+  <li>到此，双方都知道传输过程的加密密钥了，即可对请求进行加密处理，连接正式建立。</li>
+</ol>
 
-<p>equal()方法是应用于Object的，同样是比较两个对象的引用是否相同。。但是这个方法是可以被覆盖的，就像String一样，String将其改成比较字符串的内容了，而不是比较引用；所以当我们想修改一个类的比较方法时候，就可以修改equal方法的比较规则；</p>
+<h2 id="https的用法">HTTPS的用法</h2>
+
+<p>HTTPS建立连接过程中，涉及很多步骤，非常消耗时间。所以Https绝对不能全部应用在应用中，应该对某部分需要高度安全的请求再用https协议，有利于访问的高效性。</p>
+
+<p>OkhttpClient可以支持https协议
+通过设置 sslSocketFactory() 进行添加；</p>
 
 
 
@@ -242,17 +228,14 @@
                 </style>
                 <div class="ds-share"
                     style="text-align: right"
-                    data-thread-key="/2016/11/02/java-hashmap"
-                    data-title="从源码去了解HashMap"
-                    data-url="https://drearming.github.io/drearming.github.com/2016/11/02/java-hashmap/"
+                    data-thread-key="/2017/05/01/HTTPS"
+                    data-title="HTTPS协议"
+                    data-url="https://drearming.github.io/drearming.github.com/2017/05/01/HTTPS/"
                     data-images="https://drearming.github.io/drearming.github.com/img/post-bg-2015.jpg"
-                    data-content="HashMap
+                    data-content="Https协议
 
-参考链接
 
-HashMap是我们经常使用的键值对集合，它的内部原理是如何实现的呢？
-
-在要理解hashmap的内部机制前，我们先要来了解... | 陈俊杰 | MVCoder " >
+  Https协议是基于Http协议进行改进的，Https协议在Http和传输层协议之间假如了SSL（secure socket la... | 陈俊杰 | MVCoder " >
                     <div class="ds-share-inline">
                       <ul  class="ds-share-icons-16">
                         <li data-toggle="ds-share-icons-more"><a class="ds-more" href="#">分享到：</a></li>
@@ -272,12 +255,12 @@ HashMap是我们经常使用的键值对集合，它的内部原理是如何实�
                 <ul class="pager">
                     
                     <li class="previous">
-                        <a href="/drearming.github.com/2016/10/15/android/" data-toggle="tooltip" data-placement="top" title="消息队列机制">&larr; Previous Post</a>
+                        <a href="/drearming.github.com/2017/04/28/Okhttp/" data-toggle="tooltip" data-placement="top" title="okhttp源码分析">&larr; Previous Post</a>
                     </li>
                     
                     
                     <li class="next">
-                        <a href="/drearming.github.com/2016/11/21/NFC/" data-toggle="tooltip" data-placement="top" title="NFC刷卡原理和功能实现">Next Post &rarr;</a>
+                        <a href="/drearming.github.com/2017/05/06/%E5%8F%8D%E5%90%91%E4%BB%A3%E7%90%86%E6%9C%8D%E5%8A%A1%E5%99%A8%E5%92%8C%E8%B4%9F%E8%BD%BD%E5%9D%87%E8%A1%A1/" data-toggle="tooltip" data-placement="top" title="反向代理和负载均衡">Next Post &rarr;</a>
                     </li>
                     
                 </ul>
@@ -287,9 +270,9 @@ HashMap是我们经常使用的键值对集合，它的内部原理是如何实�
                 <!-- 多说评论框 start -->
                 <div class="comment">
                     <div class="ds-thread"
-                        data-thread-key="/2016/11/02/java-hashmap"
-                        data-title="从源码去了解HashMap"
-                        data-url="https://drearming.github.io/drearming.github.com/2016/11/02/java-hashmap/" >
+                        data-thread-key="/2017/05/01/HTTPS"
+                        data-title="HTTPS协议"
+                        data-url="https://drearming.github.io/drearming.github.com/2017/05/01/HTTPS/" >
                     </div>
                 </div>
                 <!-- 多说评论框 end -->

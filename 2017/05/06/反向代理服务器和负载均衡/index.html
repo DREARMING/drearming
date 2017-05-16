@@ -11,9 +11,9 @@
     <meta name="keyword"  content="Android Java Web">
     <link rel="shortcut icon" href="/drearming.github.com/img/favicon.jpg">
 
-    <title>从源码去了解HashMap - 陈俊杰 | MVCoder</title>
+    <title>反向代理和负载均衡 - 陈俊杰 | MVCoder</title>
 
-    <link rel="canonical" href="https://drearming.github.io/drearming.github.com/2016/11/02/java-hashmap/">
+    <link rel="canonical" href="https://drearming.github.io/drearming.github.com/2017/05/06/%E5%8F%8D%E5%90%91%E4%BB%A3%E7%90%86%E6%9C%8D%E5%8A%A1%E5%99%A8%E5%92%8C%E8%B4%9F%E8%BD%BD%E5%9D%87%E8%A1%A1/">
 
     <!-- Bootstrap Core CSS -->
     <link rel="stylesheet" href="/drearming.github.com/css/bootstrap.min.css">
@@ -140,17 +140,17 @@
                 <div class="post-heading">
                     <div class="tags">
                         
-                        <a class="tag" href="/drearming.github.com/tags/#Java" title="Java">Java</a>
+                        <a class="tag" href="/drearming.github.com/tags/#网络" title="网络">网络</a>
                         
-                        <a class="tag" href="/drearming.github.com/tags/#容器" title="容器">容器</a>
+                        <a class="tag" href="/drearming.github.com/tags/#Android" title="Android">Android</a>
                         
                     </div>
-                    <h1>从源码去了解HashMap</h1>
+                    <h1>反向代理和负载均衡</h1>
                     
                     
-                    <h2 class="subheading">HashMap到底是如何实现的呢？</h2>
+                    <h2 class="subheading">其实CND网络也就那么回事</h2>
                     
-                    <span class="meta">Posted by MVCoder on November 2, 2016</span>
+                    <span class="meta">Posted by MVCoder on May 6, 2017</span>
                 </div>
             </div>
         </div>
@@ -168,71 +168,37 @@
                 col-md-10 col-md-offset-1
                 post-container">
 
-				<h2 id="hashmap">HashMap</h2>
+				<h1 id="反向代理服务器和dns原理">反向代理服务器和DNS原理</h1>
 
-<p><a href="http://blog.csdn.net/vking_wang/article/details/14166593">参考链接</a></p>
+<p>先丢出这么一个问题：像微信这种大型应用，每天上百亿的请求，其服务器是处理呢？如果一台服务器，那得有多么强大才可以？这根本不可能是一台服务器来做的事情，而是一群服务器来处理这上百亿的请求。</p>
 
-<p>HashMap是我们经常使用的键值对集合，它的内部原理是如何实现的呢？</p>
+<p>不仅仅如此，微信还可以实现CDN网络，避开网络中堵塞的节点，实现数据的快速传输，可这样动态选择路线，又是如何做到呢？即CDN是如何实现的呢？</p>
 
-<p>在要理解hashmap的内部机制前，我们先要来了解一下一种数据结构hash表，我们常常使用的数据结构是Array，链表，Array在查询的时候非常快，但是删除操作却比较慢；而链表是查询比较慢，而插入删除比较快，有没有一种相对来说，更好的数据结构？有，这就是hash表</p>
+<p>这样的过程就实现就产生了疑问：我们客户端的请求会动态分配到不同的服务器地址，即服务器群需要运行相同的应用。请求时如何动态分配服务器地址呢？</p>
 
-<h2 id="hash表">hash表</h2>
+<h2 id="cdn原理">CDN原理：</h2>
 
-<p>hash表是一个线性数组，但是跟Array不同的是，hash表存储的是一个Entry,Entry中有一个key值，一个value值，还有一个hash值，还有一个next(属于一个Entry)；</p>
+<p>我们访问服务器的时候是域名+端口号来确定服务器地址的，那么我们发出请求是：</p>
 
-<p>我们在插入元素的时候，我们会对key值 调用hash函数(一般我们常用的hash函数是对数组的长度进行取模)，得出这个key值在hash表中的位置，然后将传进来的key，value键值对生成一个Entry，把Entry插进去。</p>
+<ol>
+  <li>用户向浏览器输入www.web.com这个域名，浏览器第一次发现本地没有dns缓存，则向网站的DNS服务器请求；</li>
+</ol>
 
-<p>但是有这么一种情况，因为不同的key值可能会出现相同的hash值，假如长度为10的数组，key是整型的，那么2和12都会插到数组下标为2这个位置中，所以这个时候就会发生冲突，这个我们常用的解决冲突的办法是用链表来解决这种问题。</p>
+<p>2.网站的DNS域名解析器设置了CNAME，指向了www.web.51cdn.com,请求指向了CDN网络中的智能DNS负载均衡系统（自建DNS系统，可以找到网络中阻塞不高的服务器），负载均衡的意思是，将大量的请求均匀分配到各个服务器上，以避免某个服务器太多请求导致瘫痪，同时，这种负载均衡还可以避免某个服务器无法工作，程序就不能运行，因为其他服务器都可以处理这些请求；</p>
 
-<figure class="highlight"><pre><code class="language-java" data-lang="java"><span class="o">![](</span><span class="nl">http:</span><span class="c1">//i.imgur.com/Z64NUz2.png)</span>
+<p>3.智能DNS负载均衡系统解析域名，把对用户响应速度最快的IP节点返回给用户；</p>
 
-	<span class="kd">public</span> <span class="n">V</span> <span class="nf">put</span><span class="o">(</span><span class="n">K</span> <span class="n">key</span><span class="o">,</span> <span class="n">V</span> <span class="n">value</span><span class="o">)</span> <span class="o">{</span>
-        <span class="k">if</span> <span class="o">(</span><span class="n">table</span> <span class="o">==</span> <span class="n">EMPTY_TABLE</span><span class="o">)</span> <span class="o">{</span>
-            <span class="n">inflateTable</span><span class="o">(</span><span class="n">threshold</span><span class="o">);</span>
-        <span class="o">}</span>
-        <span class="k">if</span> <span class="o">(</span><span class="n">key</span> <span class="o">==</span> <span class="kc">null</span><span class="o">)</span>
-            <span class="k">return</span> <span class="nf">putForNullKey</span><span class="o">(</span><span class="n">value</span><span class="o">);</span>
-        <span class="kt">int</span> <span class="n">hash</span> <span class="o">=</span> <span class="n">sun</span><span class="o">.</span><span class="na">misc</span><span class="o">.</span><span class="na">Hashing</span><span class="o">.</span><span class="na">singleWordWangJenkinsHash</span><span class="o">(</span><span class="n">key</span><span class="o">);</span>
-        <span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="n">indexFor</span><span class="o">(</span><span class="n">hash</span><span class="o">,</span> <span class="n">table</span><span class="o">.</span><span class="na">length</span><span class="o">);</span>
-        <span class="k">for</span> <span class="o">(</span><span class="n">HashMapEntry</span><span class="o">&lt;</span><span class="n">K</span><span class="o">,</span><span class="n">V</span><span class="o">&gt;</span> <span class="n">e</span> <span class="o">=</span> <span class="n">table</span><span class="o">[</span><span class="n">i</span><span class="o">];</span> <span class="n">e</span> <span class="o">!=</span> <span class="kc">null</span><span class="o">;</span> <span class="n">e</span> <span class="o">=</span> <span class="n">e</span><span class="o">.</span><span class="na">next</span><span class="o">)</span> <span class="o">{</span>
-            <span class="n">Object</span> <span class="n">k</span><span class="o">;</span>
-			<span class="c1">//遍历是否有相同key值的Enrty，因为hashCode相等，key却不一定相等</span>
-            <span class="k">if</span> <span class="o">(</span><span class="n">e</span><span class="o">.</span><span class="na">hash</span> <span class="o">==</span> <span class="n">hash</span> <span class="o">&amp;&amp;</span> <span class="o">((</span><span class="n">k</span> <span class="o">=</span> <span class="n">e</span><span class="o">.</span><span class="na">key</span><span class="o">)</span> <span class="o">==</span> <span class="n">key</span> <span class="o">||</span> <span class="n">key</span><span class="o">.</span><span class="na">equals</span><span class="o">(</span><span class="n">k</span><span class="o">)))</span> <span class="o">{</span>
-                <span class="n">V</span> <span class="n">oldValue</span> <span class="o">=</span> <span class="n">e</span><span class="o">.</span><span class="na">value</span><span class="o">;</span>
-                <span class="n">e</span><span class="o">.</span><span class="na">value</span> <span class="o">=</span> <span class="n">value</span><span class="o">;</span>
-                <span class="n">e</span><span class="o">.</span><span class="na">recordAccess</span><span class="o">(</span><span class="k">this</span><span class="o">);</span>
-                <span class="k">return</span> <span class="n">oldValue</span><span class="o">;</span>
-            <span class="o">}</span>
-        <span class="o">}</span>
+<p>4.用户向该IP节点（CDN服务器）发出请求；</p>
 
-        <span class="n">modCount</span><span class="o">++;</span>
-        <span class="n">addEntry</span><span class="o">(</span><span class="n">hash</span><span class="o">,</span> <span class="n">key</span><span class="o">,</span> <span class="n">value</span><span class="o">,</span> <span class="n">i</span><span class="o">);</span>
-        <span class="k">return</span> <span class="kc">null</span><span class="o">;</span>
-    <span class="o">}</span>
+<p>5.由于是第一次访问，CDN服务器会向原web站点请求，并缓存内容；</p>
 
-	<span class="kt">void</span> <span class="nf">addEntry</span><span class="o">(</span><span class="kt">int</span> <span class="n">hash</span><span class="o">,</span> <span class="n">K</span> <span class="n">key</span><span class="o">,</span> <span class="n">V</span> <span class="n">value</span><span class="o">,</span> <span class="kt">int</span> <span class="n">bucketIndex</span><span class="o">)</span> <span class="o">{</span>
-        <span class="k">if</span> <span class="o">((</span><span class="n">size</span> <span class="o">&gt;=</span> <span class="n">threshold</span><span class="o">)</span> <span class="o">&amp;&amp;</span> <span class="o">(</span><span class="kc">null</span> <span class="o">!=</span> <span class="n">table</span><span class="o">[</span><span class="n">bucketIndex</span><span class="o">]))</span> <span class="o">{</span>
-            <span class="n">resize</span><span class="o">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">table</span><span class="o">.</span><span class="na">length</span><span class="o">);</span>
-            <span class="n">hash</span> <span class="o">=</span> <span class="o">(</span><span class="kc">null</span> <span class="o">!=</span> <span class="n">key</span><span class="o">)</span> <span class="o">?</span> <span class="n">sun</span><span class="o">.</span><span class="na">misc</span><span class="o">.</span><span class="na">Hashing</span><span class="o">.</span><span class="na">singleWordWangJenkinsHash</span><span class="o">(</span><span class="n">key</span><span class="o">)</span> <span class="o">:</span> <span class="mi">0</span><span class="o">;</span>
-            <span class="n">bucketIndex</span> <span class="o">=</span> <span class="n">indexFor</span><span class="o">(</span><span class="n">hash</span><span class="o">,</span> <span class="n">table</span><span class="o">.</span><span class="na">length</span><span class="o">);</span>
-        <span class="o">}</span>
+<p>6.请求结果发给用户。</p>
 
-        <span class="n">createEntry</span><span class="o">(</span><span class="n">hash</span><span class="o">,</span> <span class="n">key</span><span class="o">,</span> <span class="n">value</span><span class="o">,</span> <span class="n">bucketIndex</span><span class="o">);</span>
-    <span class="o">}</span>
+<h2 id="发向代理服务器">发向代理服务器</h2>
 
-	<span class="kt">void</span> <span class="nf">createEntry</span><span class="o">(</span><span class="kt">int</span> <span class="n">hash</span><span class="o">,</span> <span class="n">K</span> <span class="n">key</span><span class="o">,</span> <span class="n">V</span> <span class="n">value</span><span class="o">,</span> <span class="kt">int</span> <span class="n">bucketIndex</span><span class="o">)</span> <span class="o">{</span>
-        <span class="n">HashMapEntry</span><span class="o">&lt;</span><span class="n">K</span><span class="o">,</span><span class="n">V</span><span class="o">&gt;</span> <span class="n">e</span> <span class="o">=</span> <span class="n">table</span><span class="o">[</span><span class="n">bucketIndex</span><span class="o">];</span>
-		<span class="c1">//e参数就是指Entry.next；意思是在链表头插入最新的键值对</span>
-        <span class="n">table</span><span class="o">[</span><span class="n">bucketIndex</span><span class="o">]</span> <span class="o">=</span> <span class="k">new</span> <span class="n">HashMapEntry</span><span class="o">&lt;&gt;(</span><span class="n">hash</span><span class="o">,</span> <span class="n">key</span><span class="o">,</span> <span class="n">value</span><span class="o">,</span> <span class="n">e</span><span class="o">);</span>
-        <span class="n">size</span><span class="o">++;</span>
-    <span class="o">}</span></code></pre></figure>
+<p>反向代理服务器就是起到隔绝作用，客户端请求都发送到反向代理服务器，反向代理服务器检测了请求的合法性，再将请求发送到内部网络的真实服务器，服务器处理完请求后，将数据返回给反向代理服务器，反向代理服务器将其返回给客户端。</p>
 
-<h2 id="-和equal-的区别">== 和equal() 的区别</h2>
-
-<p>很简单，==有两种使用情况，都是比较栈堆中的value值； 例如是基本数据类型的话，就比较基本类型的值；如果是对象的话，就比较对象的引用，两者相等返回true；</p>
-
-<p>equal()方法是应用于Object的，同样是比较两个对象的引用是否相同。。但是这个方法是可以被覆盖的，就像String一样，String将其改成比较字符串的内容了，而不是比较引用；所以当我们想修改一个类的比较方法时候，就可以修改equal方法的比较规则；</p>
-
+<p>这个过程，反向服务器起到很好的减压作用，避免大量请求直接访问内网服务器。并且反向服务器内部可以连接多个服务器，又可以实现请求分发的功能。</p>
 
 
                 <hr>
@@ -242,17 +208,13 @@
                 </style>
                 <div class="ds-share"
                     style="text-align: right"
-                    data-thread-key="/2016/11/02/java-hashmap"
-                    data-title="从源码去了解HashMap"
-                    data-url="https://drearming.github.io/drearming.github.com/2016/11/02/java-hashmap/"
+                    data-thread-key="/2017/05/06/反向代理服务器和负载均衡"
+                    data-title="反向代理和负载均衡"
+                    data-url="https://drearming.github.io/drearming.github.com/2017/05/06/%E5%8F%8D%E5%90%91%E4%BB%A3%E7%90%86%E6%9C%8D%E5%8A%A1%E5%99%A8%E5%92%8C%E8%B4%9F%E8%BD%BD%E5%9D%87%E8%A1%A1/"
                     data-images="https://drearming.github.io/drearming.github.com/img/post-bg-2015.jpg"
-                    data-content="HashMap
+                    data-content="反向代理服务器和DNS原理
 
-参考链接
-
-HashMap是我们经常使用的键值对集合，它的内部原理是如何实现的呢？
-
-在要理解hashmap的内部机制前，我们先要来了解... | 陈俊杰 | MVCoder " >
+先丢出这么一个问题：像微信这种大型应用，每天上百亿的请求，其服务器是处理呢？如果一台服务器，那得有多么强大才可以？这根本不可... | 陈俊杰 | MVCoder " >
                     <div class="ds-share-inline">
                       <ul  class="ds-share-icons-16">
                         <li data-toggle="ds-share-icons-more"><a class="ds-more" href="#">分享到：</a></li>
@@ -272,12 +234,12 @@ HashMap是我们经常使用的键值对集合，它的内部原理是如何实�
                 <ul class="pager">
                     
                     <li class="previous">
-                        <a href="/drearming.github.com/2016/10/15/android/" data-toggle="tooltip" data-placement="top" title="消息队列机制">&larr; Previous Post</a>
+                        <a href="/drearming.github.com/2017/05/01/HTTPS/" data-toggle="tooltip" data-placement="top" title="HTTPS协议">&larr; Previous Post</a>
                     </li>
                     
                     
                     <li class="next">
-                        <a href="/drearming.github.com/2016/11/21/NFC/" data-toggle="tooltip" data-placement="top" title="NFC刷卡原理和功能实现">Next Post &rarr;</a>
+                        <a href="/drearming.github.com/2017/05/13/%E8%B7%A8%E8%BF%9B%E7%A8%8B%E9%80%9A%E4%BF%A1/" data-toggle="tooltip" data-placement="top" title="Android跨进程通信">Next Post &rarr;</a>
                     </li>
                     
                 </ul>
@@ -287,9 +249,9 @@ HashMap是我们经常使用的键值对集合，它的内部原理是如何实�
                 <!-- 多说评论框 start -->
                 <div class="comment">
                     <div class="ds-thread"
-                        data-thread-key="/2016/11/02/java-hashmap"
-                        data-title="从源码去了解HashMap"
-                        data-url="https://drearming.github.io/drearming.github.com/2016/11/02/java-hashmap/" >
+                        data-thread-key="/2017/05/06/反向代理服务器和负载均衡"
+                        data-title="反向代理和负载均衡"
+                        data-url="https://drearming.github.io/drearming.github.com/2017/05/06/%E5%8F%8D%E5%90%91%E4%BB%A3%E7%90%86%E6%9C%8D%E5%8A%A1%E5%99%A8%E5%92%8C%E8%B4%9F%E8%BD%BD%E5%9D%87%E8%A1%A1/" >
                     </div>
                 </div>
                 <!-- 多说评论框 end -->

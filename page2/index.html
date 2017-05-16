@@ -154,6 +154,160 @@
             ">
     			
 <div class="post-preview">
+    <a href="/drearming.github.com/2017/01/03/Java_virtual_machine/">
+        <h2 class="post-title">
+            Java虚拟机全面了解
+        </h2>
+        
+        <h3 class="post-subtitle">
+            关于Java虚拟的内存布局，类加载机制，垃圾回收算法等等
+        </h3>
+        
+        <div class="post-content-preview">
+            Java虚拟机
+
+Java虚拟机的作用是什么？它如何实现这些基本功能的？
+
+作用：通过将.java文件编译成目标字节码.class文件，Java虚拟机通过加载.class文件，解析，将Java指令替换成系统底层指令，从而能够使Java程序无差别运行在各种平台上
+
+生命周期
+在Java虚拟机内部有两种线程：守护线程和非守护线程。守护线程通常是由虚拟机自己使用的，比如执行垃圾收集任务的线程。但是...
+        </div>
+    </a>
+    <p class="post-meta">
+        Posted by MVCoder on January 3, 2017
+    </p>
+</div>
+<hr>
+
+<div class="post-preview">
+    <a href="/drearming.github.com/2016/12/16/ScanSQCode/">
+        <h2 class="post-title">
+            利用zxing实现二维码扫描和生成
+        </h2>
+        
+        <h3 class="post-subtitle">
+            来研究一下这个非常常用的功能-板凳
+        </h3>
+        
+        <div class="post-content-preview">
+            二维码扫描和生成
+
+
+  参考博客：
+
+  二维码生成
+
+  二维码扫描1
+
+  二维码扫描2
+
+
+二维码的生成和识别都是采用了二维码第三方类库 - Zxing
+
+二维码的生成
+调用Zxing第三方库可以很容易生成二维码，我们用到的类是 MultiFormatWriter
+
+	public final class MultiFormatWriter implements Writer {
+
+...
+        </div>
+    </a>
+    <p class="post-meta">
+        Posted by MVCoder on December 16, 2016
+    </p>
+</div>
+<hr>
+
+<div class="post-preview">
+    <a href="/drearming.github.com/2016/12/10/Camera/">
+        <h2 class="post-title">
+            Camera 类
+        </h2>
+        
+        <h3 class="post-subtitle">
+            Camera是如何记录下你最美的时刻呢？
+        </h3>
+        
+        <div class="post-content-preview">
+            Camera
+
+首先检测运行环境，手机是否有摄像功能
+
+    
+
+	/** Check if this device has a camera */
+	private boolean checkCameraHardware(Context context) {
+   	 if (context.getPackageManager().hasSystemFeature(PackageMana...
+        </div>
+    </a>
+    <p class="post-meta">
+        Posted by MVCoder on December 10, 2016
+    </p>
+</div>
+<hr>
+
+<div class="post-preview">
+    <a href="/drearming.github.com/2016/11/21/NFC/">
+        <h2 class="post-title">
+            NFC刷卡原理和功能实现
+        </h2>
+        
+        <h3 class="post-subtitle">
+            生活中常用到的NFC功能是如何实现的呢？
+        </h3>
+        
+        <div class="post-content-preview">
+            NFC刷卡原理和功能实现
+
+
+  参考文献：Android API Guide的NFC
+
+
+如果想直接了解系统中的NFC功能模块，直接跳到文章的非NDEF TAG部分进行阅读，因为公司用的饭卡都是属于MifareClassic技术的，不含有NDEF数据
+
+如何检测手机是否支持NFC功能，或者是否打开了NFC功能
+
+    &lt;uses-feature android:name="andr...
+        </div>
+    </a>
+    <p class="post-meta">
+        Posted by MVCoder on November 21, 2016
+    </p>
+</div>
+<hr>
+
+<div class="post-preview">
+    <a href="/drearming.github.com/2016/11/02/java-hashmap/">
+        <h2 class="post-title">
+            从源码去了解HashMap
+        </h2>
+        
+        <h3 class="post-subtitle">
+            HashMap到底是如何实现的呢？
+        </h3>
+        
+        <div class="post-content-preview">
+            HashMap
+
+参考链接
+
+HashMap是我们经常使用的键值对集合，它的内部原理是如何实现的呢？
+
+在要理解hashmap的内部机制前，我们先要来了解一下一种数据结构hash表，我们常常使用的数据结构是Array，链表，Array在查询的时候非常快，但是删除操作却比较慢；而链表是查询比较慢，而插入删除比较快，有没有一种相对来说，更好的数据结构？有，这就是hash表
+
+hash表
+
+has...
+        </div>
+    </a>
+    <p class="post-meta">
+        Posted by MVCoder on November 2, 2016
+    </p>
+</div>
+<hr>
+
+<div class="post-preview">
     <a href="/drearming.github.com/2016/10/15/android/">
         <h2 class="post-title">
             消息队列机制
@@ -276,7 +430,7 @@ XML  是跨平台的，但是XML的解析和数据量传输非常庞大，嵌套
                             
                         
                             
-                                <a href="/drearming.github.com/tags/#Android" title="Android" rel="10">
+                                <a href="/drearming.github.com/tags/#Android" title="Android" rel="15">
                                     Android
                                 </a>
                             
@@ -302,9 +456,13 @@ XML  是跨平台的，但是XML的解析和数据量传输非常庞大，嵌套
                             
                         
                             
+                                <a href="/drearming.github.com/tags/#网络" title="网络" rel="5">
+                                    网络
+                                </a>
+                            
                         
                             
-                                <a href="/drearming.github.com/tags/#Framework" title="Framework" rel="3">
+                                <a href="/drearming.github.com/tags/#Framework" title="Framework" rel="4">
                                     Framework
                                 </a>
                             

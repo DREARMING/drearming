@@ -11,9 +11,9 @@
     <meta name="keyword"  content="Android Java Web">
     <link rel="shortcut icon" href="/drearming.github.com/img/favicon.jpg">
 
-    <title>从源码去了解HashMap - 陈俊杰 | MVCoder</title>
+    <title>Android跨进程通信 - 陈俊杰 | MVCoder</title>
 
-    <link rel="canonical" href="https://drearming.github.io/drearming.github.com/2016/11/02/java-hashmap/">
+    <link rel="canonical" href="https://drearming.github.io/drearming.github.com/2017/05/13/%E8%B7%A8%E8%BF%9B%E7%A8%8B%E9%80%9A%E4%BF%A1/">
 
     <!-- Bootstrap Core CSS -->
     <link rel="stylesheet" href="/drearming.github.com/css/bootstrap.min.css">
@@ -140,17 +140,17 @@
                 <div class="post-heading">
                     <div class="tags">
                         
-                        <a class="tag" href="/drearming.github.com/tags/#Java" title="Java">Java</a>
+                        <a class="tag" href="/drearming.github.com/tags/#Framework" title="Framework">Framework</a>
                         
-                        <a class="tag" href="/drearming.github.com/tags/#容器" title="容器">容器</a>
+                        <a class="tag" href="/drearming.github.com/tags/#Android" title="Android">Android</a>
                         
                     </div>
-                    <h1>从源码去了解HashMap</h1>
+                    <h1>Android跨进程通信</h1>
                     
                     
-                    <h2 class="subheading">HashMap到底是如何实现的呢？</h2>
+                    <h2 class="subheading">从AIDL出发全面分析Binder机制</h2>
                     
-                    <span class="meta">Posted by MVCoder on November 2, 2016</span>
+                    <span class="meta">Posted by MVCoder on May 13, 2017</span>
                 </div>
             </div>
         </div>
@@ -168,70 +168,250 @@
                 col-md-10 col-md-offset-1
                 post-container">
 
-				<h2 id="hashmap">HashMap</h2>
+				<h1 id="android-跨进程通信">Android 跨进程通信</h1>
 
-<p><a href="http://blog.csdn.net/vking_wang/article/details/14166593">参考链接</a></p>
+<p>Android的跨进程通信方式有多种，可以通过 Bundle、文件、SharePreference、Binder、Messenger、AIDL、socket等方式；</p>
 
-<p>HashMap是我们经常使用的键值对集合，它的内部原理是如何实现的呢？</p>
+<p>这些方式有各自的应用场景：</p>
 
-<p>在要理解hashmap的内部机制前，我们先要来了解一下一种数据结构hash表，我们常常使用的数据结构是Array，链表，Array在查询的时候非常快，但是删除操作却比较慢；而链表是查询比较慢，而插入删除比较快，有没有一种相对来说，更好的数据结构？有，这就是hash表</p>
+<ol>
+  <li>bundle 实现了Parcelable接口，一般用于四大组件之间的数据交流。</li>
+  <li>文件  简单易用，不过不适用于高并发的情况，并且无法做到实时通信</li>
+  <li>Messenger 适合于实时通信，但是不适合多并发的情况。到达服务的请求总是顺序化的。使用它的场景，Google建议是 所属服务是远程服务，并且服务不处于多线程的情况</li>
+  <li>AIDL Google的建议是：当所属服务属于远程进程，并且处于多并发的情况下，才用AIDL。并且要保证线程安全。</li>
+  <li>Binder  如果只需要在本地进行与服务进行交互，则只需要继承Binder实现服务对外的接口即可</li>
+  <li>ContentProvider  适合于数据源的CRUD操作。</li>
+  <li>Socekt 功能强大，适合于网络数据交换。</li>
+</ol>
 
-<h2 id="hash表">hash表</h2>
+<p>因为Messenger、Binder、AIDL、ContentProvider的底层都是 AIDL，而AIDL的底层是Binder，所以假如要想对Android的跨进程有清楚的认知，需要掌握Binder机制。</p>
 
-<p>hash表是一个线性数组，但是跟Array不同的是，hash表存储的是一个Entry,Entry中有一个key值，一个value值，还有一个hash值，还有一个next(属于一个Entry)；</p>
+<h3 id="背景">背景</h3>
 
-<p>我们在插入元素的时候，我们会对key值 调用hash函数(一般我们常用的hash函数是对数组的长度进行取模)，得出这个key值在hash表中的位置，然后将传进来的key，value键值对生成一个Entry，把Entry插进去。</p>
+<p>首先我们需要清楚，Android中的不同应用之间，属于不同的进程，它们之间就像一个个沙箱，不是拥有相同的UID的进程，它们的内存空间无法互相进行访问。这个时候，Android团队就需要为进程之间的通信做一些支持，那么这个跨进程机制设计需要解决什么问题？</p>
 
-<p>但是有这么一种情况，因为不同的key值可能会出现相同的hash值，假如长度为10的数组，key是整型的，那么2和12都会插到数组下标为2这个位置中，所以这个时候就会发生冲突，这个我们常用的解决冲突的办法是用链表来解决这种问题。</p>
+<ol>
+  <li>进程之间的通信，传输数据时，假如是自定义对象，系统并不清楚如何传输这些对象，所以需要进行序列化，同时在到达目的进程后，目的进程还具备还原成原来对象的能力</li>
+  <li>在多进程环境，如何找到那个能够为我们提供远程服务的对象，这个对象在其他进程上，我们称这个对象为 Binder，找到这个对象后，我们如何调用这个对象方法，如何让对象知道我们要调用它的哪个方法。</li>
+  <li>如何做到调用远程进程中的服务像调用本地方法一样简单?</li>
+</ol>
 
-<figure class="highlight"><pre><code class="language-java" data-lang="java"><span class="o">![](</span><span class="nl">http:</span><span class="c1">//i.imgur.com/Z64NUz2.png)</span>
+<p>首先解决第一个问题，第一个问题有两种方案：</p>
+<ol>
+  <li>我们可以通过 Java的 serialized 序列化和反序列化机制实现。</li>
+  <li>Android推荐我们用 Parcel，因为Java的反射机制会带来比较大的性能消耗，而Parcelable的对象则对于内存数据交流来说，性能更优。</li>
+</ol>
 
-	<span class="kd">public</span> <span class="n">V</span> <span class="nf">put</span><span class="o">(</span><span class="n">K</span> <span class="n">key</span><span class="o">,</span> <span class="n">V</span> <span class="n">value</span><span class="o">)</span> <span class="o">{</span>
-        <span class="k">if</span> <span class="o">(</span><span class="n">table</span> <span class="o">==</span> <span class="n">EMPTY_TABLE</span><span class="o">)</span> <span class="o">{</span>
-            <span class="n">inflateTable</span><span class="o">(</span><span class="n">threshold</span><span class="o">);</span>
-        <span class="o">}</span>
-        <span class="k">if</span> <span class="o">(</span><span class="n">key</span> <span class="o">==</span> <span class="kc">null</span><span class="o">)</span>
-            <span class="k">return</span> <span class="nf">putForNullKey</span><span class="o">(</span><span class="n">value</span><span class="o">);</span>
-        <span class="kt">int</span> <span class="n">hash</span> <span class="o">=</span> <span class="n">sun</span><span class="o">.</span><span class="na">misc</span><span class="o">.</span><span class="na">Hashing</span><span class="o">.</span><span class="na">singleWordWangJenkinsHash</span><span class="o">(</span><span class="n">key</span><span class="o">);</span>
-        <span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="n">indexFor</span><span class="o">(</span><span class="n">hash</span><span class="o">,</span> <span class="n">table</span><span class="o">.</span><span class="na">length</span><span class="o">);</span>
-        <span class="k">for</span> <span class="o">(</span><span class="n">HashMapEntry</span><span class="o">&lt;</span><span class="n">K</span><span class="o">,</span><span class="n">V</span><span class="o">&gt;</span> <span class="n">e</span> <span class="o">=</span> <span class="n">table</span><span class="o">[</span><span class="n">i</span><span class="o">];</span> <span class="n">e</span> <span class="o">!=</span> <span class="kc">null</span><span class="o">;</span> <span class="n">e</span> <span class="o">=</span> <span class="n">e</span><span class="o">.</span><span class="na">next</span><span class="o">)</span> <span class="o">{</span>
-            <span class="n">Object</span> <span class="n">k</span><span class="o">;</span>
-			<span class="c1">//遍历是否有相同key值的Enrty，因为hashCode相等，key却不一定相等</span>
-            <span class="k">if</span> <span class="o">(</span><span class="n">e</span><span class="o">.</span><span class="na">hash</span> <span class="o">==</span> <span class="n">hash</span> <span class="o">&amp;&amp;</span> <span class="o">((</span><span class="n">k</span> <span class="o">=</span> <span class="n">e</span><span class="o">.</span><span class="na">key</span><span class="o">)</span> <span class="o">==</span> <span class="n">key</span> <span class="o">||</span> <span class="n">key</span><span class="o">.</span><span class="na">equals</span><span class="o">(</span><span class="n">k</span><span class="o">)))</span> <span class="o">{</span>
-                <span class="n">V</span> <span class="n">oldValue</span> <span class="o">=</span> <span class="n">e</span><span class="o">.</span><span class="na">value</span><span class="o">;</span>
-                <span class="n">e</span><span class="o">.</span><span class="na">value</span> <span class="o">=</span> <span class="n">value</span><span class="o">;</span>
-                <span class="n">e</span><span class="o">.</span><span class="na">recordAccess</span><span class="o">(</span><span class="k">this</span><span class="o">);</span>
-                <span class="k">return</span> <span class="n">oldValue</span><span class="o">;</span>
-            <span class="o">}</span>
-        <span class="o">}</span>
+<h3 id="跨进程交流协议-aidl">跨进程交流协议 AIDL</h3>
 
-        <span class="n">modCount</span><span class="o">++;</span>
-        <span class="n">addEntry</span><span class="o">(</span><span class="n">hash</span><span class="o">,</span> <span class="n">key</span><span class="o">,</span> <span class="n">value</span><span class="o">,</span> <span class="n">i</span><span class="o">);</span>
-        <span class="k">return</span> <span class="kc">null</span><span class="o">;</span>
-    <span class="o">}</span>
+<p>我觉得要解决第二第三个问题，需要一种协议来规定 本地进程和远程进行的数据交流，这种协议就是AIDL。</p>
 
-	<span class="kt">void</span> <span class="nf">addEntry</span><span class="o">(</span><span class="kt">int</span> <span class="n">hash</span><span class="o">,</span> <span class="n">K</span> <span class="n">key</span><span class="o">,</span> <span class="n">V</span> <span class="n">value</span><span class="o">,</span> <span class="kt">int</span> <span class="n">bucketIndex</span><span class="o">)</span> <span class="o">{</span>
-        <span class="k">if</span> <span class="o">((</span><span class="n">size</span> <span class="o">&gt;=</span> <span class="n">threshold</span><span class="o">)</span> <span class="o">&amp;&amp;</span> <span class="o">(</span><span class="kc">null</span> <span class="o">!=</span> <span class="n">table</span><span class="o">[</span><span class="n">bucketIndex</span><span class="o">]))</span> <span class="o">{</span>
-            <span class="n">resize</span><span class="o">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">table</span><span class="o">.</span><span class="na">length</span><span class="o">);</span>
-            <span class="n">hash</span> <span class="o">=</span> <span class="o">(</span><span class="kc">null</span> <span class="o">!=</span> <span class="n">key</span><span class="o">)</span> <span class="o">?</span> <span class="n">sun</span><span class="o">.</span><span class="na">misc</span><span class="o">.</span><span class="na">Hashing</span><span class="o">.</span><span class="na">singleWordWangJenkinsHash</span><span class="o">(</span><span class="n">key</span><span class="o">)</span> <span class="o">:</span> <span class="mi">0</span><span class="o">;</span>
-            <span class="n">bucketIndex</span> <span class="o">=</span> <span class="n">indexFor</span><span class="o">(</span><span class="n">hash</span><span class="o">,</span> <span class="n">table</span><span class="o">.</span><span class="na">length</span><span class="o">);</span>
-        <span class="o">}</span>
+<p>AIDL（Android Interface defined language）,既然作为一种协议，那么它要如何设计？</p>
 
-        <span class="n">createEntry</span><span class="o">(</span><span class="n">hash</span><span class="o">,</span> <span class="n">key</span><span class="o">,</span> <span class="n">value</span><span class="o">,</span> <span class="n">bucketIndex</span><span class="o">);</span>
-    <span class="o">}</span>
+<p>归根结底，我们本地就是想调用远程服务中的方法，就是需要一个实现了这个这些接口方法的对象。</p>
 
-	<span class="kt">void</span> <span class="nf">createEntry</span><span class="o">(</span><span class="kt">int</span> <span class="n">hash</span><span class="o">,</span> <span class="n">K</span> <span class="n">key</span><span class="o">,</span> <span class="n">V</span> <span class="n">value</span><span class="o">,</span> <span class="kt">int</span> <span class="n">bucketIndex</span><span class="o">)</span> <span class="o">{</span>
-        <span class="n">HashMapEntry</span><span class="o">&lt;</span><span class="n">K</span><span class="o">,</span><span class="n">V</span><span class="o">&gt;</span> <span class="n">e</span> <span class="o">=</span> <span class="n">table</span><span class="o">[</span><span class="n">bucketIndex</span><span class="o">];</span>
-		<span class="c1">//e参数就是指Entry.next；意思是在链表头插入最新的键值对</span>
-        <span class="n">table</span><span class="o">[</span><span class="n">bucketIndex</span><span class="o">]</span> <span class="o">=</span> <span class="k">new</span> <span class="n">HashMapEntry</span><span class="o">&lt;&gt;(</span><span class="n">hash</span><span class="o">,</span> <span class="n">key</span><span class="o">,</span> <span class="n">value</span><span class="o">,</span> <span class="n">e</span><span class="o">);</span>
-        <span class="n">size</span><span class="o">++;</span>
-    <span class="o">}</span></code></pre></figure>
+<p>同时，因为跨进程的原因，我们这个对象还需要具备，发送数据到远程服务对象Binder的能力，远程Binder也需要具备接收数据的能力，并且需要有能力正确标识一个Binder对象，</p>
 
-<h2 id="-和equal-的区别">== 和equal() 的区别</h2>
+<p>不仅仅如此，AIDL也需要支持本地服务的，假如服务与调用进程处于同一进程，则不需要跨进程交流。</p>
 
-<p>很简单，==有两种使用情况，都是比较栈堆中的value值； 例如是基本数据类型的话，就比较基本类型的值；如果是对象的话，就比较对象的引用，两者相等返回true；</p>
+<p>另外，我们本地进程获取到远程服务的 Binder对象后（虚拟），不知道它到底提供什么方法，因为接口定义文件是在远程服务中，不仅仅接口文件，远程服务接收的数据格式，比如自定义对象，客户端也需要知道是长什么样子的。否则就无法正确传输数据。</p>
 
-<p>equal()方法是应用于Object的，同样是比较两个对象的引用是否相同。。但是这个方法是可以被覆盖的，就像String一样，String将其改成比较字符串的内容了，而不是比较引用；所以当我们想修改一个类的比较方法时候，就可以修改equal方法的比较规则；</p>
+<p>还有，当我们知道了接口提供的方法后，服务端和客户端应该约束好，当客户端调用这个方法，能够正确映射到 远程服务的Binder的具体方法，这套约束机制也是需要AIDL实现的。</p>
+
+<p>基于上面的一些要考虑到的难题，AIDL最后被设计成这个样子了：</p>
+
+<p>首先我们可以在Android的app目录下建立一个aidl文件夹，然后建立一个aidl的接口文件,aidl的接口文件很简单，就是远程服务提供的接口而已，如果接口引用了 自定义对象，则需要为这种对象创建个aidl文件</p>
+
+<div class="highlighter-rouge">IRemoteService.aidl
+
+package com.mvp.githubdemo;
+interface IRemoteService {
+void basicTypes(int anInt, long aLong, boolean aBoolean, float aFloat,
+        double aDouble, String aString);
+void getServiceName();}
+</div>
+
+<p>我们这个接口方法很简单，就提供一个getServiceName()的方法供 客户端访问，这个aidl文件，是需要向外公布的，客户端持有它，就知道远程服务提供什么方法了。并且如果有自定义对象，也会知道这种自定义长什么样子了。</p>
+
+<p>当然 单单一个接口文件，根本无法解决我们上面提到的各种问题。aidl文件定义好了后，我们rebuild一下项目，Android的IDE会为我们生成一个 IRemoteService.java 的类，这个类就是整个 aidl 机制的核心了。我们看看它的源码：</p>
+
+<div class="highlighter-rouge">public interface IRemoteService extends android.os.IInterface {
+/**
+ * Local-side IPC implementation stub class.
+ */
+public static abstract class Stub extends android.os.Binder implements com.mvp.githubdemo.IRemoteService {
+
+	//这个字符串就是远程服务对象 Binder 的唯一标识符了，用包名+类名唯一标识。
+	//当我们发送调用出去，至于怎么根据这个标识符找到 远程进程的 Binder 对象，
+	//这是Binder驱动的事情了，这里不做底层探究。
+
+    private static final java.lang.String DESCRIPTOR = "com.mvp.githubdemo.IRemoteService";
+
+    /**
+     * Construct the stub at attach it to the interface.
+     */
+
+	//注意，当我们构造了 Stub 对象，会将这个 Stub对象（继承了Binder，实现了aidl接口方法，它就是远程服务的Binder对象了）与标识符绑定。
+    public Stub() {
+        this.attachInterface(this, DESCRIPTOR);
+    }
+
+    /**
+     * Cast an IBinder object into an com.mvp.githubdemo.IRemoteService interface,
+     * generating a proxy if needed.
+     */
+
+	//这个方法就是客户端获取 实现了远程服务Binder代理的关键。
+	//当本地 bindservice回调 onServiceConnect 时，会返回一个 IBinder对象，这个Ibinder就是远程服务 Binder的代理。
+    public static com.mvp.githubdemo.IRemoteService asInterface(android.os.IBinder obj) {
+        if ((obj == null)) {
+            return null;
+        }
+		
+		//这句话非常有用，根据DESCRIPTOR来判断 服务所在的进程是否是本地进程，进而决定是否需要跨进程
+		//原理：因为服务实现了 Stub里面的接口方法（即向本地提供的服务），构造的时候，
+		//绑定了descriptor。而服务端和客户端shi处于同一个进程的话，那么这个 IBinder
+		//就是属于同一个对象，那么通过 queryLocalInterface(descriptor)就不会返回null
+		//相反，如果不是处于一个进程，那么当前进程肯定不存在 绑定关系，这个时候就知道是否需要跨进程调用了。
+
+		//从下面的调用也可以看到，如果是本地进程，那么直接返回接口对象
+		//如果是跨进程的话，那么会返回了一个代理，进行跨进程调用。
+        android.os.IInterface iin = obj.queryLocalInterface(DESCRIPTOR);
+        if (((iin != null) &amp;&amp; (iin instanceof com.mvp.githubdemo.IRemoteService))) {
+            return ((com.mvp.githubdemo.IRemoteService) iin);
+        }
+        return new com.mvp.githubdemo.IRemoteService.Stub.Proxy(obj);
+    }
+
+    @Override
+    public android.os.IBinder asBinder() {
+        return this;
+    }
+
+	/*
+		当服务端接收到客户端的跨进程调用时，即客户端代理 IBinder调用了 transact方法，服务端就会出发 onTransact 的调用，并且参数是一一对应的。
+		比对code值，调用在服务端的具体实现，返回结果后封装在reply，相应客户端
+		注意的是：服务器的回调OnTransact方法，是在 Binder 线程池中的线程，需要注意多线程安全。
+	*/
+    @Override
+    public boolean onTransact(int code, android.os.Parcel data, android.os.Parcel reply, int flags) throws android.os.RemoteException {
+        switch (code) {
+            case INTERFACE_TRANSACTION: {
+                reply.writeString(DESCRIPTOR);
+                return true;
+            }
+            case TRANSACTION_basicTypes: {
+                data.enforceInterface(DESCRIPTOR);
+                int _arg0;
+                _arg0 = data.readInt();
+                long _arg1;
+                _arg1 = data.readLong();
+                boolean _arg2;
+                _arg2 = (0 != data.readInt());
+                float _arg3;
+                _arg3 = data.readFloat();
+                double _arg4;
+                _arg4 = data.readDouble();
+                java.lang.String _arg5;
+                _arg5 = data.readString();
+                this.basicTypes(_arg0, _arg1, _arg2, _arg3, _arg4, _arg5);
+                reply.writeNoException();
+                return true;
+            }
+            case TRANSACTION_getServiceName: {
+                data.enforceInterface(DESCRIPTOR);
+                this.getServiceName();
+                reply.writeNoException();
+                return true;
+            }
+        }
+        return super.onTransact(code, data, reply, flags);
+    }
+
+	//这是跨进程调用 远程服务Binder的代理类，实现了需要为客户端提供的接口
+    private static class Proxy implements com.mvp.githubdemo.IRemoteService {
+        private android.os.IBinder mRemote;
+
+        Proxy(android.os.IBinder remote) {
+            mRemote = remote;
+        }
+
+        @Override
+        public android.os.IBinder asBinder() {
+            return mRemote;
+        }
+
+        public java.lang.String getInterfaceDescriptor() {
+            return DESCRIPTOR;
+        }
+
+        /**
+         * Demonstrates some basic types that you can use as parameters
+         * and return values in AIDL.
+         */
+        @Override
+        public void basicTypes(int anInt, long aLong, boolean aBoolean, float aFloat, double aDouble, java.lang.String aString) throws android.os.RemoteException {
+            android.os.Parcel _data = android.os.Parcel.obtain();
+            android.os.Parcel _reply = android.os.Parcel.obtain();
+            try {
+                _data.writeInterfaceToken(DESCRIPTOR);
+                _data.writeInt(anInt);
+                _data.writeLong(aLong);
+                _data.writeInt(((aBoolean) ? (1) : (0)));
+                _data.writeFloat(aFloat);
+                _data.writeDouble(aDouble);
+                _data.writeString(aString);
+                mRemote.transact(Stub.TRANSACTION_basicTypes, _data, _reply, 0);
+                _reply.readException();
+            } finally {
+                _reply.recycle();
+                _data.recycle();
+            }
+        }
+
+		
+        @Override
+        public void getServiceName() throws android.os.RemoteException {
+			//这是要发送到服务端的数据，包括我们的参数
+            android.os.Parcel _data = android.os.Parcel.obtain();
+			//这是服务端响应我们的结果
+            android.os.Parcel _reply = android.os.Parcel.obtain();
+			//上面两个分别充当进程交互的输出流和输入流了
+            try {
+				/*
+				首先写 远程服务Binder对象的标识符，让Binder驱动帮我们找到它
+                _data.writeInterfaceToken(DESCRIPTOR);
+				//这个是核心方法，通过 mRemote 这个IBinder代理对象，映射到远程的真实实现类Binder，参数分别是：
+				1. int型的整数，用于标识调用远程服务Binder对象的哪个方法，因为aidl是客户端和服务端共同的协议，所以这个int型值就正确的映射了具体方法
+				2. _data 我们传送到远程服务端的参数，很容易猜到，当服务端 Binder 接收到调用请求后，会按客户端封装数据的顺序去读取_data,这也是 AIDL协议需要约束的，确保程序的正确性。
+				3. _reply 服务端的响应数据，读取的时候，线程会挂起，直到远程服务返回了响应，所以我们做耗时任务的时候，需要考虑这种情况
+				4. flag，一般为0
+				*/
+				
+                mRemote.transact(Stub.TRANSACTION_getServiceName, _data, _reply, 0);
+                _reply.readException();
+            } finally {
+                _reply.recycle();
+                _data.recycle();
+            }
+        }
+    }
+
+    static final int TRANSACTION_basicTypes = (android.os.IBinder.FIRST_CALL_TRANSACTION + 0);
+    static final int TRANSACTION_getServiceName = (android.os.IBinder.FIRST_CALL_TRANSACTION + 1);
+}
+
+/**
+ * Demonstrates some basic types that you can use as parameters
+ * and return values in AIDL.
+ */
+public void basicTypes(int anInt, long aLong, boolean aBoolean, float aFloat, double aDouble, java.lang.String aString) throws android.os.RemoteException;
+
+public void getServiceName() throws android.os.RemoteException;
+}
+</div>
+
+<p>上面的注释非常详细的列出了各个细节的调用，客户端和服务端正是基于同一个aidl文件，遵守了跨进程数据交流的协议，从而解决了我一开始列出跨进程需要解决的一系列设计难题。</p>
 
 
 
@@ -242,17 +422,13 @@
                 </style>
                 <div class="ds-share"
                     style="text-align: right"
-                    data-thread-key="/2016/11/02/java-hashmap"
-                    data-title="从源码去了解HashMap"
-                    data-url="https://drearming.github.io/drearming.github.com/2016/11/02/java-hashmap/"
+                    data-thread-key="/2017/05/13/跨进程通信"
+                    data-title="Android跨进程通信"
+                    data-url="https://drearming.github.io/drearming.github.com/2017/05/13/%E8%B7%A8%E8%BF%9B%E7%A8%8B%E9%80%9A%E4%BF%A1/"
                     data-images="https://drearming.github.io/drearming.github.com/img/post-bg-2015.jpg"
-                    data-content="HashMap
+                    data-content="Android 跨进程通信
 
-参考链接
-
-HashMap是我们经常使用的键值对集合，它的内部原理是如何实现的呢？
-
-在要理解hashmap的内部机制前，我们先要来了解... | 陈俊杰 | MVCoder " >
+Android的跨进程通信方式有多种，可以通过 Bundle、文件、SharePreference、Binder、Messe... | 陈俊杰 | MVCoder " >
                     <div class="ds-share-inline">
                       <ul  class="ds-share-icons-16">
                         <li data-toggle="ds-share-icons-more"><a class="ds-more" href="#">分享到：</a></li>
@@ -272,13 +448,9 @@ HashMap是我们经常使用的键值对集合，它的内部原理是如何实�
                 <ul class="pager">
                     
                     <li class="previous">
-                        <a href="/drearming.github.com/2016/10/15/android/" data-toggle="tooltip" data-placement="top" title="消息队列机制">&larr; Previous Post</a>
+                        <a href="/drearming.github.com/2017/05/06/%E5%8F%8D%E5%90%91%E4%BB%A3%E7%90%86%E6%9C%8D%E5%8A%A1%E5%99%A8%E5%92%8C%E8%B4%9F%E8%BD%BD%E5%9D%87%E8%A1%A1/" data-toggle="tooltip" data-placement="top" title="反向代理和负载均衡">&larr; Previous Post</a>
                     </li>
                     
-                    
-                    <li class="next">
-                        <a href="/drearming.github.com/2016/11/21/NFC/" data-toggle="tooltip" data-placement="top" title="NFC刷卡原理和功能实现">Next Post &rarr;</a>
-                    </li>
                     
                 </ul>
 
@@ -287,9 +459,9 @@ HashMap是我们经常使用的键值对集合，它的内部原理是如何实�
                 <!-- 多说评论框 start -->
                 <div class="comment">
                     <div class="ds-thread"
-                        data-thread-key="/2016/11/02/java-hashmap"
-                        data-title="从源码去了解HashMap"
-                        data-url="https://drearming.github.io/drearming.github.com/2016/11/02/java-hashmap/" >
+                        data-thread-key="/2017/05/13/跨进程通信"
+                        data-title="Android跨进程通信"
+                        data-url="https://drearming.github.io/drearming.github.com/2017/05/13/%E8%B7%A8%E8%BF%9B%E7%A8%8B%E9%80%9A%E4%BF%A1/" >
                     </div>
                 </div>
                 <!-- 多说评论框 end -->

@@ -1,0 +1,1328 @@
+<!DOCTYPE html>
+
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="google-site-verification" content="xBT4GhYoi5qRD5tr338pgPM5OWHHIDR6mNg1a3euekI" />
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="So live a life you will remember">
+    <meta name="keyword"  content="Android Java Web">
+    <link rel="shortcut icon" href="/drearming.github.com/img/favicon.jpg">
+
+    <title>RxJava 源码分析 - 陈俊杰 | MVCoder</title>
+
+    <link rel="canonical" href="https://drearming.github.io/drearming.github.com/2017/04/20/RxJava2/">
+
+    <!-- Bootstrap Core CSS -->
+    <link rel="stylesheet" href="/drearming.github.com/css/bootstrap.min.css">
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="/drearming.github.com/css/hux-blog.min.css">
+
+    <!-- Pygments Github CSS -->
+    <link rel="stylesheet" href="/drearming.github.com/css/syntax.css">
+
+    <!-- Custom Fonts -->
+    <!-- <link href="http://maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css" rel="stylesheet" type="text/css"> -->
+    <!-- Hux change font-awesome CDN to qiniu -->
+    <link href="https://cdn.staticfile.org/font-awesome/4.2.0/css/font-awesome.min.css" rel="stylesheet" type="text/css">
+
+    <!-- Hux Delete, sad but pending in China
+    <link href='http://fonts.googleapis.com/css?family=Lora:400,700,400italic,700italic' rel='stylesheet' type='text/css'>
+    <link href='http://fonts.googleapis.com/css?family=Open+Sans:300italic,400italic,600italic,700italic,800italic,400,300,600,700,800' rel='stylesheet' type='text/
+    css'>
+    -->
+
+
+    <!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
+    <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
+    <!--[if lt IE 9]>
+        <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+        <script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
+    <![endif]-->
+
+    <!-- ga & ba script hoook -->
+    <script></script>
+</head>
+
+
+<!-- hack iOS CSS :active style -->
+<body ontouchstart="">
+
+    <!-- Navigation -->
+<nav class="navbar navbar-default navbar-custom navbar-fixed-top">
+    <div class="container-fluid">
+        <!-- Brand and toggle get grouped for better mobile display -->
+        <div class="navbar-header page-scroll">
+            <button type="button" class="navbar-toggle">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+            <a class="navbar-brand" href="/drearming.github.com/">MVCoder Blog</a>
+        </div>
+
+        <!-- Collect the nav links, forms, and other content for toggling -->
+        <!-- Known Issue, found by Hux:
+            <nav>'s height woule be hold on by its content.
+            so, when navbar scale out, the <nav> will cover tags.
+            also mask any touch event of tags, unfortunately.
+        -->
+        <div id="huxblog_navbar">
+            <div class="navbar-collapse">
+                <ul class="nav navbar-nav navbar-right">
+                    <li>
+                        <a href="/drearming.github.com/">Home</a>
+                    </li>
+                    
+                    <li>
+                        <a href="/drearming.github.com/about/">About</a>
+                    </li>
+                    
+                    <li>
+                        <a href="/drearming.github.com/tags/">Tags</a>
+                    </li>
+                    
+                </ul>
+            </div>
+        </div>
+        <!-- /.navbar-collapse -->
+    </div>
+    <!-- /.container -->
+</nav>
+<script>
+    // Drop Bootstarp low-performance Navbar
+    // Use customize navbar with high-quality material design animation
+    // in high-perf jank-free CSS3 implementation
+    var $body   = document.body;
+    var $toggle = document.querySelector('.navbar-toggle');
+    var $navbar = document.querySelector('#huxblog_navbar');
+    var $collapse = document.querySelector('.navbar-collapse');
+
+    $toggle.addEventListener('click', handleMagic)
+    function handleMagic(e){
+        if ($navbar.className.indexOf('in') > 0) {
+        // CLOSE
+            $navbar.className = " ";
+            // wait until animation end.
+            setTimeout(function(){
+                // prevent frequently toggle
+                if($navbar.className.indexOf('in') < 0) {
+                    $collapse.style.height = "0px"
+                }
+            },400)
+        }else{
+        // OPEN
+            $collapse.style.height = "auto"
+            $navbar.className += " in";
+        }
+    }
+</script>
+
+
+    <!-- Image to hack wechat -->
+<!-- <img src="/img/icon_wechat.png" width="0" height="0"> -->
+<!-- <img src="/drearming.github.com/img/post-bg-2015.jpg" width="0" height="0"> -->
+
+<!-- Post Header -->
+<style type="text/css">
+    header.intro-header{
+        background-image: url('/drearming.github.com/img/post-bg-2015.jpg')
+    }
+</style>
+<header class="intro-header" >
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+                <div class="post-heading">
+                    <div class="tags">
+                        
+                        <a class="tag" href="/drearming.github.com/tags/#网络" title="网络">网络</a>
+                        
+                        <a class="tag" href="/drearming.github.com/tags/#Android" title="Android">Android</a>
+                        
+                    </div>
+                    <h1>RxJava 源码分析</h1>
+                    
+                    
+                    <h2 class="subheading">操作符的和线程变换的原理</h2>
+                    
+                    <span class="meta">Posted by MVCoder on April 20, 2017</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</header>
+
+<!-- Post Content -->
+<article>
+    <div class="container">
+        <div class="row">
+
+    <!-- Post Container -->
+            <div class="
+                col-lg-8 col-lg-offset-2
+                col-md-10 col-md-offset-1
+                post-container">
+
+				<h1 id="rxjava2">RxJava2</h1>
+
+<p>参考链接：<a href="http://blog.csdn.net/zxt0601/article/details/61614799">Rxjava2源码分析</a></p>
+
+<blockquote>
+  <p>RxJava 是基于观察者模式搭建的第三方库，拥有数量庞大且功能极其强大的操作符集合，线程切换变得异常简单，Rxjava可以使程序的逻辑更加清晰。</p>
+</blockquote>
+
+<p>基本例子:</p>
+
+<div class="highlighter-rouge">Observable.create(new ObservableOnSubscribe&lt;String&gt;() {
+        @Override
+        public void subscribe(ObservableEmitter&lt;String&gt; e) throws Exception {
+            e.onNext("1");
+            e.onComplete();
+        }
+    }).subscribe(new Observer&lt;String&gt;() {
+        @Override
+        public void onSubscribe(Disposable d) {
+            Log.d(TAG, "onSubscribe()");
+        }
+
+        @Override
+        public void onNext(String value) {
+            Log.d(TAG, "onNext() called with: value = [" + value + "]");
+        }
+
+        @Override
+        public void onError(Throwable e) {
+            Log.d(TAG, "onError() called with: e = [" + e + "]");
+        }
+
+        @Override
+        public void onComplete() {
+            Log.d(TAG, "onComplete() called");
+        }
+    });
+
+log:
+onSubscribe()
+onNext() called with: value = [1]
+onComplete() called
+</div>
+
+<p>首先我们需要清楚的是：</p>
+
+<ol>
+  <li>上游是如何发送数据的</li>
+  <li>下游是如何接收数据的</li>
+  <li>上游和下游是如何联系起来的</li>
+  <li>操作符的实现</li>
+  <li>线程的调度原理</li>
+</ol>
+
+<p>create方法：</p>
+
+<div class="highlighter-rouge"> 	Observable.onCreate(new ObservableOnSubscribe&lt;T&gt;(){
+ 	@Override
+        public void subscribe(ObservableEmitter&lt;T&gt; e) throws Exception {
+            e.onNext("1");
+            e.onComplete();
+        }
+	});
+
+
+public static &lt;T&gt; Observable&lt;T&gt; create(ObservableOnSubscribe&lt;T&gt; source) {
+    //.....
+    return RxJavaPlugins.onAssembly(new ObservableCreate&lt;T&gt;(source));
+}
+</div>
+
+<p>以一个ObservableOnSubscribe接口作为参数，下面是它的接口声明</p>
+
+<div class="highlighter-rouge">public interface ObservableOnSubscribe&lt;T&gt; {
+void subscribe(ObservableEmitter&lt;T&gt; e) throws Exception;
+}
+</div>
+
+<p>ObservableEmiiter<T>是一个发射器，它跟Observer有关，看一下它的声明：</T></p>
+
+<div class="highlighter-rouge">//这是关于Disposable相关的操作
+public interface ObservableEmitter&lt;T&gt; extends Emitter&lt;T&gt; {
+	void setDisposable(Disposable d);
+	void setCancellable(Cancellable c);
+	boolean isDisposed();
+	ObservableEmitter&lt;T&gt; serialize();
+}
+
+//我们可以发现，Emitter的接口跟我们Observer中的方法非常相似，我们在后面可以看到，ObservableEmitter将会对Observer进行包装，来确定上游和下游之间的关联
+
+public interface Emitter&lt;T&gt; {
+void onNext(T value);
+void onError(Throwable error);
+void onComplete();
+}
+</div>
+
+<p>再返回看一下，在create方法内部，是通过ObservableOnSubscribe作为参数，构造了一个ObservableCreate对象；看看 RxJavaPlugins.onAssembly内部的构造：</p>
+
+<div class="highlighter-rouge">@SuppressWarnings({ "rawtypes", "unchecked" })
+public static &lt;T&gt; Observable&lt;T&gt; onAssembly(Observable&lt;T&gt; source) {
+    Function&lt;Observable, Observable&gt; f = onObservableAssembly;
+    if (f != null) {
+        return apply(f, source);
+    }
+    return source;
+}
+</div>
+
+<p>可以发现 ObservableCreate 本身是一个Observable，它是一个包装类，我们这里可以理解为直接返回它，即ObservableCreate对象</p>
+
+<div class="highlighter-rouge">public final class ObservableCreate&lt;T&gt; extends Observable&lt;T&gt; {
+final ObservableOnSubscribe&lt;T&gt; source;
+public ObservableCreate(ObservableOnSubscribe&lt;T&gt; source) {
+    this.source = source;
+}
+@Override
+protected void subscribeActual(Observer&lt;? super T&gt; observer) {
+    CreateEmitter&lt;T&gt; parent = new CreateEmitter&lt;T&gt;(observer);
+    observer.onSubscribe(parent);
+    try {
+        source.subscribe(parent);
+    } catch (Throwable ex) {
+        Exceptions.throwIfFatal(ex);
+        parent.onError(ex);
+    }
+}
+</div>
+
+<p>ObservableCreate类继承与Observable<T>，但是多了个subsribeActual，这个方法非常重要，是发射数据和接收数据，并且上下游建立关联的所在。</T></p>
+
+<p>在ObservableCreate类中，做了如下步骤：</p>
+
+<ol>
+  <li>将创建的 ObservableOnSubscribe 对象 source 保存起来，这个对象是发射数据的源头，我们可以看看基本例子中，就是在它的subscribe方法里面，调用 ObservableEmitter 的onNext,onComplete方法.</li>
+  <li>
+    <p>subscribeActual方法，我们先跳跃一下，看一下Observable对象的subscribe方法：</p>
+
+    <div class="highlighter-rouge"> //Observable实现了ObservableSource接口
+
+ public interface ObservableSource&lt;T&gt; {
+ 		void subscribe(Observer&lt;? super T&gt; observer);
+ }
+    </div>
+
+  	public final void subscribe(Observer&lt;? super T&gt; observer) {
+    <div class="highlighter-rouge"> ...
+ try {
+     //1 hook相关，略过
+     observer = RxJavaPlugins.onSubscribe(this, observer);
+     ...
+     //2 真正的订阅处
+     subscribeActual(observer);
+ } catch (NullPointerException e) { // NOPMD
+     throw e;
+ } catch (Throwable e) {
+     //3 错误处理，
+     Exceptions.throwIfFatal(e);
+     // can't call onError because no way to know if a Disposable has been set or not
+     // can't call onSubscribe because the call might have set a Subscription already
+     //4 hook错误相关，略过
+     RxJavaPlugins.onError(e);
+
+     NullPointerException npe = new NullPointerException("Actually not, but can't throw other exceptions due to RS");
+     npe.initCause(e);
+     throw npe;
+ }  }
+    </div>
+  </li>
+</ol>
+
+<p>我们可以发现，这个方法内部实际是调用了subscribeActual（observer）方法,Observer作为参数传进去，observer是我们下游数据的接收端。它的接口声明如下：</p>
+
+<div class="highlighter-rouge">public interface Observer&lt;T&gt; {
+void onSubscribe(Disposable d);
+void onNext(T value);
+void onError(Throwable e);
+void onComplete();
+}
+</div>
+
+<p>继续回到subscribeActual方法，我们就可以理解了上游和下游是如何分别发送和接收数据的，并且建立关联。</p>
+
+<p>首先创建CreateEmitter<T>发射器，并将Observer传进去，这里我们可以发现，其实createEmitter是一个包装类的角色</T></p>
+
+<div class="highlighter-rouge">static final class CreateEmitter&lt;T&gt;
+extends AtomicReference&lt;Disposable&gt;
+implements ObservableEmitter&lt;T&gt;, Disposable {
+    final Observer&lt;? super T&gt; observer;
+    CreateEmitter(Observer&lt;? super T&gt; observer) {
+        this.observer = observer;
+    }
+
+    @Override
+    public void onNext(T t) {
+        ...
+        //如果没有被dispose，会调用Observer的onNext()方法
+        if (!isDisposed()) {
+            observer.onNext(t);
+        }
+    }
+
+    @Override
+    public void onError(Throwable t) {
+        ...
+        //1 如果没有被dispose，会调用Observer的onError()方法
+        if (!isDisposed()) {
+            try {
+                observer.onError(t);
+            } finally {
+            //2 一定会自动dispose()
+                dispose();
+            }
+        } else {
+        //3 如果已经被dispose了，会抛出异常。所以onError、onComplete彼此互斥，只能被调用一次
+            RxJavaPlugins.onError(t);
+        }
+    }
+
+    @Override
+    public void onComplete() {
+     //1 如果没有被dispose，会调用Observer的onComplete()方法
+        if (!isDisposed()) {
+            try {
+                observer.onComplete();
+            } finally {
+             //2 一定会自动dispose()
+                dispose();
+            }
+        }
+    }
+
+    @Override
+    public void dispose() {
+        DisposableHelper.dispose(this);
+    }
+
+    @Override
+    public boolean isDisposed() {
+        return DisposableHelper.isDisposed(get());
+    }
+}
+</div>
+
+<p>当CreateEmtter发射数据的时候，先判断dispose是否为真，如果为真代表着下游已经取消订阅了。</p>
+
+<p>并且onComplete和onError方法只能被调用一次，因为他们被调用后都会设置dispose为true；</p>
+
+<p>onNext() 方法可以看到，我们CreateEmitter发射数据，会调用onNext方法，都是转为调用下游订阅者 observer 的onNext方法，onCompleted、onError也是一样，这是一种代理模式的存在。</p>
+
+<p>看看subscribeActual的下一条语句：</p>
+
+<div class="highlighter-rouge">observer.onSubscribe(parent);
+</div>
+
+<p>parent是CreateEmitter对象，它实现了Disposable接口，所以当调用subscribeActual方法时，订阅者 observer 就会被调用 onSubscribe方法，并且将 createEmitter 传给 订阅者，这样子，订阅者就拥有了 控制上游发送数据的能力了。</p>
+
+<p>再接下来是非常重要的一条语句，开始发射数据：</p>
+
+<div class="highlighter-rouge">source.subscribe(parent);
+</div>
+
+<p>source 是我们在 create()方法时传送进来的 ObservableOnSubscribe 对象，这里调用了它的 subScribe方法，并且将CrateEmitter对象作为参数传进去，这样，Observable就开始发送数据了。</p>
+
+<h3 id="调用流程">调用流程</h3>
+
+<p>根据上面的过程，我们总结一下 一次简单的调用过程</p>
+
+<ol>
+  <li>我们首先通过 Observable的静态方法 create，传进一个 ObservableOnSubscribe对象作为参数</li>
+  <li>在create方法内部,创建了 ObservableCreate 对象，并且将 ObservableOnSubscribe 作为构造参数，保存起来。在ObservableCreate 继承于Observable，它有一个 subscribeActual 的方法
+，所以最后是，Observable的create方法，返回了一个ObservableCreate的对象</li>
+  <li>当下游的订阅者进行订阅时，会调用 Observable对象的 subscribe 进行订阅，subscribe内部调用 subscribeActual 方法，将 observer对象作为参数传进去。</li>
+  <li>在 subscribeActual 方法内部，将订阅者作为参数，构造 CreateEmitter 对象，在CreateEmitter内部，封装了 onNext、onCompleted、onError等方法，当调用CreateEmitter进行数据发射的时候，相当于一个代理对象，转为调用 observer 对象的onNext、onCompleted、onError方法。</li>
+  <li>subscribeActual内部，还有一条语句，observer.onSubscribe(Disposable)，将CreateEmitter作为参数，调用订阅者的onSubscribe方法，使observer在下游具有控制上游发送数据的能力</li>
+  <li>最后调用 ObservableOnSubscribe对象的 subscribe方法，将 CreateEmitter 对象传进去，开始发送数据，因为发送数据是转接到 observer 的方法调用，所以实现了上下游的数据发送。</li>
+</ol>
+
+<h2 id="操作符原理">操作符原理</h2>
+
+<blockquote>
+  <p>map 操作符用得非常频繁，用于将上游的数据做一次变换，拿它举个例子：</p>
+</blockquote>
+
+<div class="highlighter-rouge">final Observable&lt;String&gt; testCreateObservable = Observable.create(new ObservableOnSubscribe&lt;String&gt;() {
+        @Override
+        public void subscribe(ObservableEmitter&lt;String&gt; e) throws Exception {
+            e.onNext("1");
+            e.onComplete()
+        }
+    });
+
+Observable&lt;Integer&gt; map = testCreateObservable.map(new Function&lt;String, Integer&gt;() {
+                @Override
+                public Integer apply(String s) throws Exception {
+                    return Integer.parseInt(s);
+                }
+            });
+            map.subscribe(new Observer&lt;Integer&gt;() {
+                @Override
+                public void onSubscribe(Disposable d) {
+                    Log.d(TAG, "onSubscribe() called with: d = [" + d + "]");
+                }
+
+                @Override
+                public void onNext(Integer value) {
+                    Log.d(TAG, "onNext() called with: value = [" + value + "]");
+                }
+
+                @Override
+                public void onError(Throwable e) {
+                    Log.d(TAG, "onError() called with: e = [" + e + "]");
+                }
+
+                @Override
+                public void onComplete() {
+                    Log.d(TAG, "onComplete() called");
+                }
+            });
+</div>
+
+<p>看看map操作符的源码：</p>
+
+<div class="highlighter-rouge">public final &lt;R&gt; Observable&lt;R&gt; map(Function&lt;? super T, ? extends R&gt; mapper) {
+    //判空略过
+    ObjectHelper.requireNonNull(mapper, "mapper is null");
+    //RxJavaPlugins.onAssembly()是hook 上文提到过
+    return RxJavaPlugins.onAssembly(new ObservableMap&lt;T, R&gt;(this, mapper));
+}
+</div>
+
+<p>这里跟上面的 ObservableCreate有点类似，返回了一个ObservableMap类型 的 Observable 对象。</p>
+
+<div class="highlighter-rouge">public final class ObservableMap&lt;T, U&gt; extends AbstractObservableWithUpstream&lt;T, U&gt; {
+//将function变换函数类保存起来
+final Function&lt;? super T, ? extends U&gt; function;
+
+public ObservableMap(ObservableSource&lt;T&gt; source, Function&lt;? super T, ? extends U&gt; function) {
+    //super()将上游的Observable保存起来 ，用于subscribeActual()中用。
+    super(source);
+    this.function = function;
+}
+
+@Override
+public void subscribeActual(Observer&lt;? super U&gt; t) {
+    source.subscribe(new MapObserver&lt;T, U&gt;(t, function));
+}
+</div>
+
+<p>看到这里就非常熟悉了，同样是保存了source对象，不过subscrieActual不再创建了CreateEmitter对象，这样也很容易理解，因为map操作符只是将上游的数据进行转变，不涉及数据的创建。</p>
+
+<p>我们可以知道，当下游订阅的时候，就会调用上一个Observable的subscribeActual方法，到了map操作符时，它是调用了其上面一个observable的subscribe方法，并且将下游的observer进行封装，封装成 MapObserver&lt;T,U&gt;,传递给上一个Observable；这样当上游发射数据的时候，就会调用MapObserver的onNext、onCompleted、onError 方法！</p>
+
+<p>我们就清楚了 Map操作符起到了承上启下的作用。看一下 MapObserver的源码：</p>
+
+<div class="highlighter-rouge">static final class MapObserver&lt;T, U&gt; extends BasicFuseableObserver&lt;T, U&gt; {
+    final Function&lt;? super T, ? extends U&gt; mapper;
+    MapObserver(Observer&lt;? super U&gt; actual, Function&lt;? super T, ? extends U&gt; mapper) {
+        //super()将actual保存起来
+        super(actual);
+        //保存Function变量
+        this.mapper = mapper;
+    }
+    @Override
+    public void onNext(T t) {
+        //done在onError 和 onComplete以后才会是true，默认这里是false，所以跳过
+        if (done) {
+            return;
+        }
+        //默认sourceMode是0，所以跳过
+        if (sourceMode != NONE) {
+            actual.onNext(null);
+            return;
+        }
+        //下游Observer接受的值
+        U v;
+        //这一步执行变换,将上游传过来的T，利用Function转换成下游需要的U。
+        try {
+            v = ObjectHelper.requireNonNull(mapper.apply(t), "The mapper function returned a null value.");
+        } catch (Throwable ex) {
+            fail(ex);
+            return;
+        }
+        //变换后传递给下游Observer
+        actual.onNext(v);
+    }
+</div>
+
+<p>我们可以发现，onNext()方法里面，将上游传递下来的数据t，转换为v，在下面这句语句里面：</p>
+
+<div class="highlighter-rouge">ObjectHelper.requireNonNull(mapper.apply(t), "The mapper function returned a null value.");
+</div>
+
+<p>调用mapper，即map操作符构造的时候传进来 Function，它的apply方法，将数据t转换为我们需要的数据v；然后它持有下游的observer，调用其onNext方法，这样数据就经过了转换，传递给了下游的订阅者</p>
+
+<p><img src="http://ww1.sinaimg.cn/mw1024/52eb2279jw1f2rxcvophmj20h30hl0v3.jpg" alt="" /></p>
+
+<h3 id="总结一下操作符的操作流程">总结一下操作符的操作流程</h3>
+
+<ol>
+  <li>当下游订阅的时候，调用 map 操作符生成的Observable，即 ObservableMap，它的subscribeActual 方法，在里面，ObservableMap,它持有上游的Observable，调用其subscribe方法，并且将 封装了Function转换操作的 MapObserver的 observer 传到上游去。</li>
+  <li>当上游收到map操作符的调用，它会执行subscribe方法，调用其内部的 subscribeActual 方法，这个时候，如果这里就是源头了，这个subscribeActual将会有 CreateEmitter，封装map操作符传上来的 mapObserver，然后调用其 onSubscribe方法，最后开始发射数据。</li>
+  <li>源头发射数据的时候，实际调用了 mapObserver的 onNext 方法，在mapObserver的onNext方法里面，上游的数据，经过 function里面的操作转换，然后 mapObserver里面持有下游的observer，将经过转换的数据发送给下游，这样map的承上启下作用就完成了。</li>
+</ol>
+
+<p>在这里我们可以发现，即使有多少个操作符，这种承上启下的作用都不会变换。上面的执行流程是一致的。</p>
+
+<h2 id="线程切换原理">线程切换原理</h2>
+
+<blockquote>
+  <p>Rxjava 除了让程序逻辑清晰的链式调用，还有极其方便的线程切换能力。</p>
+</blockquote>
+
+<div class="highlighter-rouge">Observable.just(1, 2, 3, 4) // IO 线程，由 subscribeOn() 指定
+.subscribeOn(Schedulers.io())
+.observeOn(Schedulers.newThread())
+.map(mapOperator) // 新线程，由 observeOn() 指定
+.observeOn(Schedulers.io())
+.map(mapOperator2) // IO 线程，由 observeOn() 指定
+.observeOn(AndroidSchedulers.mainThread) 
+.subscribe(subscriber);  // Android 主线程，由 observeOn() 指定
+</div>
+
+<h3 id="subscribeon">subscribeOn</h3>
+
+<p>subscribeOn 可以设置发生订阅所在的线程，因为我们下游一旦订阅，就会沿着逻辑链向上调用上一个Observable的subscribe方法，直到上游源头，所以，订阅所在的线程就是数据发送所在的线程。因为逻辑链一直向上调用的原因，所以最接近上游的线程切换，才会真正决定订阅所在的线程。</p>
+
+<p><img src="http://ww4.sinaimg.cn/mw1024/52eb2279jw1f2rxcynbsuj20ha0d7wg2.jpg" alt="" /></p>
+
+<p>看一下 subscribeOn 具体的源码：</p>
+
+<div class="highlighter-rouge">public final Observable&lt;T&gt; subscribeOn(Scheduler scheduler) {
+//判空略过
+    ObjectHelper.requireNonNull(scheduler, "scheduler is null");
+    //抛开Hook，重点还是ObservableSubscribeOn
+    return RxJavaPlugins.onAssembly(new ObservableSubscribeOn&lt;T&gt;(this, scheduler));
+}
+</div>
+
+<p>…我们发现，又是一段熟悉的代码，返回了一个 ObservableSubscribeOn 对象，这又是一个Observable类型，又是包装类的手法了</p>
+
+<div class="highlighter-rouge">public final class ObservableSubscribeOn&lt;T&gt; extends AbstractObservableWithUpstream&lt;T, T&gt; {
+//保存线程调度器
+final Scheduler scheduler;
+public ObservableSubscribeOn(ObservableSource&lt;T&gt; source, Scheduler scheduler) {
+    //map的源码中我们分析过，super()只是简单的保存ObservableSource
+    super(source);
+    this.scheduler = scheduler;
+}
+
+@Override
+public void subscribeActual(final Observer&lt;? super T&gt; s) {
+    //1  创建一个包装Observer
+    final SubscribeOnObserver&lt;T&gt; parent = new SubscribeOnObserver&lt;T&gt;(s);
+    //2  手动调用 下游（终点）Observer.onSubscribe()方法,所以onSubscribe()方法执行在 订阅处所在的线程
+    s.onSubscribe(parent);
+    //3 setDisposable()是为了将子线程的操作加入Disposable管理中
+    parent.setDisposable(scheduler.scheduleDirect(new Runnable() {
+        @Override
+        public void run() {
+        //4 此时已经运行在相应的Scheduler 的线程中
+            source.subscribe(parent);
+        }
+    }));
+}
+</div>
+
+<p>ObservableSubscribeOn 保存了scheduler对象，然后在其 subscribeActual方法里面，创建了一个 SubscribeOnObserver 的包装类，封装来自下游的observer对象。</p>
+
+<div class="highlighter-rouge">    static final class SubscribeOnObserver&lt;T&gt; extends AtomicReference&lt;Disposable&gt; implements Observer&lt;T&gt;, Disposable {
+    //真正的下游（终点）观察者
+    final Observer&lt;? super T&gt; actual;
+    //用于保存上游的Disposable，以便在自身dispose时，连同上游一起dispose
+    final AtomicReference&lt;Disposable&gt; s;
+
+    SubscribeOnObserver(Observer&lt;? super T&gt; actual) {
+        this.actual = actual;
+        this.s = new AtomicReference&lt;Disposable&gt;();
+    }
+
+    @Override
+    public void onSubscribe(Disposable s) {
+        //onSubscribe()方法由上游调用，传入Disposable。在本类中赋值给this.s，加入管理。
+        DisposableHelper.setOnce(this.s, s);
+    }
+
+    //直接调用下游观察者的对应方法
+    @Override
+    public void onNext(T t) {
+        actual.onNext(t);
+    }
+    @Override
+    public void onError(Throwable t) {
+        actual.onError(t);
+    }
+    @Override
+    public void onComplete() {
+        actual.onComplete();
+    }
+
+    //取消订阅时，连同上游Disposable一起取消
+    @Override
+    public void dispose() {
+        DisposableHelper.dispose(s);
+        DisposableHelper.dispose(this);
+    }
+
+    @Override
+    public boolean isDisposed() {
+        return DisposableHelper.isDisposed(get());
+    }
+    //这个方法在subscribeActual()中被手动调用，为了将Schedulers返回的Worker加入管理
+    void setDisposable(Disposable d) {
+        DisposableHelper.setOnce(this, d);
+    }
+}
+</div>
+
+<p>SubscribeOnObserver 直接调用下游 observer的方法，里面还设置了 disposable，当上游开始发送数据的时候，会调用下游的onSubscribe方法，传入CreateEmitter这个发送对象，属于Disposable，下游可以用于控制上游的数据发送，这里通过一些列处理来保持这种特性，当subScribeOnObserver的下游发生diapose的时候，那么这里这个包装类里面也会发生dispose，并且终止线程，同时调用上游的dispose；</p>
+
+<p>回到 subscribeActual 方法里面，调用了scheduler.scheduleDirect(new Runnable) 开启子线程来 调用上游的 subscribe方法，并且把包装类 subscribeOnObserver传给上游。</p>
+
+<div class="highlighter-rouge">  /**
+ * Schedules the given task on this scheduler non-delayed execution.
+ * .....
+ */
+public Disposable scheduleDirect(Runnable run) {
+    return scheduleDirect(run, 0L, TimeUnit.NANOSECONDS);
+}
+
+public Disposable scheduleDirect(Runnable run, long delay, TimeUnit unit) {
+    //class Worker implements Disposable ，Worker本身是实现了Disposable 
+	//在 subscribeOnObserver的setParent方法里面，封装了，当下游调用dispose方法时//候，这个work线程将会关闭；
+    final Worker w = createWorker();
+    //hook略过
+    final Runnable decoratedRun = RxJavaPlugins.onSchedule(run);
+    //开始在Worker的线程执行任务，
+    w.schedule(new Runnable() {
+        @Override
+        public void run() {
+            try {
+            //调用的是 run()不是 start()方法执行的线程的方法。
+                decoratedRun.run();
+            } finally {
+            //执行完毕会 dispose()
+                w.dispose();
+            }
+        }
+    }, delay, unit);
+    //返回Worker对象
+    return w;
+}
+</div>
+
+<p>这里就是开启子线程调用了 上游的subscribe方法，我们可以知道，这样上游如果不进行其他线程切换的话，那么直到发送数据的时候，即订阅的时候，都会在当前指定的线程工作，所以就证明了一开始提出的结论， subscribeOn 决定了订阅发生的线程。并且，只有最接近上游的线程切换，才真正决定订阅所发生的线程</p>
+
+<h3 id="observeron">observerOn</h3>
+
+<p>我们在Android 中，经常会请求网络或者处理耗时操作后，更新UI，而更新Ui必须在主线程上，所以我们要切回主线程更新UI，而Rxjava是如何切换工作的线程呢？ 跟subscribeOn 不一样的是，subscribeOn决定的是发送数据所在的线程，但是在流式处理链上，数据的处理可能涉及到不同线程上，比如更新UI，而oberverOn则是指定处理过程中的线程，并且可以多次指定，不同过程发生在不同线程。</p>
+
+<p>observerOn 发生的线程</p>
+
+<div class="highlighter-rouge">public final Observable&lt;T&gt; observeOn(Scheduler scheduler) {
+    return observeOn(scheduler, false, bufferSize());
+}
+
+public final Observable&lt;T&gt; observeOn(Scheduler scheduler, boolean delayError, int bufferSize) {
+    ....
+    return RxJavaPlugins.onAssembly(new ObservableObserveOn&lt;T&gt;(this, scheduler, delayError, bufferSize));
+}
+</div>
+
+<p>又是这个套路，直接看 ObservableObserveOn 的代码</p>
+
+<div class="highlighter-rouge">public final class ObservableObserveOn&lt;T&gt; extends AbstractObservableWithUpstream&lt;T, T&gt; {
+//本例是 AndroidSchedulers.mainThread()
+final Scheduler scheduler;
+//默认false
+final boolean delayError;
+//默认128
+final int bufferSize;
+public ObservableObserveOn(ObservableSource&lt;T&gt; source, Scheduler scheduler, boolean delayError, int bufferSize) {
+    super(source);
+    this.scheduler = scheduler;
+    this.delayError = delayError;
+    this.bufferSize = bufferSize;
+}
+
+@Override
+protected void subscribeActual(Observer&lt;? super T&gt; observer) {
+    // false
+    if (scheduler instanceof TrampolineScheduler) {
+        source.subscribe(observer);
+    } else {
+        //1 创建出一个 主线程的Worker
+        Scheduler.Worker w = scheduler.createWorker();
+        //2 订阅上游数据源， 
+        source.subscribe(new ObserveOnObserver&lt;T&gt;(observer, w, delayError, bufferSize));
+    }
+}
+</div>
+
+<p>一般都不会是TrampolineScheduler,所以会通过传进来的scheduler来创建一个worker，这里是主线程的scheduler，所以会创建一个运行在主线程的worker；</p>
+
+<p>这样当上游发送数据下来， 那么就会调用 ObserverOnObserver 这个 observer对象的 onNext、onCompleted方法了。</p>
+
+<p>再来看看 ObserveOnObserver的源码</p>
+
+<div class="highlighter-rouge">static final class ObserveOnObserver&lt;T&gt; extends BasicIntQueueDisposable&lt;T&gt;
+implements Observer&lt;T&gt;, Runnable {
+    //下游的观察者
+    final Observer&lt;? super T&gt; actual;
+    //对应Scheduler里的Worker
+    final Scheduler.Worker worker;
+    //上游被观察者 push 过来的数据都存在这里
+    SimpleQueue&lt;T&gt; queue;
+    Disposable s;
+    //如果onError了，保存对应的异常
+    Throwable error;
+    //是否完成
+    volatile boolean done;
+    //是否取消
+    volatile boolean cancelled;
+    // 代表同步发送 异步发送 
+    int sourceMode;
+    ....
+    @Override
+    public void onSubscribe(Disposable s) {
+        if (DisposableHelper.validate(this.s, s)) {
+            this.s = s;
+            //省略大量无关代码
+            //创建一个queue 用于保存上游 onNext() push的数据
+            queue = new SpscLinkedArrayQueue&lt;T&gt;(bufferSize);
+            //回调下游观察者onSubscribe方法
+            actual.onSubscribe(this);
+        }
+    }
+
+    @Override
+    public void onNext(T t) {
+        //1 执行过error / complete 会是true
+        if (done) {
+            return;
+        }
+        //2 如果数据源类型不是异步的， 默认不是
+        if (sourceMode != QueueDisposable.ASYNC) {
+            //3 将上游push过来的数据 加入 queue里
+            queue.offer(t);
+        }
+        //4 开始进入对应Workder线程，在线程里 将queue里的t 取出 发送给下游Observer
+        schedule();
+    }
+
+    @Override
+    public void onError(Throwable t) {
+        //已经done 会 抛异常 和 上一篇文章里提到的一样
+        if (done) {
+            RxJavaPlugins.onError(t);
+            return;
+        }
+        //给error存个值 
+        error = t;
+        done = true;
+        //开始调度
+        schedule();
+    }
+
+    @Override
+    public void onComplete() {
+    //已经done 会 返回  不会crash 和上一篇文章里提到的一样
+        if (done) {
+            return;
+        }
+        done = true;
+        //开始调度
+        schedule();
+    }
+
+    void schedule() {
+        if (getAndIncrement() == 0) {
+            //该方法需要传入一个线程， 注意看本类实现了Runnable的接口，所以查看对应的run()方法
+            worker.schedule(this);
+        }
+    }
+    //从这里开始，这个方法已经是在Workder对应的线程里执行的了
+    @Override
+    public void run() {
+        //默认是false
+        if (outputFused) {
+            drainFused();
+        } else {
+            //取出queue里的数据 发送
+            drainNormal();
+        }
+    }
+
+
+    void drainNormal() {
+        int missed = 1;
+
+        final SimpleQueue&lt;T&gt; q = queue;
+        final Observer&lt;? super T&gt; a = actual;
+
+        for (;;) {
+            // 1 如果已经 终止 或者queue空，则跳出函数，
+            if (checkTerminated(done, q.isEmpty(), a)) {
+                return;
+            }
+
+            for (;;) {
+                boolean d = done;
+                T v;
+
+                try {
+                    //2 从queue里取出一个值
+                    v = q.poll();
+                } catch (Throwable ex) {
+                    //3 异常处理 并跳出函数
+                    Exceptions.throwIfFatal(ex);
+                    s.dispose();
+                    q.clear();
+                    a.onError(ex);
+                    return;
+                }
+                boolean empty = v == null;
+                //4 再次检查 是否 终止  如果满足条件 跳出函数
+                if (checkTerminated(d, empty, a)) {
+                    return;
+                }
+                //5 上游还没结束数据发送，但是这边处理的队列已经是空的，不会push给下游 Observer
+                if (empty) {
+                    //仅仅是结束这次循环，不发送这个数据而已，并不会跳出函数
+                    break;
+                }
+                //6 发送给下游了
+                a.onNext(v);
+            }
+
+            //7 对不起这里我也不是很明白，大致猜测是用于 同步原子操作 如有人知道 烦请告知 
+            missed = addAndGet(-missed);
+            if (missed == 0) {
+                break;
+            }
+        }
+    }
+
+    //检查 是否 已经 结束（error complete）， 是否没数据要发送了(empty 空)， 
+    boolean checkTerminated(boolean d, boolean empty, Observer&lt;? super T&gt; a) {
+        //如果已经disposed 
+        if (cancelled) {
+            queue.clear();
+            return true;
+        }
+        // 如果已经结束
+        if (d) {
+            Throwable e = error;
+            //如果是延迟发送错误
+            if (delayError) {
+                //如果空
+                if (empty) {
+                    if (e != null) {
+                        a.onError(e);
+                    } else {
+                        a.onComplete();
+                    }
+                    //停止worker（线程）
+                    worker.dispose();
+                    return true;
+                }
+            } else {
+                //发送错误
+                if (e != null) {
+                    queue.clear();
+                    a.onError(e);
+                    worker.dispose();
+                    return true;
+                } else
+                //发送complete
+                if (empty) {
+                    a.onComplete();
+                    worker.dispose();
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+}
+</div>
+
+<p>这里的onNext方法并不是立刻发送数据了，而是将数据存在队列里面，然后调用worker来进行轮循queue中的数据，将其发送到下游，因为worker是指定了发生的线程，所以这里就发生了线程的切换，下游收到的数据，则是发生在 worker执行的线程。</p>
+
+<p>所以得出这些结论：</p>
+
+<ol>
+  <li>在onNext()里，先不切换线程，将数据加入队列queue。然后开始切换线程，在另一线程中，从queue里取出数据，push给下游Observer</li>
+  <li>observeOn()影响的是其下游的代码，且多次调用仍然生效。</li>
+  <li>关于多次调用生效问题。对比subscribeOn()切换线程是在subscribeActual()里做的，只是主动切换了上游的订阅线程，从而影响其发射数据时所在的线程。而直到真正发射数据之前，任何改变线程的行为，都会生效（影响发射数据的线程）。所以subscribeOn()只生效一次。observeOn()是一个主动的行为，并且切换线程后会立刻发送数据，所以会生效多次.</li>
+</ol>
+
+
+
+                <hr>
+
+                
+                <!-- 多说 Share start -->
+                </style>
+                <div class="ds-share"
+                    style="text-align: right"
+                    data-thread-key="/2017/04/20/RxJava2"
+                    data-title="RxJava 源码分析"
+                    data-url="https://drearming.github.io/drearming.github.com/2017/04/20/RxJava2/"
+                    data-images="https://drearming.github.io/drearming.github.com/img/post-bg-2015.jpg"
+                    data-content="RxJava2
+
+参考链接：Rxjava2源码分析
+
+
+  RxJava 是基于观察者模式搭建的第三方库，拥有数量庞大且功能极其强大的操作符集合，线程切换... | 陈俊杰 | MVCoder " >
+                    <div class="ds-share-inline">
+                      <ul  class="ds-share-icons-16">
+                        <li data-toggle="ds-share-icons-more"><a class="ds-more" href="#">分享到：</a></li>
+                        <li><a class="ds-wechat flat" href="javascript:void(0);" data-service="wechat">微信</a></li>
+                        <li><a class="ds-weibo flat" href="javascript:void(0);" data-service="weibo">微博</a></li>
+                        <li><a class="ds-douban flat" href="javascript:void(0);" data-service="douban">豆瓣</a></li>
+                      </ul>
+                      <div class="ds-share-icons-more">
+                      </div>
+                    </div>
+                <hr>
+                </div>
+                <!-- 多说 Share end-->
+                
+
+
+                <ul class="pager">
+                    
+                    <li class="previous">
+                        <a href="/drearming.github.com/2017/03/30/volley/" data-toggle="tooltip" data-placement="top" title="Volley网络框架">&larr; Previous Post</a>
+                    </li>
+                    
+                    
+                    <li class="next">
+                        <a href="/drearming.github.com/2017/04/28/Okhttp/" data-toggle="tooltip" data-placement="top" title="okhttp源码分析">Next Post &rarr;</a>
+                    </li>
+                    
+                </ul>
+
+
+                
+                <!-- 多说评论框 start -->
+                <div class="comment">
+                    <div class="ds-thread"
+                        data-thread-key="/2017/04/20/RxJava2"
+                        data-title="RxJava 源码分析"
+                        data-url="https://drearming.github.io/drearming.github.com/2017/04/20/RxJava2/" >
+                    </div>
+                </div>
+                <!-- 多说评论框 end -->
+                
+
+                
+
+            </div>
+
+    <!-- Sidebar Container -->
+            <div class="
+                col-lg-8 col-lg-offset-2
+                col-md-10 col-md-offset-1
+                sidebar-container">
+
+                <!-- Featured Tags -->
+                
+                <section>
+                    <hr class="hidden-sm hidden-xs">
+                    <h5><a href="/tags/">FEATURED TAGS</a></h5>
+                    <div class="tags">
+        				
+                            
+        				
+                            
+                				<a href="/drearming.github.com/tags/#Android" title="Android" rel="15">
+                                    Android
+                                </a>
+                            
+        				
+                            
+        				
+                            
+                				<a href="/drearming.github.com/tags/#MealOrder" title="MealOrder" rel="2">
+                                    MealOrder
+                                </a>
+                            
+        				
+                            
+                				<a href="/drearming.github.com/tags/#Java" title="Java" rel="3">
+                                    Java
+                                </a>
+                            
+        				
+                            
+        				
+                            
+        				
+                            
+        				
+                            
+                				<a href="/drearming.github.com/tags/#网络" title="网络" rel="5">
+                                    网络
+                                </a>
+                            
+        				
+                            
+                				<a href="/drearming.github.com/tags/#Framework" title="Framework" rel="4">
+                                    Framework
+                                </a>
+                            
+        				
+        			</div>
+                </section>
+                
+
+                <!-- Friends Blog -->
+                
+                <hr>
+                <h5>FRIENDS</h5>
+                <ul class="list-inline">
+                    
+                        <li><a href="https://github.com/DREARMING">MVCoder</a></li>
+                    
+                        <li><a href="http://blog.csdn.net/lmj623565791/article/details/48129405">鸿洋</a></li>
+                    
+                        <li><a href="http://blog.csdn.net/guolin_blog/article/details/9097463/">郭霖</a></li>
+                    
+                        <li><a href="http://blog.csdn.net/aigestudio">爱歌</a></li>
+                    
+                        <li><a href="http://www.jianshu.com/p/6a8c2ae0b1c6?utm_campaign=haruki">死党</a></li>
+                    
+                </ul>
+                
+            </div>
+        </div>
+    </div>
+</article>
+
+
+<!-- 多说公共JS代码 start (一个网页只需插入一次) -->
+<script type="text/javascript">
+    // dynamic User by Hux
+    var _user = 'mvcoder';
+
+    // duoshuo comment query.
+    var duoshuoQuery = {short_name: _user };
+    (function() {
+        var ds = document.createElement('script');
+        ds.type = 'text/javascript';ds.async = true;
+        ds.src = (document.location.protocol == 'https:' ? 'https:' : 'http:') + '//static.duoshuo.com/embed.js';
+        ds.charset = 'UTF-8';
+        (document.getElementsByTagName('head')[0]
+         || document.getElementsByTagName('body')[0]).appendChild(ds);
+    })();
+</script>
+<!-- 多说公共JS代码 end -->
+
+
+
+
+
+
+
+<!-- async load function -->
+<script>
+    function async(u, c) {
+      var d = document, t = 'script',
+          o = d.createElement(t),
+          s = d.getElementsByTagName(t)[0];
+      o.src = u;
+      if (c) { o.addEventListener('load', function (e) { c(null, e); }, false); }
+      s.parentNode.insertBefore(o, s);
+    }
+</script>
+<!-- anchor-js, Doc:http://bryanbraun.github.io/anchorjs/ -->
+<script>
+    async("http://cdn.bootcss.com/anchor-js/1.1.1/anchor.min.js",function(){
+        anchors.options = {
+          visible: 'always',
+          placement: 'right',
+          icon: '#'
+        };
+        anchors.add().remove('.intro-header h1').remove('.subheading').remove('.sidebar-container h5');
+    })
+</script>
+<style>
+    /* place left on bigger screen */
+    @media all and (min-width: 800px) {
+        .anchorjs-link{
+            position: absolute;
+            left: -0.75em;
+            font-size: 1.1em;
+            margin-top : -0.1em;
+        }
+    }
+</style>
+
+
+
+    <!-- Footer -->
+<footer>
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+                <ul class="list-inline text-center">
+                    
+                    
+
+                    <!-- add Weibo, Zhihu by Hux, add target = "_blank" to <a> by Hux -->
+                    
+                    
+
+
+                    
+                    
+                    <li>
+                        <a target="_blank" href="https://github.com/drearming">
+                            <span class="fa-stack fa-lg">
+                                <i class="fa fa-circle fa-stack-2x"></i>
+                                <i class="fa fa-github fa-stack-1x fa-inverse"></i>
+                            </span>
+                        </a>
+                    </li>
+                    
+                </ul>
+                <p class="copyright text-muted">
+                    Copyright &copy; MVCoder Blog 2017
+                    <br>
+                    Theme by <a href="http://huangxuan.me">Hux</a> |
+                    <iframe
+                        style="margin-left: 2px; margin-bottom:-5px;"
+                        frameborder="0" scrolling="0" width="91px" height="20px"
+                        src="https://ghbtns.com/github-btn.html?user=huxpro&repo=huxpro.github.io&type=star&count=true" >
+                    </iframe>
+					<br>
+					粤ICP备17049060号
+                </p>
+            </div>
+        </div>
+    </div>
+</footer>
+
+<!-- jQuery -->
+<script src="/drearming.github.com/js/jquery.min.js "></script>
+
+<!-- Bootstrap Core JavaScript -->
+<script src="/drearming.github.com/js/bootstrap.min.js "></script>
+
+<!-- Custom Theme JavaScript -->
+<script src="/drearming.github.com/js/hux-blog.min.js "></script>
+
+
+<!-- async load function -->
+<script>
+    function async(u, c) {
+      var d = document, t = 'script',
+          o = d.createElement(t),
+          s = d.getElementsByTagName(t)[0];
+      o.src = u;
+      if (c) { o.addEventListener('load', function (e) { c(null, e); }, false); }
+      s.parentNode.insertBefore(o, s);
+    }
+</script>
+
+<!-- 
+     Because of the native support for backtick-style fenced code blocks 
+     right within the Markdown is landed in Github Pages, 
+     From V1.6, There is no need for Highlight.js, 
+     so Huxblog drops it officially.
+
+     - https://github.com/blog/2100-github-pages-now-faster-and-simpler-with-jekyll-3-0  
+     - https://help.github.com/articles/creating-and-highlighting-code-blocks/    
+-->
+<!--
+    <script>
+        async("http://cdn.bootcss.com/highlight.js/8.6/highlight.min.js", function(){
+            hljs.initHighlightingOnLoad();
+        })
+    </script>
+    <link href="http://cdn.bootcss.com/highlight.js/8.6/styles/github.min.css" rel="stylesheet">
+-->
+
+
+<!-- jquery.tagcloud.js -->
+<script>
+    // only load tagcloud.js in tag.html
+    if($('#tag_cloud').length !== 0){
+        async("/js/jquery.tagcloud.js",function(){
+            $.fn.tagcloud.defaults = {
+                //size: {start: 1, end: 1, unit: 'em'},
+                color: {start: '#bbbbee', end: '#0085a1'},
+            };
+            $('#tag_cloud a').tagcloud();
+        })
+    }
+</script>
+
+<!--fastClick.js -->
+<script>
+    async("http://cdn.bootcss.com/fastclick/1.0.6/fastclick.min.js", function(){
+        var $nav = document.querySelector("nav");
+        if($nav) FastClick.attach($nav);
+    })
+</script>
+
+
+<!-- Google Analytics -->
+
+<script>
+    // dynamic User by Hux
+    var _gaId = 'UA-49627206-1';
+    var _gaDomain = 'drearming.github.io';
+
+    // Originial
+    (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+    (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+    m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+    })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+    ga('create', _gaId, _gaDomain);
+    ga('send', 'pageview');
+</script>
+
+
+
+<!-- Baidu Tongji -->
+
+<script>
+    // dynamic User by Hux
+    var _baId = '4cc1f2d8f3067386cc5cdb626a202900';
+
+    // Originial
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "//hm.baidu.com/hm.js?" + _baId;
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+</script>
+
+
+
+
+<!-- Image to hack wechat -->
+<img src="/img/icon_wechat.png" width="0" height="0" />
+<!-- Migrate from head to bottom, no longer block render and still work -->
+
+</body>
+
+</html>

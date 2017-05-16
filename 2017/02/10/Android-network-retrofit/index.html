@@ -205,7 +205,7 @@
 
 <p>动态代理的源码：</p>
 
-<p>//动态代理的目的是在执行具体方法前(也可以不执行)，做一些必要的步骤，这里为的是执行接口的方法(即执行http请求)，将method对象的annotion，reponseType，parameterType构造出一个ServiceMethod对象，这个ServiceMethod对象就是将接口方法上的信息，封装成包含所有请求头，请求url，请求正文的一个Okhttp3的Request对象(serviceMethod对象执行toRequest(Object… args)方法后生成Request对象)</p>
+<p>//动态代理模式下，对接口方法的调用会转向对InvocationHandler的调用，retrofit很巧妙地利用了这点，在接口的方法(即执行http请求)被调用时，利用传进来的method对象的annotion，reponseType，parameterType构造出一个ServiceMethod对象，这个ServiceMethod对象含有接口方法上的信息（请求头，请求url，请求正文等信息），serviceMethod对象执行toRequest(Object… args)方法后生成 okhttp的 Request对象，实现了接口方法到 okhttp Request的映射，同时 serviceMethod 因为知道返回类型，可以调用toResponse（ResponseBody）将okhttp的responseBody转换为我们的返回类型；</p>
 
 <figure class="highlight"><pre><code class="language-java" data-lang="java">	<span class="kd">public</span> <span class="o">&lt;</span><span class="n">T</span><span class="o">&gt;</span> <span class="n">T</span> <span class="nf">create</span><span class="o">(</span><span class="kd">final</span> <span class="n">Class</span><span class="o">&lt;</span><span class="n">T</span><span class="o">&gt;</span> <span class="n">service</span><span class="o">)</span> <span class="o">{</span>
     <span class="n">Utils</span><span class="o">.</span><span class="na">validateServiceInterface</span><span class="o">(</span><span class="n">service</span><span class="o">);</span>
@@ -232,51 +232,36 @@
         <span class="o">});</span>
   	<span class="o">}</span></code></pre></figure>
 
-<p>ServiceMethod对象除了能够构造一个Request对象外，它还拥有一个CallAdapter<T>,其实就是Retrofit对象的CallAdapter;这个callAdapter的adapt方法是返回一个ExecutorCallBack&lt;&gt;对象，并且这个方法的参数，就是一个OkHttpCall&lt;&gt;对象，它就是封装了我们接口方法等价的Http请求Request对象的Call<T>对象</T></T></p>
+<p>ServiceMethod，它还拥有一个CallAdapter<T>,这个CallAdapter从源代码中可以知道是根据 serviceMethod 的returnType来决定用哪种CallAdapter来回调请求。在默认情况下，retrofit生成一个CallAdapter用于将请求结果回调在主线程中执行。</T></p>
 
-<p>到了这一步，我们就执行到我们常用步骤的：</p>
+<p>retrofit 在构造的时候，可以通过</p>
 
-<figure class="highlight"><pre><code class="language-java" data-lang="java">	<span class="n">Call</span><span class="o">&lt;</span><span class="n">ResponseInfo</span><span class="o">&gt;</span> <span class="n">call</span> <span class="o">=</span> <span class="n">service</span><span class="o">.</span><span class="na">httpGet</span><span class="o">();</span></code></pre></figure>
+<figure class="highlight"><pre><code class="language-java" data-lang="java">	 <span class="n">Retrofit</span> <span class="n">retrofit</span> <span class="o">=</span> <span class="k">new</span> <span class="n">Retrofit</span><span class="o">.</span><span class="na">Builder</span><span class="o">()</span>
+                <span class="o">.</span><span class="na">addCallAdapterFactory</span><span class="o">(</span><span class="n">RxJava2CallAdapterFactory</span><span class="o">.</span><span class="na">create</span><span class="o">())</span>
+				<span class="o">.</span><span class="na">build</span><span class="o">();</span></code></pre></figure>
 
-<p>上面的call对象就是ExecutorCallBackCall<T>对象，它有一个成员变量就是oktthpCall<T>对象（ServiceMethod方法和arg传进区构造的），当调用它的enqueue方法，就是调用okhttpCall<T>对象的enqueue方法，这个方法里面，可以获取由我们接口设置的真是http请求，下面是真正将serviceMethod转换为HTTP 请求的方法</T></T></T></p>
+<p>来添加 CallAdapterFactory，这个工厂根据返回类型，决定是否能够处理当前返回类型的请求回调。比如默认的callAdapterFactory则是处理 Call<T> 类型的返回结果，而上述代码是添加了 RxJava2的callAdapter，当接口方法的返回类型是 Observable、Flowable等 Rxjava2 支持的返回类型时，则会返回 Rxjava2CallAdapter 来处理回调。 所以我们应该在工厂方法里面处理自己能够处理的返回类型，不能处理的返回类型会交由下面的 CallAdapterFactory处理。</T></p>
 
-<figure class="highlight"><pre><code class="language-java" data-lang="java">	<span class="kd">private</span> <span class="n">okhttp3</span><span class="o">.</span><span class="na">Call</span> <span class="nf">createRawCall</span><span class="o">()</span> <span class="kd">throws</span> <span class="n">IOException</span> <span class="o">{</span>
-    <span class="n">Request</span> <span class="n">request</span> <span class="o">=</span> <span class="n">serviceMethod</span><span class="o">.</span><span class="na">toRequest</span><span class="o">(</span><span class="n">args</span><span class="o">);</span>
-    <span class="n">okhttp3</span><span class="o">.</span><span class="na">Call</span> <span class="n">call</span> <span class="o">=</span> <span class="n">serviceMethod</span><span class="o">.</span><span class="na">callFactory</span><span class="o">.</span><span class="na">newCall</span><span class="o">(</span><span class="n">request</span><span class="o">);</span>
-    <span class="k">if</span> <span class="o">(</span><span class="n">call</span> <span class="o">==</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span>
-      <span class="k">throw</span> <span class="k">new</span> <span class="nf">NullPointerException</span><span class="o">(</span><span class="s">"Call.Factory returned null."</span><span class="o">);</span>
-    <span class="o">}</span>
-    <span class="k">return</span> <span class="n">call</span><span class="o">;</span>
-  <span class="o">}</span></code></pre></figure>
+<p>在默认的情况下，这个 callAdapter 的 adapt 方法是返回一个ExecutorCallBackCall&lt;&gt;对象，并且这个方法的参数，就是一个OkHttpCall&lt;&gt;对象，它里面内部是通过代理的方式，将对okhttpCall的enqueue等操作，做一次代理，会切换到主线程去执行回调。</p>
 
-<p>就可以构造Call<T>对象了</T></p>
-
-<figure class="highlight"><pre><code class="language-java" data-lang="java">	<span class="kd">final</span> <span class="kd">class</span> <span class="nc">ExecutorCallAdapterFactory</span> <span class="kd">extends</span> <span class="n">CallAdapter</span><span class="o">.</span><span class="na">Factory</span> <span class="o">{</span>
-  	<span class="kd">final</span> <span class="n">Executor</span> <span class="n">callbackExecutor</span><span class="o">;</span>
-
-  	<span class="n">ExecutorCallAdapterFactory</span><span class="o">(</span><span class="n">Executor</span> <span class="n">callbackExecutor</span><span class="o">)</span> <span class="o">{</span>
-    	<span class="k">this</span><span class="o">.</span><span class="na">callbackExecutor</span> <span class="o">=</span> <span class="n">callbackExecutor</span><span class="o">;</span>
-  	<span class="o">}</span>
-
-  	<span class="nd">@Override</span>
-  	<span class="kd">public</span> <span class="n">CallAdapter</span><span class="o">&lt;</span><span class="n">Call</span><span class="o">&lt;?&gt;&gt;</span> <span class="n">get</span><span class="o">(</span><span class="n">Type</span> <span class="n">returnType</span><span class="o">,</span> <span class="n">Annotation</span><span class="o">[]</span> <span class="n">annotations</span><span class="o">,</span> 	<span class="n">Retrofit</span> <span class="n">retrofit</span><span class="o">)</span> <span class="o">{</span>
+<figure class="highlight"><pre><code class="language-java" data-lang="java">	<span class="nd">@Override</span>
+  	<span class="kd">public</span> <span class="n">CallAdapter</span><span class="o">&lt;?,</span> <span class="o">?&gt;</span> <span class="n">get</span><span class="o">(</span><span class="n">Type</span> <span class="n">returnType</span><span class="o">,</span> <span class="n">Annotation</span><span class="o">[]</span> <span class="n">annotations</span><span class="o">,</span> <span class="n">Retrofit</span> <span class="n">retrofit</span><span class="o">)</span> <span class="o">{</span>
     <span class="k">if</span> <span class="o">(</span><span class="n">getRawType</span><span class="o">(</span><span class="n">returnType</span><span class="o">)</span> <span class="o">!=</span> <span class="n">Call</span><span class="o">.</span><span class="na">class</span><span class="o">)</span> <span class="o">{</span>
       <span class="k">return</span> <span class="kc">null</span><span class="o">;</span>
     <span class="o">}</span>
     <span class="kd">final</span> <span class="n">Type</span> <span class="n">responseType</span> <span class="o">=</span> <span class="n">Utils</span><span class="o">.</span><span class="na">getCallResponseType</span><span class="o">(</span><span class="n">returnType</span><span class="o">);</span>
-    <span class="k">return</span> <span class="k">new</span> <span class="n">CallAdapter</span><span class="o">&lt;</span><span class="n">Call</span><span class="o">&lt;?&gt;&gt;()</span> <span class="o">{</span>
+    <span class="k">return</span> <span class="k">new</span> <span class="n">CallAdapter</span><span class="o">&lt;</span><span class="n">Object</span><span class="o">,</span> <span class="n">Call</span><span class="o">&lt;?&gt;&gt;()</span> <span class="o">{</span>
       <span class="nd">@Override</span> <span class="kd">public</span> <span class="n">Type</span> <span class="nf">responseType</span><span class="o">()</span> <span class="o">{</span>
         <span class="k">return</span> <span class="n">responseType</span><span class="o">;</span>
       <span class="o">}</span>
 
-      <span class="nd">@Override</span> <span class="kd">public</span> <span class="o">&lt;</span><span class="n">R</span><span class="o">&gt;</span> <span class="n">Call</span><span class="o">&lt;</span><span class="n">R</span><span class="o">&gt;</span> <span class="nf">adapt</span><span class="o">(</span><span class="n">Call</span><span class="o">&lt;</span><span class="n">R</span><span class="o">&gt;</span> <span class="n">call</span><span class="o">)</span> <span class="o">{</span>
+      <span class="nd">@Override</span> <span class="kd">public</span> <span class="n">Call</span><span class="o">&lt;</span><span class="n">Object</span><span class="o">&gt;</span> <span class="nf">adapt</span><span class="o">(</span><span class="n">Call</span><span class="o">&lt;</span><span class="n">Object</span><span class="o">&gt;</span> <span class="n">call</span><span class="o">)</span> <span class="o">{</span>
         <span class="k">return</span> <span class="k">new</span> <span class="n">ExecutorCallbackCall</span><span class="o">&lt;&gt;(</span><span class="n">callbackExecutor</span><span class="o">,</span> <span class="n">call</span><span class="o">);</span>
       <span class="o">}</span>
     <span class="o">};</span>
   	<span class="o">}</span>
-
-	<span class="o">-------------------</span>
-	<span class="kd">static</span> <span class="kd">final</span> <span class="kd">class</span> <span class="nc">ExecutorCallbackCall</span><span class="o">&lt;</span><span class="n">T</span><span class="o">&gt;</span> <span class="kd">implements</span> <span class="n">Call</span><span class="o">&lt;</span><span class="n">T</span><span class="o">&gt;</span> <span class="o">{</span>
+	
+ 	 <span class="kd">static</span> <span class="kd">final</span> <span class="kd">class</span> <span class="nc">ExecutorCallbackCall</span><span class="o">&lt;</span><span class="n">T</span><span class="o">&gt;</span> <span class="kd">implements</span> <span class="n">Call</span><span class="o">&lt;</span><span class="n">T</span><span class="o">&gt;</span> <span class="o">{</span>
     <span class="kd">final</span> <span class="n">Executor</span> <span class="n">callbackExecutor</span><span class="o">;</span>
     <span class="kd">final</span> <span class="n">Call</span><span class="o">&lt;</span><span class="n">T</span><span class="o">&gt;</span> <span class="n">delegate</span><span class="o">;</span>
 
@@ -290,6 +275,8 @@
 
       <span class="n">delegate</span><span class="o">.</span><span class="na">enqueue</span><span class="o">(</span><span class="k">new</span> <span class="n">Callback</span><span class="o">&lt;</span><span class="n">T</span><span class="o">&gt;()</span> <span class="o">{</span>
         <span class="nd">@Override</span> <span class="kd">public</span> <span class="kt">void</span> <span class="nf">onResponse</span><span class="o">(</span><span class="n">Call</span><span class="o">&lt;</span><span class="n">T</span><span class="o">&gt;</span> <span class="n">call</span><span class="o">,</span> <span class="kd">final</span> <span class="n">Response</span><span class="o">&lt;</span><span class="n">T</span><span class="o">&gt;</span> <span class="n">response</span><span class="o">)</span> <span class="o">{</span>
+		
+		<span class="c1">//callExecutor的execute方法仅仅是将runnable运行于主线程</span>
           <span class="n">callbackExecutor</span><span class="o">.</span><span class="na">execute</span><span class="o">(</span><span class="k">new</span> <span class="n">Runnable</span><span class="o">()</span> <span class="o">{</span>
             <span class="nd">@Override</span> <span class="kd">public</span> <span class="kt">void</span> <span class="nf">run</span><span class="o">()</span> <span class="o">{</span>
               <span class="k">if</span> <span class="o">(</span><span class="n">delegate</span><span class="o">.</span><span class="na">isCanceled</span><span class="o">())</span> <span class="o">{</span>
@@ -312,7 +299,115 @@
       <span class="o">});</span>
     <span class="o">}</span></code></pre></figure>
 
-<p>然后OkHttpCall对象执行equeue方法，构造Response对象，然后判断请求是否成功，然后作为参数传到ExecutorCallbackCall的enqueue方法中，然后将 步骤中的CallBack<T>的onSuccess,onFailure方法通过callBackExecutor 传回主线程执行，到此，整个过程分析完毕</T></p>
+<p>当然RxJava的callAdapter则会对 okHttpCall enqueue等方法的调用，定义不一样的回调，有兴趣的自己查看。</p>
+
+<p>到了这一步，我们就执行到我们常用步骤的：</p>
+
+<figure class="highlight"><pre><code class="language-java" data-lang="java">	<span class="n">Call</span><span class="o">&lt;</span><span class="n">ResponseInfo</span><span class="o">&gt;</span> <span class="n">call</span> <span class="o">=</span> <span class="n">service</span><span class="o">.</span><span class="na">httpGet</span><span class="o">();</span></code></pre></figure>
+
+<p>上面的call对象就是ExecutorCallBackCall<T>对象，它有一个成员变量就是oktthpCall<T>对象（ServiceMethod方法和arg传进区构造的），当调用它的enqueue方法，就是调用okhttpCall<T>对象的enqueue方法，这个方法里面，可以获取由我们接口设置的真是http请求，下面是真正将serviceMethod转换为HTTP 请求的方法</T></T></T></p>
+
+<figure class="highlight"><pre><code class="language-java" data-lang="java">	<span class="kd">private</span> <span class="n">okhttp3</span><span class="o">.</span><span class="na">Call</span> <span class="nf">createRawCall</span><span class="o">()</span> <span class="kd">throws</span> <span class="n">IOException</span> <span class="o">{</span>
+    <span class="n">Request</span> <span class="n">request</span> <span class="o">=</span> <span class="n">serviceMethod</span><span class="o">.</span><span class="na">toRequest</span><span class="o">(</span><span class="n">args</span><span class="o">);</span>
+    <span class="n">okhttp3</span><span class="o">.</span><span class="na">Call</span> <span class="n">call</span> <span class="o">=</span> <span class="n">serviceMethod</span><span class="o">.</span><span class="na">callFactory</span><span class="o">.</span><span class="na">newCall</span><span class="o">(</span><span class="n">request</span><span class="o">);</span>
+    <span class="k">if</span> <span class="o">(</span><span class="n">call</span> <span class="o">==</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span>
+      <span class="k">throw</span> <span class="k">new</span> <span class="nf">NullPointerException</span><span class="o">(</span><span class="s">"Call.Factory returned null."</span><span class="o">);</span>
+    <span class="o">}</span>
+    <span class="k">return</span> <span class="n">call</span><span class="o">;</span>
+  <span class="o">}</span></code></pre></figure>
+
+<p>就可以构造Call<T>对象了，这是 okhttp的 Call<T>了，接下来通过它来调用 okhttp 请求网络，这就成功的将 接口方法切换成 一次网络请求了。</T></T></p>
+
+<p>通过请求服务器，返回了 okhttp类型的 Response对象，我们上面提及过，serviceMethod里面可以将ResponseBody转换为我们想要的 returnType类型，因为我们在实际开发过程中，服务器的返回结果，我们往往只想要成功的时候返回我们需要的结果即可，而不用去判断响应码是否为200，这些应该自动化处理掉。</p>
+
+<div class="highlighter-rouge"> Response&lt;T&gt; parseResponse(okhttp3.Response rawResponse) throws IOException {
+ResponseBody rawBody = rawResponse.body();
+
+// Remove the body's source (the only stateful object) so we can pass the response along.
+rawResponse = rawResponse.newBuilder()
+    .body(new NoContentResponseBody(rawBody.contentType(), rawBody.contentLength()))
+    .build();
+
+int code = rawResponse.code();
+if (code &lt; 200 || code &gt;= 300) {
+  try {
+    // Buffer the entire body to avoid future I/O.
+    ResponseBody bufferedBody = Utils.buffer(rawBody);
+    return Response.error(bufferedBody, rawResponse);
+  } finally {
+    rawBody.close();
+  }
+}
+
+if (code == 204 || code == 205) {
+  rawBody.close();
+  return Response.success(null, rawResponse);
+}
+
+ExceptionCatchingRequestBody catchingBody = new ExceptionCatchingRequestBody(rawBody);
+try {
+  T body = serviceMethod.toResponse(catchingBody);
+  return Response.success(body, rawResponse);
+} catch (RuntimeException e) {
+  // If the underlying source threw an exception, propagate that rather than indicating it was
+  // a runtime exception.
+  catchingBody.throwIfCaught();
+  throw e;
+}   }
+</div>
+
+<p>我们看到，parseResponse方法，如果结果码是含有正确返回结果的，则调用serviceMethod.toResponse方法，将responseBody转换为我们需要的数据类型。</p>
+
+<div class="highlighter-rouge">public ServiceMethod build() {
+  callAdapter = createCallAdapter();
+  responseType = callAdapter.responseType();
+  if (responseType == Response.class || responseType == okhttp3.Response.class) {
+    throw methodError("'"
+        + Utils.getRawType(responseType).getName()
+        + "' is not a valid response body type. Did you mean ResponseBody?");
+  }
+  responseConverter = createResponseConverter();
+....
+}
+
+ private Converter&lt;ResponseBody, T&gt; createResponseConverter() {
+  Annotation[] annotations = method.getAnnotations();
+  try {
+    return retrofit.responseBodyConverter(responseType, annotations);
+  } catch (RuntimeException e) { // Wide exception range because factories are user code.
+    throw methodError(e, "Unable to create converter for %s", responseType);
+  }
+}
+
+...Retrofit.java
+
+public &lt;T&gt; Converter&lt;ResponseBody, T&gt; responseBodyConverter(Type type, Annotation[] annotations) {
+return nextResponseBodyConverter(null, type, annotations);
+  	}
+
+public &lt;T&gt; Converter&lt;ResponseBody, T&gt; nextResponseBodyConverter(Converter.Factory skipPast,
+  Type type, Annotation[] annotations) {
+checkNotNull(type, "type == null");
+checkNotNull(annotations, "annotations == null");
+
+int start = converterFactories.indexOf(skipPast) + 1;
+for (int i = start, count = converterFactories.size(); i &lt; count; i++) {
+  Converter&lt;ResponseBody, ?&gt; converter =
+      converterFactories.get(i).responseBodyConverter(type, annotations, this);
+  if (converter != null) {
+    //noinspection unchecked
+    return (Converter&lt;ResponseBody, T&gt;) converter;
+  }
+}
+</div>
+
+<p>这个过程是在 serviceMethod 构造的时候，根据returnType判断，当前serviceMethod应该使用哪个convertAdapter进行 responseBody到 returnType的转换。</p>
+
+<p>而ConvertAdapterFactory 也是在retrofit 构建的时候添加的。</p>
+
+<hr />
+
+<p>最后，判断请求是否成功，然后作为参数传到ExecutorCallbackCall的enqueue方法中，然后将 步骤中的CallBack<T>的onSuccess,onFailure方法通过callBackExecutor 传回主线程执行，到此，整个过程分析完毕</T></p>
 
 <figure class="highlight"><pre><code class="language-java" data-lang="java">	<span class="nd">@Override</span> <span class="kd">public</span> <span class="kt">void</span> <span class="nf">enqueue</span><span class="o">(</span><span class="kd">final</span> <span class="n">Callback</span><span class="o">&lt;</span><span class="n">T</span><span class="o">&gt;</span> <span class="n">callback</span><span class="o">)</span> <span class="o">{</span>
     <span class="k">if</span> <span class="o">(</span><span class="n">callback</span> <span class="o">==</span> <span class="kc">null</span><span class="o">)</span> <span class="k">throw</span> <span class="k">new</span> <span class="n">NullPointerException</span><span class="o">(</span><span class="s">"callback == null"</span><span class="o">);</span>
@@ -558,7 +653,7 @@
                             
         				
                             
-                				<a href="/drearming.github.com/tags/#Android" title="Android" rel="10">
+                				<a href="/drearming.github.com/tags/#Android" title="Android" rel="15">
                                     Android
                                 </a>
                             
@@ -584,9 +679,13 @@
                             
         				
                             
+                				<a href="/drearming.github.com/tags/#网络" title="网络" rel="5">
+                                    网络
+                                </a>
+                            
         				
                             
-                				<a href="/drearming.github.com/tags/#Framework" title="Framework" rel="3">
+                				<a href="/drearming.github.com/tags/#Framework" title="Framework" rel="4">
                                     Framework
                                 </a>
                             
